@@ -604,7 +604,13 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       };
     },
     end: (item, monitor) => {
-      const dropResult = monitor.getDropResult() as { jobId?: string; rowType?: string; attached?: boolean } | null;
+      const dropResult = monitor.getDropResult() as { 
+        jobId?: string; 
+        rowType?: string; 
+        attached?: boolean;
+        isSecondShift?: boolean;
+        keepOriginal?: boolean;
+      } | null;
       
       // If dropped outside a valid target and not attached to another resource, remove assignment
       // BUT don't remove if this was a successful second shift operation
@@ -612,9 +618,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         // Remove this assignment and all attached assignments
         removeAssignment(assignment.id);
         attachedAssignments.forEach(a => removeAssignment(a.id));
-      } else if (dropResult && dropResult.isSecondShift) {
+      } else if (dropResult && (dropResult.isSecondShift || dropResult.keepOriginal)) {
         // For successful second shift drops, don't remove the original assignment
-        console.log('🌙 Second shift drop successful - keeping original assignment');
+        console.log('🌙 Second shift drop successful - keeping original assignment', {
+          isSecondShift: dropResult.isSecondShift,
+          keepOriginal: dropResult.keepOriginal
+        });
       }
     },
     canDrag: () => {
