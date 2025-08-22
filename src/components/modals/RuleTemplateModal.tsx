@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Upload, Save, RefreshCw } from 'lucide-react';
+import { X, Download, Upload, Save, RefreshCw, Settings } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { MagnetInteractionRule, DropRule } from '../../types';
 import { 
@@ -19,6 +19,7 @@ const RuleTemplateModal: React.FC<RuleTemplateModalProps> = ({ onClose }) => {
   const { 
     magnetInteractionRules, 
     dropRules,
+    resources,
     updateMagnetInteractionRule,
     updateDropRule
   } = useScheduler();
@@ -215,7 +216,7 @@ const RuleTemplateModal: React.FC<RuleTemplateModalProps> = ({ onClose }) => {
                         onClick={() => {
                           // Create dynamic rules based on current resources
                           const availableTypes = [...new Set(resources.map(r => r.type))];
-                          const dynamicRules = createRulesForJobType('both', availableTypes);
+                          const dynamicRules = ruleUtils.createJobTypeRules('both', availableTypes);
                           
                           // Apply the dynamic rules
                           dynamicRules.forEach(rule => {
