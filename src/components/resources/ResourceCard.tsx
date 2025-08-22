@@ -368,10 +368,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
         onDragStart={(e) => {
           // Store Ctrl key state globally for drag operations
           (window as any).dragCtrlKey = e.ctrlKey;
-          // Also store the current drag item for visual feedback
+          // Also store the current drag item for visual feedback with enhanced context
           (window as any).currentDragItem = {
             resource,
-            isSecondShift: e.ctrlKey
+            isSecondShift: e.ctrlKey,
+            dragStartTime: Date.now(),
+            sourceLocation: 'resource-pool'
           };
         }}
       >

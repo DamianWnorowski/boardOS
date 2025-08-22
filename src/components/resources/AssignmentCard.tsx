@@ -576,6 +576,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
     type: ItemTypes.ASSIGNMENT,
     item: (monitor) => {
       const isCtrlHeld = dragState.isCtrlHeld;
+      const resource = getResourceById(assignment.resourceId);
       const dragItem = { 
         type: ItemTypes.ASSIGNMENT, 
         assignments: [assignment, ...attachedAssignments],
@@ -584,7 +585,9 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         assignmentId: assignment.id,
         jobId: assignment.jobId,
         row: assignment.row,
-        isSecondShift: isCtrlHeld
+        isSecondShift: isCtrlHeld,
+        dragStartTime: Date.now(),
+        sourceLocation: 'assignment-card'
       };
       
       setCurrentDragItem(dragItem);
