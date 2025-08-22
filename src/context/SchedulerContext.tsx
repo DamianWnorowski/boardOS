@@ -821,7 +821,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const assignResourceWithTruckConfig = (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number) => {
-    logger.debug('assignResourceWithTruckConfig called', { resourceId, jobId, row, truckConfig, position });
+    logger.debug('assignResourceWithTruckConfig called', { resourceId, jobId, row, truckConfig, position, isSecondShift: false }); // Default to false
    
     // Check if this is a truck and clean up invalid configurations
     const resource = getResourceById(resourceId);
@@ -845,7 +845,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const existingAssignments = assignments.filter(a => a.resourceId === resourceId && !a.attachedTo);
     
     const hasConflictingAssignment = existingAssignments.some(a => {
-      const assignedJob = getJobById(a.jobId);
+      const assignedJob = getJobById(a.jobId); // Check if assigned to a job in the same shift
       return assignedJob?.shift === currentJobShift;
     });
     
@@ -883,6 +883,50 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     logger.debug('Returning assignment ID', { assignmentId: newAssignment.id });
     return newAssignment.id; // Return the new assignment ID
+  };
+
+  // Overloaded function to handle the isSecondShift flag
+  const assignResourceWithTruckConfigAndShift = (
+    resourceId: string,
+    jobId: string,
+    row: RowType,
+    truckConfig?: 'flowboy' | 'dump-trailer',
+    position?: number,
+    isSecondShift: boolean = false // New parameter
+  ) => {
+    logger.debug('assignResourceWithTruckConfigAndShift called', { resourceId, jobId, row, truckConfig, position, isSecondShift });
+
+    const resource = getResourceById(resourceId);
+    const job = getJobById(jobId);
+    const defaultStartTime = job?.startTime || '07:00';
+    const currentJobShift = job?.shift || 'day';
+
+    const existingAssignments = assignments.filter(a => a.resourceId === resourceId && !a.attachedTo);
+    const hasConflictingAssignment = existingAssignments.some(a => {
+      const assignedJob = getJobById(a.jobId);
+      return assignedJob?.shift === currentJobShift;
+    });
+
+    // Only remove conflicting assignments if it's NOT a second shift operation
+    if (hasConflictingAssignment && !isSecondShift) {
+      setAssignments(prev => prev.filter(a => {
+        if (a.resourceId !== resourceId || a.attachedTo) return true;
+        const assignedJob = getJobById(a.jobId);
+        return assignedJob?.shift !== currentJobShift;
+      }));
+    }
+
+    const newAssignment: Assignment = {
+      id: `assign-${uuidv4()}`,
+      resourceId,
+      jobId,
+      row,
+      position,
+      truckConfig,
+      timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
+    };
+    setAssignments(prev => [...prev, newAssignment]);
+    return newAssignment.id;
   };
 
   const updateAssignment = (assignment: Assignment) => {
@@ -1223,7 +1267,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     // Resource actions
     addResource,
-    updateResource,
+    updateResource, // Keep original updateResource
     removeResource,
     toggleResourceOnSite,
     
@@ -1231,10 +1275,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     assignResource,
     assignResourceWithTruckConfig,
     assignResourceWithAttachment,
+    assignResourceWithTruckConfigAndShift, // Expose the new function
     updateAssignment,
     removeAssignment,
     attachResources,
-    detachResources,
+++ b/src/components/board/JobRow.tsx
     updateTimeSlot,
     updateAssignmentNote,
     cleanupOrphanedData,
