@@ -1279,7 +1279,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     updateAssignment,
     removeAssignment,
     attachResources,
-++ b/src/components/board/JobRow.tsx
     updateTimeSlot,
     updateAssignmentNote,
     cleanupOrphanedData,
