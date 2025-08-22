@@ -180,17 +180,22 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         }
         
         if (item.type === ItemTypes.RESOURCE) {
-          // Check if this resource is already assigned to this exact job/row
-          const existingAssignment = assignments.find(a => 
-            a.resourceId === item.resource.id && 
-            a.jobId === jobId && 
-            a.row === rowType &&
-            !a.attachedTo
-          );
-          
-          if (existingAssignment) {
-            console.log('🎯 Resource already assigned to this job/row, skipping');
-            return { jobId, rowType, assignmentId: existingAssignment.id, duplicate: true };
+          // For second shift (Ctrl+drag), allow creating additional assignments
+          if (!item.isSecondShift) {
+            // Check if this resource is already assigned to this exact job/row (only for normal drops)
+            const existingAssignment = assignments.find(a => 
+              a.resourceId === item.resource.id && 
+              a.jobId === jobId && 
+              a.row === rowType &&
+              !a.attachedTo
+            );
+            
+            if (existingAssignment) {
+              console.log('🎯 Resource already assigned to this job/row, skipping');
+              return { jobId, rowType, assignmentId: existingAssignment.id, duplicate: true };
+            }
+          } else {
+            console.log('🌙 Second shift drop - allowing additional assignment');
           }
           
           let position = assignments.length;
