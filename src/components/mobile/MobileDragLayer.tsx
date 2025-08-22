@@ -31,61 +31,64 @@ const MobileDragLayer: React.FC = () => {
 
   // Get drag feedback info
   const getDragFeedbackInfo = () => {
+    console.log('🎨 getDragFeedbackInfo called with item:', item);
+    
     if (!item || item.type !== ItemTypes.RESOURCE) {
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
     const resource = item.resource;
+    console.log('🎨 Resource:', resource?.name, 'type:', resource?.type);
+    
     if (!resource) {
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
     // Check current assignments for this resource
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+    console.log('🎨 Resource assignments:', resourceAssignments.length);
+    
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
+    console.log('🎨 Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
     
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const isCurrentlyWorkingDouble = hasDayJob && hasNightJob;
     
-    // Debug logging
-    console.log('🎨 Drag feedback debug:', {
-      resourceName: resource.name,
-      isCtrlHeld: dragState.isCtrlHeld,
-      isSecondShift: item.isSecondShift,
-      hasDayJob,
-      hasNightJob,
-      isCurrentlyWorkingDouble,
-      assignedJobs: assignedJobs.map(j => ({ name: j.name, shift: j.shift }))
-    });
+    console.log('🎨 Job status:', { hasDayJob, hasNightJob, isCurrentlyWorkingDouble, isSecondShift: item.isSecondShift });
+    
 
     // If Ctrl is held, this will be a second assignment
     if (item.isSecondShift === true) {
+      console.log('🎨 Ctrl+drag detected, determining color...');
+      
       if (isCurrentlyWorkingDouble) {
         // Already working double, adding a third job
+        console.log('🎨 → Red: Adding 3rd job');
         return { 
           message: 'Adding 3rd job', 
           color: 'text-red-600', 
           icon: '🔥' 
         };
       } else if (hasNightJob) {
-        // Has night job, Ctrl+dragging creates night ↔ day combination (orange)
+        // Has night job, Ctrl+dragging will add day job → night ↔ day (orange)
+        console.log('🎨 → Orange: Has night job, adding day job');
         return { 
           message: 'Creating double shift', 
           color: 'text-orange-600', 
           icon: '🌙' 
         };
       } else if (hasDayJob) {
-        // Has day job, Ctrl+dragging creates day ↔ day combination (teal)
-        // This will be orange for "Creating double shift" which is what we want for day→night
+        // Has day job, Ctrl+dragging will add another day job → day ↔ day (teal)
+        console.log('🎨 → Teal: Has day job, adding another day job');
         return { 
-          message: 'Creating double shift', 
-          color: 'text-orange-600', 
-          icon: '🌙' 
+          message: 'Adding 2nd day job', 
+          color: 'text-teal-600', 
+          icon: '☀️' 
         };
       } else {
-        // No current jobs, creating second assignment with Ctrl held → assume day-to-day
         // No current jobs, Ctrl+dragging assumes day ↔ day (teal)
+        console.log('🎨 → Teal: No jobs, assuming day ↔ day');
         return {
           message: 'Adding 2nd day job', 
           color: 'text-teal-600', 
@@ -95,6 +98,7 @@ const MobileDragLayer: React.FC = () => {
     }
 
     // Normal drag (not Ctrl+drag)
+    console.log('🎨 Normal drag (no Ctrl)');
     if (resourceAssignments.length === 0) {
       // First assignment
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
