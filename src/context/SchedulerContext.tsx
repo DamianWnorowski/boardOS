@@ -838,21 +838,18 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const resource = getResourceById(resourceId);
     const job = getJobById(jobId);
     const defaultStartTime = job?.startTime || '07:00';
-    const currentJobShift = job?.shift || 'day';
 
-    const existingAssignments = assignments.filter(a => a.resourceId === resourceId && !a.attachedTo);
-    const hasConflictingAssignment = existingAssignments.some(a => {
-      const assignedJob = getJobById(a.jobId);
-      return assignedJob?.shift === currentJobShift;
-    });
+    // Check if resource is already assigned to this specific job (prevent duplicates in same job)
+    const existingJobAssignment = assignments.find(a => 
+      a.resourceId === resourceId && 
+      a.jobId === jobId && 
+      !a.attachedTo
+    );
 
-    // Only remove conflicting assignments if it's NOT a second shift operation
-    if (hasConflictingAssignment && !isSecondShift) {
-      setAssignments(prev => prev.filter(a => {
-        if (a.resourceId !== resourceId || a.attachedTo) return true;
-        const assignedJob = getJobById(a.jobId);
-        return assignedJob?.shift !== currentJobShift;
-      }));
+    // Prevent duplicates within the same job
+    if (existingJobAssignment) {
+      console.log('🚫 Resource already assigned to this job, preventing duplicate');
+      return existingJobAssignment.id; // Return existing assignment ID
     }
 
     const newAssignment: Assignment = {
