@@ -122,9 +122,11 @@ const MobileDragLayer: React.FC = () => {
   };
 
   const renderItem = () => {
+    console.log('🎨 MobileDragLayer renderItem called with itemType:', itemType);
     if (!item) return null;
 
     const feedbackInfo = getDragFeedbackInfo();
+    console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
 
     switch (itemType) {
       case ItemTypes.RESOURCE:
