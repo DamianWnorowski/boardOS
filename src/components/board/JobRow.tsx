@@ -664,7 +664,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
                         <AssignmentCard assignment={assignment} />
                       </motion.div>
                     ))}
-                  </AnimatePresence>
+          <div className={rowType === 'crew' ? 'flex flex-col space-y-2' : isSplit ? 'flex justify-between items-stretch' : 'flex justify-between items-start'}>
                   
                   {/* Add dump trailer button */}
                   {isActive && dumpTrailerAssignments.length < dumpTrailerLimit && (
@@ -743,24 +743,66 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
                 >
                   {Array.from({ length: 15 }, (_, i) => i + 1).map(num => (
                     <option key={num} value={num}>{tenWheelAssignments.length} / {num}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1 min-h-[40px] border-l-2 border-green-200 pl-2">
-              <AnimatePresence>
-                {tenWheelAssignments.map(assignment => (
-                  <motion.div
-                    key={assignment.id}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  >
-                    <AssignmentCard assignment={assignment} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              <>
+                {/* Left side: Equipment and vehicles */}
+                <div className="flex flex-col gap-2 flex-1 justify-start">
+                  <AnimatePresence>
+                    {sortedAssignments
+                      .filter(assignment => {
+                        const resourceA = getResourceById(assignment.resourceId);
+                        if (!resourceA) return false;
+                        
+                        // Show equipment types and trucks on the left
+                        return ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
+                                'roller', 'dozer', 'payloader', 'equipment', 'truck'].includes(resourceA.type);
+                      })
+                      .map(assignment => (
+                        <motion.div
+                          key={assignment.id}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          className="block"
+                        >
+                          <AssignmentCard 
+                            assignment={assignment}
+                            onOpenPersonModal={handleOpenPersonModal}
+                          />
+                        </motion.div>
+                      ))}
+                  </AnimatePresence>
+                </div>
+                
+                {/* Right side: Personnel only */}
+                <div className="flex flex-col gap-2 flex-1 justify-start">
+                  <AnimatePresence>
+                    {sortedAssignments
+                      .filter(assignment => {
+                        const resourceA = getResourceById(assignment.resourceId);
+                        if (!resourceA) return false;
+                        
+                        // Show personnel types on the right
+                        return ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'].includes(resourceA.type);
+                      })
+                      .map(assignment => (
+                        <motion.div
+                          key={assignment.id}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          className="block"
+                        >
+                          <AssignmentCard 
+                            assignment={assignment}
+                            onOpenPersonModal={handleOpenPersonModal}
+                          />
+                        </motion.div>
+                      ))}
+                  </AnimatePresence>
+                </div>
+              </>
               
               {/* Add 10W truck button */}
               {isActive && tenWheelAssignments.length < tenWheelLimit && (
