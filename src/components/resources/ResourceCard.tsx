@@ -372,7 +372,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
           // Also store the current drag item for visual feedback with enhanced context
           (window as any).currentDragItem = {
             resource,
-            isSecondShift: getIsCtrlHeld()
+            isSecondShift: getIsCtrlHeld(),
             dragStartTime: Date.now(),
             sourceLocation: 'resource-pool'
           };
