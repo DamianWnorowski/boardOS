@@ -47,9 +47,20 @@ const MobileDragLayer: React.FC = () => {
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const isCurrentlyWorkingDouble = hasDayJob && hasNightJob;
+    
+    // Debug logging
+    console.log('🎨 Drag feedback debug:', {
+      resourceName: resource.name,
+      isCtrlHeld: dragState.isCtrlHeld,
+      isSecondShift: item.isSecondShift,
+      hasDayJob,
+      hasNightJob,
+      isCurrentlyWorkingDouble,
+      assignedJobs: assignedJobs.map(j => ({ name: j.name, shift: j.shift }))
+    });
 
     // If Ctrl is held, this will be a second assignment
-    if (dragState.isCtrlHeld || item.isSecondShift) {
+    if (item.isSecondShift === true) {
       if (isCurrentlyWorkingDouble) {
         // Already working double, adding a third job
         return { 
@@ -58,14 +69,14 @@ const MobileDragLayer: React.FC = () => {
           icon: '🔥' 
         };
       } else if (hasNightJob) {
-        // Has night job, assume going to day job (night ↔ day) → orange
+        // Has night job, Ctrl+dragging creates night ↔ day combination (orange)
         return { 
           message: 'Creating double shift', 
           color: 'text-orange-600', 
           icon: '🌙' 
         };
       } else if (hasDayJob) {
-        // Has day job, assume going to another day job (day ↔ day) → teal
+        // Has day job, Ctrl+dragging creates day ↔ day combination (teal)
         // This will be orange for "Creating double shift" which is what we want for day→night
         return { 
           message: 'Creating double shift', 
@@ -74,7 +85,7 @@ const MobileDragLayer: React.FC = () => {
         };
       } else {
         // No current jobs, creating second assignment with Ctrl held → assume day-to-day
-        // No current jobs, creating second assignment with Ctrl held
+        // No current jobs, Ctrl+dragging assumes day ↔ day (teal)
         return {
           message: 'Adding 2nd day job', 
           color: 'text-teal-600', 
