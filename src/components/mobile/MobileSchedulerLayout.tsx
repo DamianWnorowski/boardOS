@@ -15,8 +15,6 @@ const MobileSchedulerLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<MobileTab>('jobs');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  if (!isMobile) return null;
 
   const handleEditJob = (job: Job) => {
     setSelectedJob(job);
