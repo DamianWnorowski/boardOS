@@ -540,4 +540,546 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             <div className="group relative">
               <Info size={12} className="ml-1 text-gray-400 hover:text-gray-600 cursor-help" />
               <div className="absolute left-full top-0 ml-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                Allowed: {getDropRule(rowType).
+                Allowed: {getDropRule(rowType).map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ') || 'None'}
+              </div>
+            </div>
+            
+            {isJobFinalized && (
+              <Lock size={12} className="ml-2 text-green-600" title="Job is finalized" />
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Toggle button for rows that can be toggled */}
+            {canBeToggled && !isJobFinalized && (
+              <button 
+                onClick={handleToggleRow}
+                className={`p-0.5 rounded-sm ${isEnabled ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
+                title={isEnabled ? "Disable row" : "Enable row"}
+              >
+                {isEnabled ? <Check size={14} /> : <X size={14} />}
+              </button>
+            )}
+            
+            {/* Status indicators */}
+            {isNeeded && !isEnabled && canBeToggled && (
+              <span className="text-xs text-red-500 italic px-1.5 py-0.5 bg-red-50 rounded">
+                Disabled
+              </span>
+            )}
+            
+            {!isNeeded && isEnabled && canBeToggled && (
+              <span className="text-xs text-blue-600 italic px-1.5 py-0.5 bg-blue-50 rounded">
+                Manually enabled
+              </span>
+            )}
+            
+            {/* Assignment count */}
+            <span className="text-xs text-gray-400">
+              {assignments.length ? `${assignments.length} assigned` : ''}
+            </span>
+          </div>
+        </div>
+        
+        {/* Two-column layout for trucks */}
+        <div className="flex space-x-4">
+          {/* Left column: Flowboy and Dump Trailer sections */}
+          <div className="flex-1 space-y-4">
+            {/* Flowboy Trucks section - show for paving, both, or if has assignments */}
+            {shouldShowFlowboy && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-medium text-gray-700">Flowboy</span>
+                    <select
+                      value={flowboyLimit}
+                      onChange={(e) => setFlowboyLimit(Number(e.target.value))}
+                      className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium border-none appearance-none cursor-pointer hover:bg-blue-200 transition-colors"
+                      disabled={isJobFinalized}
+                    >
+                      {Array.from({ length: 25 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{flowboyAssignments.length} / {num}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1 min-h-[40px] border-l-2 border-blue-200 pl-2">
+                  <AnimatePresence>
+                    {flowboyAssignments.map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      >
+                        <AssignmentCard assignment={assignment} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {/* Add flowboy button */}
+                  {isActive && flowboyAssignments.length < flowboyLimit && (
+                    <div className="flex">
+                      <TemplateCard
+                        equipmentType="truck"
+                        label="Add Flowboy"
+                        onClick={() => handleOpenEquipmentSelector('truck', 'flowboy')}
+                        isCompact={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Dump Trailer Trucks section - show for milling, both, or if has assignments */}
+            {shouldShowDumpTrailer && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-medium text-gray-700">Dump Trailer</span>
+                    <select
+                      value={dumpTrailerLimit}
+                      onChange={(e) => setDumpTrailerLimit(Number(e.target.value))}
+                      className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-medium border-none appearance-none cursor-pointer hover:bg-orange-200 transition-colors"
+                      disabled={isJobFinalized}
+                    >
+                      {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{dumpTrailerAssignments.length} / {num}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1 min-h-[40px] border-l-2 border-orange-200 pl-2">
+                  <AnimatePresence>
+                    {dumpTrailerAssignments.map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      >
+                        <AssignmentCard assignment={assignment} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {/* Add dump trailer button */}
+                  {isActive && dumpTrailerAssignments.length < dumpTrailerLimit && (
+                    <div className="flex">
+                      <TemplateCard
+                        equipmentType="truck"
+                        label="Add Dump Trailer"
+                        onClick={() => handleOpenEquipmentSelector('truck', 'dump-trailer')}
+                        isCompact={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Generic Add Truck button for other job types */}
+            {shouldShowGenericAddButton && isActive && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-medium text-gray-700">Trucks</span>
+                    <select
+                      value={flowboyLimit}
+                      onChange={(e) => setFlowboyLimit(Number(e.target.value))}
+                      className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium border-none appearance-none cursor-pointer hover:bg-gray-200 transition-colors"
+                      disabled={isJobFinalized}
+                    >
+                      {Array.from({ length: 25 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{trailerAssignments.length} / {num}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1 min-h-[40px] border-l-2 border-gray-200 pl-2">
+                  <AnimatePresence>
+                    {trailerAssignments.map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      >
+                        <AssignmentCard assignment={assignment} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {/* Add generic truck button */}
+                  {trailerAssignments.length < flowboyLimit && (
+                    <div className="flex">
+                      <TemplateCard
+                        equipmentType="truck"
+                        label="Add Truck"
+                        onClick={() => handleOpenEquipmentSelector('truck')}
+                        isCompact={true}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Right column: 10W trucks section */}
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-medium text-gray-700">10W Trucks</span>
+                <select
+                  value={tenWheelLimit}
+                  onChange={(e) => setTenWheelLimit(Number(e.target.value))}
+                  className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium border-none appearance-none cursor-pointer hover:bg-green-200 transition-colors"
+                  disabled={isJobFinalized}
+                >
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={num}>{tenWheelAssignments.length} / {num}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-col space-y-1 min-h-[40px] border-l-2 border-green-200 pl-2">
+              <AnimatePresence>
+                {tenWheelAssignments.map(assignment => (
+                  <motion.div
+                    key={assignment.id}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  >
+                    <AssignmentCard assignment={assignment} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {/* Add 10W truck button */}
+              {isActive && tenWheelAssignments.length < tenWheelLimit && (
+                <div className="flex">
+                  <TemplateCard
+                    equipmentType="truck"
+                    label="10W Truck"
+                    onClick={() => handleOpenEquipmentSelector('truck', '10w')}
+                    isCompact={true}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Equipment selector modal */}
+        {selectedEquipmentType && (
+          <EquipmentSelectorModal
+            jobId={jobId}
+            rowType={rowType}
+            equipmentType={selectedEquipmentType}
+            truckCategory={selectedTruckCategory}
+            onClose={handleCloseSelector}
+          />
+        )}
+        
+        {/* Truck configuration modal */}
+        {pendingTruckDrop && (
+          <TruckConfigModal
+            onSelect={handleTruckConfigSelect}
+            onClose={handleTruckConfigClose}
+          />
+        )}
+        
+        {/* Person Modal */}
+        {isPersonModalOpen && selectedPersonAssignment && (
+          <PersonModal
+            assignment={selectedPersonAssignment}
+            onClose={handleClosePersonModal}
+          />
+        )}
+        </div>
+      </div>
+    );
+  }
+  
+  const templateCards = getTemplateCards();
+  
+  return (
+    <div className="p-2 border-b border-gray-200 min-h-[60px] transition-colors duration-200 relative">
+      {/* Main drop target */}
+      <div
+        ref={drop}
+        className={`w-full ${
+          isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
+        }`}
+      >
+      <div className="w-full flex justify-between items-center mb-1">
+        <div className="flex items-center">
+          <span className={`text-xs font-medium ${isActive ? 'text-gray-500' : 'text-gray-400'} ${!isActive ? 'line-through' : ''}`}>
+            {label}
+          </span>
+          
+          {/* Drop rules indicator */}
+          <div className="group relative">
+            <Info size={12} className="ml-1 text-gray-400 hover:text-gray-600 cursor-help" />
+            <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+              Allowed: {getDropRule(rowType).map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ') || 'None'}
+            </div>
+          </div>
+          
+          {isJobFinalized && (
+            <Lock size={12} className="ml-2 text-green-600" title="Job is finalized" />
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* Toggle button for rows that can be toggled */}
+          {canBeToggled && !isJobFinalized && (
+            <button 
+              onClick={handleToggleRow}
+              className={`p-0.5 rounded-sm ${isEnabled ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
+              title={isEnabled ? "Disable row" : "Enable row"}
+            >
+              {isEnabled ? <Check size={14} /> : <X size={14} />}
+            </button>
+          )}
+          
+          {/* Status indicators */}
+          {isNeeded && !isEnabled && canBeToggled && (
+            <span className="text-xs text-red-500 italic px-1.5 py-0.5 bg-red-50 rounded">
+              Disabled
+            </span>
+          )}
+          
+          {!isNeeded && isEnabled && canBeToggled && (
+            <span className="text-xs text-blue-600 italic px-1.5 py-0.5 bg-blue-50 rounded">
+              Manually enabled
+            </span>
+          )}
+          
+          {/* Assignment count */}
+          <span className="text-xs text-gray-400">
+            {assignments.length ? `${assignments.length} assigned` : ''}
+          </span>
+        </div>
+      </div>
+      
+      {/* Display assignments */}
+      <div className="space-y-2">
+        {/* Actual assignments - vertical for crew, horizontal for others with operators on right */}
+        <div className={rowType === 'crew' ? 'flex flex-col space-y-2' : isSplit ? 'flex justify-between items-stretch' : 'flex flex-col space-y-2'}>
+          {/* For split rows: Left side for equipment/vehicles, right side for personnel */}
+          {isSplit ? (
+            <>
+              {/* Left side: Equipment/Vehicles only */}
+              <div className="flex flex-col gap-2 min-w-[120px] flex-shrink-0">
+                {isSplit && rowConfig?.boxes[0] && (
+                  <div className="text-xs font-medium text-gray-600 mb-1 bg-gray-100 px-2 py-1 rounded">
+                    {rowConfig.boxes[0].name}
+                  </div>
+                )}
+                <AnimatePresence>
+                  {sortedAssignments
+                    .filter(assignment => {
+                      const resourceA = getResourceById(assignment.resourceId);
+                      if (!resourceA) return false;
+                      
+                      // For split rows, use box rules
+                      if (isSplit && rowConfig?.boxes[0]) {
+                        return rowConfig.boxes[0].allowedTypes.includes(resourceA.type);
+                      }
+                      
+                      return false;
+                    })
+                    .sort((a, b) => (a.position || 0) - (b.position || 0))
+                    .map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="inline-block"
+                      >
+                        <AssignmentCard 
+                          assignment={assignment}
+                          onOpenPersonModal={handleOpenPersonModal}
+                        />
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+              
+              {/* Right side: Personnel only */}
+              <div className="flex flex-col gap-2 min-w-[120px] flex-shrink-0 justify-start">
+                {isSplit && rowConfig?.boxes[1] && (
+                  <div className="text-xs font-medium text-gray-600 mb-1 bg-gray-100 px-2 py-1 rounded">
+                    {rowConfig.boxes[1].name}
+                  </div>
+                )}
+                <AnimatePresence>
+                  {sortedAssignments
+                    .filter(assignment => {
+                      const resourceA = getResourceById(assignment.resourceId);
+                      if (!resourceA) return false;
+                      
+                      // For split rows, use box rules
+                      if (isSplit && rowConfig?.boxes[1]) {
+                        return rowConfig.boxes[1].allowedTypes.includes(resourceA.type);
+                      }
+                      
+                      return false;
+                    })
+                    .sort((a, b) => (a.position || 0) - (b.position || 0))
+                    .map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="inline-block"
+                      >
+                        <AssignmentCard 
+                          assignment={assignment}
+                          onOpenPersonModal={handleOpenPersonModal}
+                        />
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+            </>
+          ) : (
+            /* Two-column layout: equipment on left, personnel on right */
+            <div className="flex space-x-4">
+              {/* Left side: Equipment and attached groups */}
+              <div className="flex-1 space-y-2">
+                <AnimatePresence>
+                  {sortedAssignments
+                    .filter(assignment => {
+                      const resource = getResourceById(assignment.resourceId);
+                      if (!resource) return false;
+                      
+                      // Show attached groups and unattached equipment on the left
+                      if (assignment.attachments && assignment.attachments.length > 0) {
+                        return true; // Attached groups go on left
+                      }
+                      
+                      return equipmentTypes.includes(resource.type);
+                    })
+                    .map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="block"
+                      >
+                        <AssignmentCard 
+                          assignment={assignment}
+                          onOpenPersonModal={handleOpenPersonModal}
+                        />
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+              
+              {/* Right side: Unattached personnel */}
+              <div className="flex-1 space-y-2">
+                <AnimatePresence>
+                  {sortedAssignments
+                    .filter(assignment => {
+                      const resource = getResourceById(assignment.resourceId);
+                      if (!resource) return false;
+                      
+                      // Only show unattached personnel on the right
+                      if (assignment.attachments && assignment.attachments.length > 0) {
+                        return false; // Attached groups already shown on left
+                      }
+                      
+                      return !equipmentTypes.includes(resource.type) && resource.type !== 'truck';
+                    })
+                    .map(assignment => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="block"
+                      >
+                        <AssignmentCard 
+                          assignment={assignment}
+                          onOpenPersonModal={handleOpenPersonModal}
+                        />
+                      </motion.div>
+                    ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Template cards underneath assignments */}
+        {isActive && !isJobFinalized && templateCards.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <AnimatePresence>
+              {templateCards.map((template) => (
+                <motion.div
+                  key={`template-${template.type}`}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                >
+                  <TemplateCard
+                    equipmentType={template.type}
+                    label={template.label}
+                    onClick={() => handleOpenEquipmentSelector(template.type)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+      
+      {/* Equipment selector modal */}
+      {selectedEquipmentType && (
+        <EquipmentSelectorModal
+          jobId={jobId}
+          rowType={rowType}
+          equipmentType={selectedEquipmentType}
+          truckCategory={selectedTruckCategory}
+          onClose={handleCloseSelector}
+        />
+      )}
+      
+      {/* Truck configuration modal */}
+      {pendingTruckDrop && (
+        <TruckConfigModal
+          onSelect={handleTruckConfigSelect}
+          onClose={handleTruckConfigClose}
+        />
+      )}
+      
+      {/* Person Modal */}
+      {isPersonModalOpen && selectedPersonAssignment && (
+        <PersonModal
+          assignment={selectedPersonAssignment}
+          onClose={handleClosePersonModal}
+        />
+      )}
+      </div>
+    </div>
+  );
+};
+
+export default JobRow;
