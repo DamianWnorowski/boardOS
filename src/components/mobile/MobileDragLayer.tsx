@@ -146,6 +146,12 @@ const MobileDragLayer: React.FC = () => {
 
     const feedbackInfo = getDragFeedbackInfo();
     console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
+    console.log('🎨 MobileDragLayer color check:', {
+      color: feedbackInfo.color,
+      includesRed: feedbackInfo.color.includes('red'),
+      includesOrange: feedbackInfo.color.includes('orange'),
+      includesTeal: feedbackInfo.color.includes('teal')
+    });
 
     switch (itemType) {
       case ItemTypes.RESOURCE:
@@ -168,15 +174,20 @@ const MobileDragLayer: React.FC = () => {
         );
       case ItemTypes.ASSIGNMENT:
         return (
-          <div className="transform scale-110 shadow-2xl border-2 border-green-400 rounded-lg bg-white p-2">
+          <div className={`transform scale-110 shadow-2xl border-4 rounded-lg bg-white p-2 ${
+            feedbackInfo.color === 'text-red-600' ? 'border-red-500' :
+            feedbackInfo.color === 'text-orange-600' ? 'border-orange-500' :
+            feedbackInfo.color === 'text-teal-600' ? 'border-teal-500' :
+            feedbackInfo.color === 'text-purple-600' ? 'border-purple-500' : 'border-blue-500'
+          }`}>
             <ResourceCard 
               resource={item.resource} 
               isDragging={true}
               isCompact={false}
             />
-            <div className="text-xs text-center mt-2 text-green-600 font-medium flex items-center justify-center space-x-1">
-              <span className="text-base">🔄</span>
-              <span>Moving assignment</span>
+            <div className={`text-xs text-center mt-2 font-medium flex items-center justify-center space-x-1 ${feedbackInfo.color}`}>
+              <span className="text-base">{feedbackInfo.icon}</span>
+              <span>{feedbackInfo.message}</span>
             </div>
           </div>
         );
