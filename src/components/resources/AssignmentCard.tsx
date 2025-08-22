@@ -459,6 +459,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
     attachResources,
     detachResources,
     resources,
+    assignments,
     getResourcesByAssignment,
     getAssignmentById,
     hasMultipleJobAssignments,
@@ -605,7 +606,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       // Don't allow dragging while a modal is open
       return !isScrewmanModalOpen && !isOperatorModalOpen && !isTimeSlotModalOpen;
     }
-  });
+  }, [assignment, attachedAssignments, dragState.isCtrlHeld, resource, setCurrentDragItem, removeAssignment, isScrewmanModalOpen, isOperatorModalOpen, isTimeSlotModalOpen]);
   
   // Handle dropping of other resources onto this one for attaching
   const [{ isOver, canDrop }, drop] = useDrop({
@@ -767,7 +768,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
     }),
-  });
+  }, [assignment, attachedAssignments, assignments, getAssignmentById, getResourceById, getMagnetInteractionRule, assignResourceWithAttachment, attachResources, removeAssignment, safeLocalStorage]);
 
   // Clean up drop state when component unmounts or item changes
   useEffect(() => {
