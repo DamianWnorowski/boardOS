@@ -572,7 +572,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
     return canMagnetAttachTo(itemResource.type, resource.type);
   };
   
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging, isSecondShift }, drag] = useDrag({
     type: ItemTypes.ASSIGNMENT,
     item: (monitor) => {
       const isCtrlHeld = getIsCtrlHeld();
@@ -593,9 +593,16 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       setCurrentDragItem(dragItem);
       return dragItem;
     },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
+    collect: (monitor) => {
+      const item = monitor.getItem();
+      const isDragging = monitor.isDragging();
+      const isSecondShift = item?.isSecondShift || false;
+      
+      return {
+        isDragging,
+        isSecondShift
+      };
+    },
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult() as { jobId?: string; rowType?: string; attached?: boolean } | null;
       
@@ -614,7 +621,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       // Don't allow dragging while a modal is open
       return !isScrewmanModalOpen && !isOperatorModalOpen && !isTimeSlotModalOpen;
     }
-  }, [assignment, attachedAssignments, dragState.isCtrlHeld, resource, setCurrentDragItem, removeAssignment, isScrewmanModalOpen, isOperatorModalOpen, isTimeSlotModalOpen]);
+  }, [assignment, attachedAssignments, resource, setCurrentDragItem, removeAssignment, isScrewmanModalOpen, isOperatorModalOpen, isTimeSlotModalOpen]);
   
   // Handle dropping of other resources onto this one for attaching
   const [{ isOver, canDrop }, drop] = useDrop({
@@ -879,7 +886,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         <motion.div 
           ref={combinedRef}
           className={`relative ${hoverStyle} ${dropAnimation} ${multiJobStyle} rounded-md cursor-move transition-all duration-200 inline-block group`}
-          style={{ opacity: isDragging ? 0.4 : 1 }}
+          style={{ opacity: isDragging && !isSecondShift ? 0.4 : 1 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -966,7 +973,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       <motion.div 
         ref={combinedRef}
         className={`relative ${hoverStyle} ${dropAnimation} ${multiJobStyle} rounded-md cursor-move transition-all duration-200 inline-block group`}
-        style={{ opacity: isDragging ? 0.4 : 1 }}
+        style={{ opacity: isDragging && !isSecondShift ? 0.4 : 1 }}
         onDoubleClick={handleDoubleClick}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
