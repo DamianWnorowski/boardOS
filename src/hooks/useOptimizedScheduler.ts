@@ -13,27 +13,31 @@ export const useOptimizedScheduler = () => {
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(context.searchTerm, 300);
   
+  // Memoize assigned resource IDs
+  const assignedResourceIds = useMemo(() => {
+    return new Set(context.assignments.map(a => a.resourceId));
+  }, [context.assignments]);
+
+  // Memoize available resources using useMemoizedFilter at top level
+  const availableResources = useMemoizedFilter(context.resources, (r) => {
+    // Apply search filter
+    if (debouncedSearchTerm && 
+        !r.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) && 
+        !r.identifier?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) {
+      return false;
+    }
+    
+    // Apply type filter
+    if (context.filteredResourceType && r.type !== context.filteredResourceType) {
+      return false;
+    }
+    
+    // Resource is available only if not assigned anywhere
+    return !assignedResourceIds.has(r.id);
+  }, [debouncedSearchTerm, context.filteredResourceType, assignedResourceIds]);
+
   // Memoize expensive computations
   const memoizedData = useMemo(() => {
-    const assignedResourceIds = new Set(context.assignments.map(a => a.resourceId));
-    
-    const availableResources = useMemoizedFilter(context.resources, (r) => {
-      // Apply search filter
-      if (debouncedSearchTerm && 
-          !r.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) && 
-          !r.identifier?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      // Apply type filter
-      if (context.filteredResourceType && r.type !== context.filteredResourceType) {
-        return false;
-      }
-      
-      // Resource is available only if not assigned anywhere
-      return !assignedResourceIds.has(r.id);
-    }, [debouncedSearchTerm, context.filteredResourceType]);
-
     const resourcesByType = context.resources.reduce((groups, resource) => {
       if (!groups[resource.type]) {
         groups[resource.type] = [];
@@ -60,10 +64,10 @@ export const useOptimizedScheduler = () => {
       totalAssignments: context.assignments.length
     };
   }, [
-    context.assignments,
+    assignedResourceIds,
+    availableResources,
     context.resources,
-    debouncedSearchTerm,
-    context.filteredResourceType,
+    context.assignments,
     context.jobs.length
   ]);
 
