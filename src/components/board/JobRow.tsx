@@ -115,8 +115,45 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     return !assignment.attachedTo;
   });
   
-  // Sort assignments by position
-  const sortedAssignments = [...filteredAssignments].sort((a, b) => (a.position || 0) - (b.position || 0));
+  // Helper function to determine sort priority for resources
+  const getSortPriority = (assignment: Assignment): number => {
+    const resource = getResourceById(assignment.resourceId);
+    if (!resource) return 999; // Unknown resources go last
+    
+    // Check if this assignment has attachments (attached magnets get highest priority)
+    if (assignment.attachments && assignment.attachments.length > 0) {
+      return 0; // Attached magnets first
+    }
+    
+    // Equipment types get priority 1
+    const equipmentTypes = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 
+                            'dozer', 'payloader', 'roller', 'equipment', 'truck'];
+    if (equipmentTypes.includes(resource.type)) {
+      return 1; // Unattached equipment second
+    }
+    
+    // Operators get priority 2
+    if (resource.type === 'operator') {
+      return 2; // Unattached operators third
+    }
+    
+    // All other personnel get priority 3
+    return 3; // Other personnel fourth
+  };
+  
+  // Sort assignments by priority, then by position
+  const sortedAssignments = [...filteredAssignments].sort((a, b) => {
+    const priorityA = getSortPriority(a);
+    const priorityB = getSortPriority(b);
+    
+    // If priorities are different, sort by priority
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    // If priorities are the same, sort by position
+    return (a.position || 0) - (b.position || 0);
+  });
 
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: [ItemTypes.RESOURCE, ItemTypes.ASSIGNMENT],
@@ -836,7 +873,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       {/* Display assignments */}
       <div className="space-y-2">
         {/* Actual assignments - vertical for crew, horizontal for others with operators on right */}
-        <div className={rowType === 'crew' ? 'flex flex-col space-y-2' : isSplit ? 'flex justify-between items-stretch' : 'flex justify-between items-start'}>
+        <div className={rowType === 'crew' ? 'flex flex-col space-y-2' : isSplit ? 'flex justify-between items-stretch' : 'flex flex-col space-y-2'}>
           {/* For split rows: Left side for equipment/vehicles, right side for personnel */}
           {isSplit ? (
             <>
@@ -919,67 +956,24 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
               </div>
             </>
           ) : (
-            /* Original layout for non-Equipment rows */
-            <>
-              {/* Left side: Equipment and vehicles */}
-              <div className="flex flex-wrap gap-2 flex-1">
-                <AnimatePresence>
-                  {sortedAssignments
-                    .filter(assignment => {
-                      const resource = getResourceById(assignment.resourceId);
-                      if (!resource) return false;
-                      
-                      // Equipment and vehicles go on left
-                      return ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 
-                              'dozer', 'payloader', 'roller', 'equipment', 'truck'].includes(resource.type);
-                    })
-                    .map(assignment => (
-                      <motion.div
-                        key={assignment.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="inline-block"
-                      >
-                        <AssignmentCard 
-                          assignment={assignment}
-                          onOpenPersonModal={handleOpenPersonModal}
-                        />
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              </div>
-              
-              {/* Right side: Personnel */}
-              <div className="flex flex-wrap gap-2 justify-end">
-                <AnimatePresence>
-                  {sortedAssignments
-                    .filter(assignment => {
-                      const resource = getResourceById(assignment.resourceId);
-                      if (!resource) return false;
-                      
-                      // Personnel go on right
-                      return ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'].includes(resource.type);
-                    })
-                    .map(assignment => (
-                      <motion.div
-                        key={assignment.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="inline-block"
-                      >
-                        <AssignmentCard 
-                          assignment={assignment}
-                          onOpenPersonModal={handleOpenPersonModal}
-                        />
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              </div>
-            </>
+            /* Vertical layout for all non-split rows */
+            <AnimatePresence>
+              {sortedAssignments.map(assignment => (
+                <motion.div
+                  key={assignment.id}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="block"
+                >
+                  <AssignmentCard 
+                    assignment={assignment}
+                    onOpenPersonModal={handleOpenPersonModal}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
         
