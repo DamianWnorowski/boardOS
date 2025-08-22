@@ -58,39 +58,25 @@ const MobileDragLayer: React.FC = () => {
           icon: '🔥' 
         };
       } else if (hasDayJob) {
-        // Check what shift we're dropping onto to determine the appropriate color
-        // We need to get the target job from the current drop context
-        // For now, we'll distinguish day-to-day as a special case
-        const isDayToDay = true; // This will be day-to-day since hasDayJob is true and we're doing Ctrl+drag
-        
-        if (isDayToDay) {
-          // Day job to another day job - use teal color
-          return { 
-            message: 'Adding 2nd day job', 
-            color: 'text-teal-600', 
-            icon: '☀️' 
-          };
-        } else {
-          // Day job to night job - creating double shift
-          return { 
-            message: 'Creating double shift', 
-            color: 'text-purple-600', 
-            icon: '🌙' 
-          };
-        }
+        // Day job to another job - use teal for day-to-day assignments
+        return { 
+          message: 'Adding 2nd day job', 
+          color: 'text-teal-600', 
+          icon: '☀️' 
+        };
       } else if (hasNightJob) {
-        // Has night job, adding day job (creating double shift)
+        // Has night job, adding another job
         return { 
           message: 'Creating double shift', 
           color: 'text-purple-600', 
           icon: '🌙' 
         };
       } else {
-        // No current jobs, creating second assignment
+        // No current jobs, creating second assignment with Ctrl held
         return { 
-          message: 'Creating 2nd assignment', 
-          color: 'text-orange-600', 
-          icon: '⚡' 
+          message: 'Adding 2nd job', 
+          color: 'text-teal-600', 
+          icon: '📋' 
         };
       }
     }
