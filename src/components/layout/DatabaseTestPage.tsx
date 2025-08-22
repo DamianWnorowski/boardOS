@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, UserCheck, Database, AlertCircle } from 'lucide-react';
 import DatabaseStatus from '../database/DatabaseStatus';
 import DatabaseTester from '../testing/DatabaseTester';
 
