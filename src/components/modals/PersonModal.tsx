@@ -36,7 +36,11 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   // Initialize edited resource when resource changes
   React.useEffect(() => {
     if (resource && !editedResource) {
-      setEditedResource({ ...resource });
+      setEditedResource({ 
+        ...resource,
+        certifications: resource.certifications || [],
+        skills: resource.skills || []
+      });
     }
   }, [resource, editedResource]);
   
@@ -74,7 +78,13 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   
   const handleSaveEdit = () => {
     if (editedResource && hasUnsavedChanges) {
-      updateResource(editedResource);
+      // Ensure certifications and skills are arrays
+      const resourceToSave = {
+        ...editedResource,
+        certifications: Array.isArray(editedResource.certifications) ? editedResource.certifications : [],
+        skills: Array.isArray(editedResource.skills) ? editedResource.skills : []
+      };
+      updateResource(resourceToSave);
       setHasUnsavedChanges(false);
       onClose();
     }
@@ -403,6 +413,58 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                       </>
                     )}
                     
+                    {/* Certifications Section - Only for Personnel */}
+                    {!isEquipmentOrVehicle && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Certifications
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {availableCertifications.map(cert => {
+                            const isSelected = (editedResource?.certifications || []).includes(cert.value);
+                            return (
+                              <button
+                                key={cert.value}
+                                type="button"
+                                onClick={() => handleToggleCertification(cert.value)}
+                                className={`px-3 py-2 text-sm rounded-md border transition-colors ${
+                                  isSelected
+                                    ? 'bg-green-500 text-white border-green-600'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{cert.label}</span>
+                                  <span className="ml-2">
+                                    {isSelected ? '✓' : '+'}
+                                  </span>
+                                </div>
+                                {cert.description && (
+                                  <div className="text-xs opacity-75 mt-1">
+                                    {cert.description}
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Equipment Skills Section - Only for Personnel */}
+                    {!isEquipmentOrVehicle && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Equipment Operation Skills
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                          {equipmentSkills.map(skill => {
+                            const isSelected = (editedResource?.skills || []).includes(skill.value);
+                            return (
+                              <button
+                                key={skill.value}
+                                type="button"
+                                onClick={() => handleToggleSkill(skill.value)}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Type
@@ -437,6 +499,17 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                         </optgroup>
                       </select>
                     </div>
+                                    handleEditChange('skills', updatedSkills);
+                                  }}
+                                  className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                                />
+                                <span className="text-sm text-gray-700">{skill}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {hasUnsavedChanges && (
