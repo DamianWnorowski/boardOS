@@ -1278,7 +1278,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     assignResourceWithTruckConfigAndShift, // Expose the new function
     updateAssignment,
     removeAssignment,
-    attachResources,
     updateTimeSlot,
     updateAssignmentNote,
     cleanupOrphanedData,
