@@ -60,8 +60,18 @@ const MobileDragLayer: React.FC = () => {
     currentOffset: !!currentOffset
   });
 
+  // Debug logging for rendering
+  console.log('🎨 MobileDragLayer render check:', {
+    isDragging,
+    itemType,
+    hasItem: !!item,
+    isSecondShift: item?.isSecondShift,
+    currentOffset: !!currentOffset
+  });
+
   // Only show on mobile/touch devices
   if (!isDragging) {
+    console.log('🎨 MobileDragLayer not rendering - not dragging');
     console.log('🎨 MobileDragLayer not rendering - not dragging');
     console.log('🎨 MobileDragLayer not rendering - not dragging');
     console.log('🎨 MobileDragLayer not rendering - not dragging');
@@ -101,7 +111,14 @@ const MobileDragLayer: React.FC = () => {
       isSecondShift: item?.isSecondShift
     });
     
+    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
+      itemType: item?.type,
+      resourceName: item?.resource?.name,
+      isSecondShift: item?.isSecondShift
+    });
+    
     if (!item) {
+      console.log('🎨 MobileDragLayer → Blue: No item');
       console.log('🎨 MobileDragLayer → Blue: No item');
       console.log('🎨 MobileDragLayer → Blue: No item');
       console.log('🎨 MobileDragLayer → Blue: No item');
@@ -122,7 +139,10 @@ const MobileDragLayer: React.FC = () => {
     
     console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
     
+    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
+    
     if (!resource) {
+      console.log('🎨 MobileDragLayer → Blue: No resource found');
       console.log('🎨 MobileDragLayer → Blue: No resource found');
       console.log('🎨 MobileDragLayer → Blue: No resource found');
       console.log('🎨 MobileDragLayer → Blue: No resource found');
@@ -133,6 +153,13 @@ const MobileDragLayer: React.FC = () => {
 
     // Check current assignments for this resource
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
+    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
+      id: a.id,
+      jobId: a.jobId,
+      jobName: getJobById(a.jobId)?.name,
+      shift: getJobById(a.jobId)?.shift
+    })));
     console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
     console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
       id: a.id,
@@ -182,11 +209,19 @@ const MobileDragLayer: React.FC = () => {
     console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
     console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
     console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
+    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
     
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const isCurrentlyWorkingDouble = hasDayJob && hasNightJob;
     
+    console.log('🎨 MobileDragLayer Job status:', { 
+      hasDayJob, 
+      hasNightJob, 
+      isCurrentlyWorkingDouble, 
+      isSecondShift: item.isSecondShift,
+      ctrlDetected: item.isSecondShift === true
+    });
     console.log('🎨 MobileDragLayer Job status:', { 
       hasDayJob, 
       hasNightJob, 
@@ -231,9 +266,11 @@ const MobileDragLayer: React.FC = () => {
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
+      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       
       if (isCurrentlyWorkingDouble) {
         // Already working double, adding a third job
+        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
         console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
         console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
         console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
@@ -251,6 +288,7 @@ const MobileDragLayer: React.FC = () => {
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
+        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
         return { 
           message: 'Creating double shift', 
           color: 'text-orange-600', 
@@ -263,6 +301,7 @@ const MobileDragLayer: React.FC = () => {
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
+        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         return { 
           message: 'Adding 2nd day job', 
           color: 'text-teal-600', 
@@ -270,6 +309,7 @@ const MobileDragLayer: React.FC = () => {
         };
       } else {
         // No current jobs, Ctrl+dragging assumes day ↔ day (teal)
+        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
@@ -289,8 +329,10 @@ const MobileDragLayer: React.FC = () => {
     console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
     console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
     console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
+    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
     if (resourceAssignments.length === 0) {
       // First assignment
+      console.log('🎨 MobileDragLayer → Blue: First assignment');
       console.log('🎨 MobileDragLayer → Blue: First assignment');
       console.log('🎨 MobileDragLayer → Blue: First assignment');
       console.log('🎨 MobileDragLayer → Blue: First assignment');
