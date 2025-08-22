@@ -811,7 +811,9 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const templateCards = getTemplateCards();
   
   return (
-    <div className="p-2 border-b border-gray-200 min-h-[60px] transition-colors duration-200 relative">
+    <div className={`border-b border-gray-200 transition-colors duration-200 relative ${
+      !isActive ? 'p-1 min-h-[24px]' : 'p-2 min-h-[60px]'
+    }`}>
       {/* Main drop target */}
       <div
         ref={drop}
@@ -819,22 +821,24 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
         }`}
       >
-      <div className="w-full flex justify-between items-center mb-1">
+      <div className={`w-full flex justify-between items-center ${!isActive ? 'mb-0' : 'mb-1'}`}>
         <div className="flex items-center">
-          <span className={`text-xs font-medium ${isActive ? 'text-gray-500' : 'text-gray-400'} ${!isActive ? 'line-through' : ''}`}>
+          <span className={`${!isActive ? 'text-[10px]' : 'text-xs'} font-medium ${isActive ? 'text-gray-500' : 'text-gray-400'} ${!isActive ? 'line-through' : ''}`}>
             {label}
           </span>
           
-          {/* Drop rules indicator */}
-          <div className="group relative">
-            <Info size={12} className="ml-1 text-gray-400 hover:text-gray-600 cursor-help" />
-            <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-              Allowed: {getDropRule(rowType).map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ') || 'None'}
+          {/* Drop rules indicator - only show when active */}
+          {isActive && (
+            <div className="group relative">
+              <Info size={12} className="ml-1 text-gray-400 hover:text-gray-600 cursor-help" />
+              <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                Allowed: {getDropRule(rowType).map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ') || 'None'}
+              </div>
             </div>
-          </div>
+          )}
           
           {isJobFinalized && (
-            <Lock size={12} className="ml-2 text-green-600" title="Job is finalized" />
+            <Lock size={!isActive ? 10 : 12} className="ml-2 text-green-600" title="Job is finalized" />
           )}
         </div>
         
@@ -843,35 +847,36 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           {canBeToggled && !isJobFinalized && (
             <button 
               onClick={handleToggleRow}
-              className={`p-0.5 rounded-sm ${isEnabled ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
+              className={`${!isActive ? 'p-0.5' : 'p-0.5'} rounded-sm ${isEnabled ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
               title={isEnabled ? "Disable row" : "Enable row"}
             >
-              {isEnabled ? <Check size={14} /> : <X size={14} />}
+              {isEnabled ? <Check size={!isActive ? 10 : 14} /> : <X size={!isActive ? 10 : 14} />}
             </button>
           )}
           
           {/* Status indicators */}
           {isNeeded && !isEnabled && canBeToggled && (
-            <span className="text-xs text-red-500 italic px-1.5 py-0.5 bg-red-50 rounded">
+            <span className={`${!isActive ? 'text-[10px] px-1 py-0.5' : 'text-xs px-1.5 py-0.5'} text-red-500 italic bg-red-50 rounded`}>
               Disabled
             </span>
           )}
           
           {!isNeeded && isEnabled && canBeToggled && (
-            <span className="text-xs text-blue-600 italic px-1.5 py-0.5 bg-blue-50 rounded">
+            <span className={`${!isActive ? 'text-[10px] px-1 py-0.5' : 'text-xs px-1.5 py-0.5'} text-blue-600 italic bg-blue-50 rounded`}>
               Manually enabled
             </span>
           )}
           
           {/* Assignment count */}
-          <span className="text-xs text-gray-400">
+          <span className={`${!isActive ? 'text-[10px]' : 'text-xs'} text-gray-400`}>
             {assignments.length ? `${assignments.length} assigned` : ''}
           </span>
         </div>
       </div>
       
-      {/* Display assignments */}
-      <div className="space-y-2">
+      {/* Display assignments - hide when inactive to minimize space */}
+      {isActive && (
+        <div className="space-y-2">
         {/* Actual assignments - vertical for crew, horizontal for others with operators on right */}
         <div className={rowType === 'crew' ? 'flex flex-col space-y-2' : isSplit ? 'flex justify-between items-stretch' : 'flex flex-col space-y-2'}>
           {/* For split rows: Left side for equipment/vehicles, right side for personnel */}
@@ -999,7 +1004,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             </AnimatePresence>
           </div>
         )}
-      </div>
+        </div>
+      )}
       
       {/* Equipment selector modal */}
       {selectedEquipmentType && (
