@@ -260,6 +260,74 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                   </div>
                 )}
                 
+                {/* Personnel Certifications Section */}
+                {!isEquipmentOrVehicle && resource.certifications && resource.certifications.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Current Certifications</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {resource.certifications.map((cert: string) => (
+                        <span 
+                          key={cert}
+                          className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full border border-blue-200"
+                        >
+                          {cert.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Personnel Equipment Skills Section */}
+                {!isEquipmentOrVehicle && resource.skills && resource.skills.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Equipment Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {resource.skills.filter((skill: string) => 
+                        ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 
+                         'dozer', 'payloader', 'roller', 'tracTruckDriver', '10wTruckDriver', 'heavyVehicleOperation'].includes(skill)
+                      ).map((skill: string) => (
+                        <span 
+                          key={skill}
+                          className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full border border-green-200"
+                        >
+                          {skill === 'millingMachine' ? 'Milling Machine' : 
+                           skill === 'tracTruckDriver' ? 'Trac Truck' :
+                           skill === '10wTruckDriver' ? '10W Truck' :
+                           skill === 'heavyVehicleOperation' ? 'Heavy Vehicle' :
+                           skill.charAt(0).toUpperCase() + skill.slice(1)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Personnel Physical Skills Section */}
+                {!isEquipmentOrVehicle && resource.skills && resource.skills.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Physical Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {resource.skills.filter((skill: string) => 
+                        ['pavingRaker', 'screwman', 'asphaltRaker', 'shoveler', 'groundman', 
+                         'materialHandler', 'pipeLayer', 'formSetter', 'concreteFinisher', 'safetySpotter'].includes(skill)
+                      ).map((skill: string) => (
+                        <span 
+                          key={skill}
+                          className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full border border-purple-200"
+                        >
+                          {skill === 'pavingRaker' ? 'Paving Raker' :
+                           skill === 'asphaltRaker' ? 'Asphalt Raker' :
+                           skill === 'materialHandler' ? 'Material Handler' :
+                           skill === 'pipeLayer' ? 'Pipe Layer' :
+                           skill === 'formSetter' ? 'Form Setter' :
+                           skill === 'concreteFinisher' ? 'Concrete Finisher' :
+                           skill === 'safetySpotter' ? 'Safety Spotter' :
+                           skill.charAt(0).toUpperCase() + skill.slice(1)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
                     {isEquipmentOrVehicle ? 'Equipment Details' : 'Personal Information'}
@@ -287,8 +355,50 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                         <span className="font-medium">{resource.model}</span>
                       </div>
                     )}
+                     {!isEquipmentOrVehicle && resource.location && (
+                       <div className="flex justify-between">
+                         <span className="text-gray-500">Home Base:</span>
+                         <span className="font-medium">{resource.location}</span>
+                       </div>
+                     )}
                   </div>
                 </div>
+                
+                {/* Current Assignment Information */}
+                {assignment.jobId && job && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Current Assignment</h3>
+                    <div className="space-y-2 text-sm bg-blue-50 border border-blue-200 rounded-md p-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Job:</span>
+                        <span className="font-medium">{job.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Row:</span>
+                        <span className="font-medium capitalize">{assignment.row}</span>
+                      </div>
+                      {assignment.timeSlot && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Time:</span>
+                          <span className="font-medium">
+                            {assignment.timeSlot.isFullDay 
+                              ? 'Full Day' 
+                              : `${assignment.timeSlot.startTime} - ${assignment.timeSlot.endTime}`
+                            }
+                          </span>
+                        </div>
+                      )}
+                      {assignment.truckConfig && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Truck Config:</span>
+                          <span className="font-medium capitalize">
+                            {assignment.truckConfig === 'flowboy' ? 'Flowboy (F/B)' : 'Dump Trailer (D/T)'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Shift Information</h3>
