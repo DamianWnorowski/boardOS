@@ -209,7 +209,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           // Mark as handled to prevent duplicate processing
           (item as any)._handled = true;
           
-          const assignmentId = assignResource(item.resource.id, jobId, rowType, position);
+          const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
           console.log('✅ Assignment created:', assignmentId);
           return { jobId, rowType, assignmentId };
         }
@@ -220,7 +220,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             console.log('🌙 Second shift assignment - creating new assignment for resource');
             (item as any)._handled = true;
             const position = assignments.length;
-            const assignmentId = assignResource(item.resource.id, jobId, rowType, position);
+            const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
             console.log('✅ Second shift assignment created:', assignmentId);
             return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {

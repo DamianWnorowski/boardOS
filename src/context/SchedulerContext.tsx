@@ -817,72 +817,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const assignResource = (resourceId: string, jobId: string, row: RowType, position?: number) => {
     logger.debug('assignResource called', { resourceId, jobId, row, position });
    
-    return assignResourceWithTruckConfig(resourceId, jobId, row, undefined, position);
+    return assignResourceWithTruckConfigAndShift(resourceId, jobId, row, undefined, position, false);
   };
 
-  const assignResourceWithTruckConfig = (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number) => {
-    logger.debug('assignResourceWithTruckConfig called', { resourceId, jobId, row, truckConfig, position, isSecondShift: false }); // Default to false
-   
-    // Check if this is a truck and clean up invalid configurations
-    const resource = getResourceById(resourceId);
-    
-    // Get the job to use its default start time
-    const job = getJobById(jobId);
-    const defaultStartTime = job?.startTime || '07:00';
-    
-    // Check if resource is already assigned to this job/row
-    const existingAssignment = assignments.find(a => 
-      a.resourceId === resourceId && a.jobId === jobId && a.row === row && !a.attachedTo
-    );
-    
-    if (existingAssignment) {
-      // If already assigned to same job/row, just return the ID
-      logger.debug('Existing assignment found', { assignmentId: existingAssignment.id });
-      return existingAssignment.id;
-    }
-    
-    const currentJobShift = job?.shift || 'day';
-    const existingAssignments = assignments.filter(a => a.resourceId === resourceId && !a.attachedTo);
-    
-    const hasConflictingAssignment = existingAssignments.some(a => {
-      const assignedJob = getJobById(a.jobId); // Check if assigned to a job in the same shift
-      return assignedJob?.shift === currentJobShift;
-    });
-    
-    if (hasConflictingAssignment) {
-      // Remove existing assignments for the same shift only
-      setAssignments(prev => {
-        const filtered = prev.filter(a => {
-          if (a.resourceId !== resourceId || a.attachedTo) return true; // Keep attached assignments
-          const assignedJob = getJobById(a.jobId);
-          return assignedJob?.shift !== currentJobShift;
-        });
-        return filtered;
-      });
-    }
-    
-    // Create a new assignment
-    const newAssignment: Assignment = {
-      id: `assign-${uuidv4()}`,
-      resourceId,
-      jobId,
-      row,
-      position,
-      truckConfig, // Store truck config directly in assignment
-      timeSlot: {
-        startTime: defaultStartTime,
-        endTime: '15:30',
-        isFullDay: true
-      }
-    };
-    
-    logger.debug('Created new assignment', newAssignment);
-   
-    // Add the new assignment (existing assignments for different shifts are preserved)
-    setAssignments(prev => [...prev, newAssignment]);
-    
-    logger.debug('Returning assignment ID', { assignmentId: newAssignment.id });
-    return newAssignment.id; // Return the new assignment ID
+  const assignResourceWithTruckConfig = (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number, isSecondShift: boolean = false) => {
+    return assignResourceWithTruckConfigAndShift(resourceId, jobId, row, truckConfig, position, isSecondShift);
   };
 
   // Overloaded function to handle the isSecondShift flag
