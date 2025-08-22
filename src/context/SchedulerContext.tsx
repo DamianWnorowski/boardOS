@@ -7,6 +7,7 @@ import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { magnetManager } from '../classes/Magnet';
 import { buildStandardConstructionRules, buildStandardDropRules } from '../utils/ruleCreator';
+import { safeLocalStorage } from '../utils/localStorageUtils';
 
 // Deep equality comparison utility
 const deepEqual = (a: any, b: any): boolean => {
@@ -41,17 +42,6 @@ const deepEqual = (a: any, b: any): boolean => {
   }
   
   return true;
-};
-
-// Safe wrappers for localStorage access to support non-browser environments
-const safeLocalStorage = {
-  getItem: (key: string) =>
-    typeof window !== 'undefined' ? window.localStorage.getItem(key) : null,
-  setItem: (key: string, value: string) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(key, value);
-    }
-  }
 };
 
 interface SchedulerContextType {

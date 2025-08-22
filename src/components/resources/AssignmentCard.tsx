@@ -13,6 +13,7 @@ import TimeSlotModal from '../modals/TimeSlotModal';
 import PersonModal from '../modals/PersonModal';
 import { Clock, AlertCircle, Edit2, StickyNote } from 'lucide-react';
 import { logger } from '../../utils/logger';
+import { safeLocalStorage } from '../../utils/localStorageUtils';
 
 // Helper function to get consistent time indicator colors
 const getTimeIndicatorColor = (resource: any, attachedAssignments: Assignment[] = [], getResourceById: any = null) => {
