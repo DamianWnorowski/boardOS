@@ -1,0 +1,311 @@
+import React, { useState } from 'react';
+import { X, MapPin } from 'lucide-react';
+import { useScheduler } from '../../context/SchedulerContext';
+import { Job } from '../../types';
+import LocationSelector from './LocationSelector';
+
+interface EditJobModalProps {
+  job: Job;
+  onClose: () => void;
+}
+
+const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose }) => {
+  const { updateJob } = useScheduler();
+  
+  const [editedJob, setEditedJob] = useState<Job>({
+    id: job.id,
+    name: job.name,
+    number: job.number || '',
+    type: job.type,
+    shift: job.shift || 'day',
+    notes: job.notes || '',
+    startTime: job.startTime || '07:00',
+    plants: job.plants || [],
+    location: job.location
+  });
+  
+  // Extract competitor plant from existing plants
+  const existingCompetitor = (job.plants || []).find(plant => 
+    !['Lydel', 'East Island'].includes(plant)
+  );
+  const [competitorPlant, setCompetitorPlant] = useState(existingCompetitor || '');
+  
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditedJob(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handlePlantChange = (plantName: string, checked: boolean) => {
+    setEditedJob(prev => ({
+      ...prev,
+      plants: checked 
+        ? [...(prev.plants || []), plantName]
+        : (prev.plants || []).filter(p => p !== plantName)
+    }));
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add competitor plant to plants array if specified
+    const basePlants = (editedJob.plants || []).filter(plant => 
+      ['Lydel', 'East Island'].includes(plant)
+    );
+    const finalPlants = [...basePlants];
+    if (competitorPlant.trim()) {
+      finalPlants.push(competitorPlant.trim());
+    }
+    
+    updateJob({
+      ...editedJob,
+      plants: finalPlants
+    });
+    onClose();
+  };
+  
+  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
+    setEditedJob(prev => ({ ...prev, location }));
+    setShowLocationSelector(false);
+  };
+  
+  const handleRemoveLocation = () => {
+    setEditedJob(prev => ({ ...prev, location: undefined }));
+  };
+  
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+  
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">Edit Job</h2>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-4">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Job Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={editedJob.name}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="number" className="block text-sm font-medium text-gray-700">
+                Job Number
+              </label>
+              <input
+                type="text"
+                id="number"
+                name="number"
+                value={editedJob.number}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                placeholder="e.g., 24-1067-24"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="shift" className="block text-sm font-medium text-gray-700">
+                Shift
+              </label>
+              <select
+                id="shift"
+                name="shift"
+                value={editedJob.shift}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              >
+                <option value="day">Day Shift</option>
+                <option value="night">Night Shift</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+                Job Type
+              </label>
+              <select
+                id="type"
+                name="type"
+                value={editedJob.type}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              >
+                <option value="milling">Milling</option>
+                <option value="paving">Paving</option>
+                <option value="both">Milling & Paving</option>
+                <option value="drainage">Drainage</option>
+                <option value="stripping">Stripping</option>
+                <option value="hired">Hired</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            {/* Plant Selection for Paving Jobs */}
+            {(editedJob.type === 'paving' || editedJob.type === 'both') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Asphalt Plants
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Select which plants the trucks will pull asphalt from
+                </p>
+                <div className="space-y-2">
+                  {['Lydel', 'East Island'].map((plant) => (
+                    <label key={plant} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={(editedJob.plants || []).includes(plant)}
+                        onChange={(e) => handlePlantChange(plant, e.target.checked)}
+                        className="rounded text-blue-600 mr-2"
+                      />
+                      <span className="text-sm">{plant}</span>
+                    </label>
+                  ))}
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={competitorPlant.trim() !== ''}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          setCompetitorPlant('');
+                        }
+                      }}
+                      className="rounded text-blue-600 mr-2"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Competitor plant name..."
+                      value={competitorPlant}
+                      onChange={(e) => setCompetitorPlant(e.target.value)}
+                      className="flex-1 px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
+                Default Start Time
+              </label>
+              <input
+                type="time"
+                id="startTime"
+                name="startTime"
+                value={editedJob.startTime || '07:00'}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                This will be the default start time for all crew members assigned to this job, but can be changed individually.
+              </p>
+            </div>
+            
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows={3}
+                value={editedJob.notes}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Location
+              </label>
+              {editedJob.location ? (
+                <div className="mt-1 flex items-center justify-between p-2 border rounded-md bg-gray-50">
+                  <div className="flex items-center">
+                    <MapPin size={16} className="text-green-600 mr-2" />
+                    <span className="text-sm">{editedJob.location.address}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationSelector(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveLocation}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowLocationSelector(true)}
+                  className="mt-1 w-full p-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors flex items-center justify-center"
+                >
+                  <MapPin size={16} className="mr-2" />
+                  Select Location
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-5 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Update Job
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      {showLocationSelector && (
+        <LocationSelector
+          onSelect={handleLocationSelect}
+          onClose={() => setShowLocationSelector(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default EditJobModal;

@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  
+  /* Better drag feedback on mobile */
+  .dragging {
+    opacity: 0.7;
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+  }
+  
+  /* Smooth scrolling on mobile */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Improved button tap targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better modal positioning on mobile */
+  .mobile-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    border-radius: 12px;
+  }
+}
+
+/* Desktop-specific improvements */
+@media (min-width: 1024px) {
+  /* Better hover states */
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.2s ease-in-out;
+  }
+}
