@@ -839,16 +839,22 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const job = getJobById(jobId);
     const defaultStartTime = job?.startTime || '07:00';
 
-    // Check if resource is already assigned to this specific job (prevent duplicates in same job)
+    // For second shift (Ctrl+drag), we want to prevent duplicates in the SAME job
+    // but allow different jobs even if same shift
     const existingJobAssignment = assignments.find(a => 
       a.resourceId === resourceId && 
       a.jobId === jobId && 
       !a.attachedTo
     );
 
-    // Prevent duplicates within the same job
+    // Prevent duplicates within the same job (regardless of Ctrl state)
     if (existingJobAssignment) {
-      console.log('🚫 Resource already assigned to this job, preventing duplicate');
+      console.log('🚫 Resource already assigned to this job, preventing duplicate', {
+        resourceId,
+        jobId,
+        existingAssignmentId: existingJobAssignment.id,
+        isSecondShift
+      });
       return existingJobAssignment.id; // Return existing assignment ID
     }
 
