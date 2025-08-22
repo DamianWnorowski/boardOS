@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MessageSquare, Send, Edit3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Job, Assignment } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
+import { useModal } from '../../context/ModalContext';
 
 interface SendSMSModalProps {
   job: Job;
