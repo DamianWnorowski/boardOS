@@ -186,16 +186,26 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             const existingAssignment = assignments.find(a => 
               a.resourceId === item.resource.id && 
               a.jobId === jobId && 
-              a.row === rowType &&
               !a.attachedTo
             );
             
             if (existingAssignment) {
-              console.log('🎯 Resource already assigned to this job/row, skipping');
+              console.log('🎯 Resource already assigned to this job, skipping');
               return { jobId, rowType, assignmentId: existingAssignment.id, duplicate: true };
             }
           } else {
             console.log('🌙 Second shift drop - allowing additional assignment');
+            // For second shift, also check for existing assignment in the same job
+            const existingJobAssignment = assignments.find(a => 
+              a.resourceId === item.resource.id && 
+              a.jobId === jobId &&
+              !a.attachedTo
+            );
+            
+            if (existingJobAssignment) {
+              console.log('🎯 Resource already assigned to this job, skipping second shift');
+              return { jobId, rowType, assignmentId: existingJobAssignment.id, duplicate: true };
+            }
           }
           
           let position = assignments.length;

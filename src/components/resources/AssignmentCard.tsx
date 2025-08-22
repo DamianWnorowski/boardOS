@@ -869,7 +869,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   const dropAnimation = isDroppingItem ? 'scale-110' : '';
 
   // Check if resource has multiple job assignments for styling
-  const multiJobStyle = hasMultipleJobAssignments(resource.id) ? 'ring-2 ring-orange-400' : '';
+  const multiJobStyle = hasMultipleJobAssignments(resource.id) ? 'ring-2 ring-teal-400' : '';
   
   // Check if resource is working double shift
   const workingDouble = isWorkingDouble(resource.id);
