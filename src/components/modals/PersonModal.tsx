@@ -36,11 +36,7 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   // Initialize edited resource when resource changes
   React.useEffect(() => {
     if (resource && !editedResource) {
-      setEditedResource({ 
-        ...resource,
-        certifications: resource.certifications || [],
-        skills: resource.skills || []
-      });
+      setEditedResource({ ...resource });
     }
   }, [resource, editedResource]);
   
@@ -78,13 +74,7 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   
   const handleSaveEdit = () => {
     if (editedResource && hasUnsavedChanges) {
-      // Ensure certifications and skills are arrays
-      const resourceToSave = {
-        ...editedResource,
-        certifications: Array.isArray(editedResource.certifications) ? editedResource.certifications : [],
-        skills: Array.isArray(editedResource.skills) ? editedResource.skills : []
-      };
-      updateResource(resourceToSave);
+      updateResource(editedResource);
       setHasUnsavedChanges(false);
       onClose();
     }
@@ -106,6 +96,34 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
     ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 
      'dozer', 'payloader', 'roller', 'equipment', 'truck'].includes(resource.type)
   );
+
+  const availableCertifications = [
+    { value: 'cdl', label: 'CDL', description: 'Commercial Driver\'s License' },
+    { value: 'hazmat', label: 'HAZMAT', description: 'Hazardous Materials' },
+    { value: 'osha', label: 'OSHA', description: 'Safety Certification' }
+  ];
+
+  const equipmentSkills = [
+    { value: 'skidsteer', label: 'Skid Steer' },
+    { value: 'paver', label: 'Paver' },
+    { value: 'excavator', label: 'Excavator' }
+  ];
+
+  const handleToggleCertification = (certValue: string) => {
+    const currentCerts = editedResource?.certifications || [];
+    const updatedCerts = currentCerts.includes(certValue)
+      ? currentCerts.filter((cert: string) => cert !== certValue)
+      : [...currentCerts, certValue];
+    handleEditChange('certifications', updatedCerts);
+  };
+
+  const handleToggleSkill = (skillValue: string) => {
+    const currentSkills = editedResource?.skills || [];
+    const updatedSkills = currentSkills.includes(skillValue)
+      ? currentSkills.filter((skill: string) => skill !== skillValue)
+      : [...currentSkills, skillValue];
+    handleEditChange('skills', updatedSkills);
+  };
 
   return (
     <Portal>
@@ -465,6 +483,25 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                                 key={skill.value}
                                 type="button"
                                 onClick={() => handleToggleSkill(skill.value)}
+                                className={`px-3 py-2 text-sm rounded-md border transition-colors ${
+                                  isSelected
+                                    ? 'bg-purple-500 text-white border-purple-600'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{skill.label}</span>
+                                  <span className="ml-2">
+                                    {isSelected ? '✓' : '+'}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Type
@@ -499,17 +536,6 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                         </optgroup>
                       </select>
                     </div>
-                                    handleEditChange('skills', updatedSkills);
-                                  }}
-                                  className="h-4 w-4 text-purple-600 border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-700">{skill}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
                   </div>
                   
                   {hasUnsavedChanges && (
