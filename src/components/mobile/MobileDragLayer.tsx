@@ -57,28 +57,28 @@ const MobileDragLayer: React.FC = () => {
           color: 'text-red-600', 
           icon: '🔥' 
         };
+      } else if (hasNightJob) {
+        // Has night job, assume going to day job (night ↔ day) → orange
+        return { 
+          message: 'Creating double shift', 
+          color: 'text-orange-600', 
+          icon: '🌙' 
+        };
       } else if (hasDayJob) {
-        } else if (hasNightJob) {
-          // Has night job, assume going to day job (night ↔ day) → orange
-          return { 
-            message: 'Creating double shift', 
-            color: 'text-orange-600', 
-            icon: '🌙' 
-          };
-        } else if (hasDayJob) {
-          // Has day job, assume going to another day job (day ↔ day) → teal
+        // Has day job, assume going to another day job (day ↔ day) → teal
         // This will be orange for "Creating double shift" which is what we want for day→night
         return { 
           message: 'Creating double shift', 
           color: 'text-orange-600', 
           icon: '🌙' 
         };
-          // No current jobs, creating second assignment with Ctrl held → assume day-to-day
+      } else {
+        // No current jobs, creating second assignment with Ctrl held → assume day-to-day
         // No current jobs, creating second assignment with Ctrl held
-            message: 'Adding 2nd day job', 
-            color: 'text-teal-600', 
-            icon: '☀️' 
-          icon: '📋' 
+        return {
+          message: 'Adding 2nd day job', 
+          color: 'text-teal-600', 
+          icon: '☀️' 
         };
       }
     }
