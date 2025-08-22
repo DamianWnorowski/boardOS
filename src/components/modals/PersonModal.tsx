@@ -36,7 +36,11 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   // Initialize edited resource when resource changes
   React.useEffect(() => {
     if (resource && !editedResource) {
-      setEditedResource({ ...resource });
+      setEditedResource({ 
+        ...resource,
+        certifications: resource.certifications || [],
+        skills: resource.skills || []
+      });
     }
   }, [resource, editedResource]);
   
@@ -74,7 +78,13 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   
   const handleSaveEdit = () => {
     if (editedResource && hasUnsavedChanges) {
-      updateResource(editedResource);
+      // Ensure certifications and skills are arrays
+      const resourceToSave = {
+        ...editedResource,
+        certifications: Array.isArray(editedResource.certifications) ? editedResource.certifications : [],
+        skills: Array.isArray(editedResource.skills) ? editedResource.skills : []
+      };
+      updateResource(resourceToSave);
       setHasUnsavedChanges(false);
       onClose();
     }
@@ -106,7 +116,13 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   const equipmentSkills = [
     { value: 'skidsteer', label: 'Skid Steer' },
     { value: 'paver', label: 'Paver' },
-    { value: 'excavator', label: 'Excavator' }
+    { value: 'excavator', label: 'Excavator' },
+    { value: 'sweeper', label: 'Sweeper' },
+    { value: 'millingMachine', label: 'Milling Machine' },
+    { value: 'grader', label: 'Grader' },
+    { value: 'dozer', label: 'Dozer' },
+    { value: 'payloader', label: 'Payloader' },
+    { value: 'roller', label: 'Roller' }
   ];
 
   const handleToggleCertification = (certValue: string) => {
