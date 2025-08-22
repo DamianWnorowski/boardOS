@@ -145,7 +145,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
         {/* Yard departure time indicator for truck with crew - positioned where count used to be */}
         {attachedAssignments.length > 0 && (
           <div 
-            className={`absolute -top-2 -right-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
+            className={`absolute -top-2 -left-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
             title={`${mainResource.onSite !== true ? 'Time out of yard' : 'Time on job'} - click to edit`}
             onClick={(e) => {
               e.stopPropagation();
@@ -254,7 +254,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
         {/* Time indicator on the person (laborer) when using a truck */}
         {attachedAssignments.length > 0 && (
           <div 
-            className={`absolute -top-2 -right-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
+            className={`absolute -top-2 -left-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
             title={`${mainResource.onSite !== true ? 'time out of yard' : 'time on job'} (person will use truck) - click to edit`}
             onClick={(e) => {
               e.stopPropagation();
@@ -382,7 +382,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
                 
                 {/* Individual time indicator for each personnel */}
                 <div 
-                  className={`absolute -top-2 -right-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(item.resource, [], getResourceById)}`}
+                  className={`absolute -top-2 -left-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(item.resource, [], getResourceById)}`}
                   title={`Click to edit time on job`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -410,7 +410,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
       
       {/* Time indicator */}
       <div 
-        className={`absolute -top-2 -right-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
+        className={`absolute -top-2 -left-2 text-white text-xs px-2 py-0.5 rounded-full flex items-center justify-center shadow-sm z-30 cursor-pointer ${getTimeIndicatorColor(mainResource, attachedAssignments, getResourceById)}`}
         title={`Click to edit ${mainResource.type === 'truck' || mainResource.type === 'sweeper' ? mainResource.onSite !== true ? 'time out of yard' : 'time on job' : 'time on job'}`}
       >
         {isEditingTime ? (
@@ -1003,7 +1003,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         {/* Time indicator - only show if equipment has operator or doesn't need one */}
         {hasOperator() && (
           <div 
-            className={`absolute -top-2 -right-2 text-white text-xs rounded-full flex items-center justify-center shadow-sm z-30 ${getTimeIndicatorColor(resource, [], getResourceById)}`}
+            className={`absolute -top-2 -left-2 text-white text-xs rounded-full flex items-center justify-center shadow-sm z-30 ${getTimeIndicatorColor(resource, [], getResourceById)}`}
             title={`Click to edit ${(resource.type === 'truck' || resource.type === 'sweeper') && resource.onSite === false ? 'time out of yard' : 'time on job'}`}
             onClick={(e) => {
               e.stopPropagation();
