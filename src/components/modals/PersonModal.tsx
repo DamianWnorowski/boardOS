@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, FileText, Clock, MapPin } from 'lucide-react';
+import { X, User, FileText, Clock, MapPin, Edit3, Save } from 'lucide-react';
 import { Assignment } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import Portal from '../common/Portal';
@@ -11,9 +11,11 @@ interface PersonModalProps {
 
 const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   console.log('PersonModal component rendered with assignment:', assignment);
-  const { getResourceById, getJobById, updateAssignmentNote, toggleResourceOnSite, isWorkingDouble, getResourceDoubleShiftJobs } = useScheduler();
-  const [activeTab, setActiveTab] = useState<'stats' | 'note'>('stats');
+  const { getResourceById, getJobById, updateAssignmentNote, updateResource, toggleResourceOnSite, isWorkingDouble, getResourceDoubleShiftJobs } = useScheduler();
+  const [activeTab, setActiveTab] = useState<'stats' | 'note' | 'edit'>('stats');
   const [noteText, setNoteText] = useState(assignment.note || '');
+  const [editedResource, setEditedResource] = useState<any>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   console.log('PersonModal - assignment.resourceId:', assignment.resourceId);
   console.log('PersonModal - getResourceById function type:', typeof getResourceById);
@@ -30,6 +32,13 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   const job = assignment.jobId ? getJobById(assignment.jobId) : null;
   const workingDouble = resource ? isWorkingDouble(resource.id) : false;
   const doubleShiftJobs = resource ? getResourceDoubleShiftJobs(resource.id) : { dayJob: undefined, nightJob: undefined };
+  
+  // Initialize edited resource when resource changes
+  React.useEffect(() => {
+    if (resource && !editedResource) {
+      setEditedResource({ ...resource });
+    }
+  }, [resource, editedResource]);
   
   console.log('PersonModal rendering', { resourceName: resource?.name, assignmentId: assignment.id });
   
@@ -56,6 +65,19 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
   const handleSaveNote = () => {
     updateAssignmentNote(assignment.id, noteText);
     onClose();
+  };
+  
+  const handleEditChange = (field: string, value: any) => {
+    setEditedResource((prev: any) => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
+  };
+  
+  const handleSaveEdit = () => {
+    if (editedResource && hasUnsavedChanges) {
+      updateResource(editedResource);
+      setHasUnsavedChanges(false);
+      onClose();
+    }
   };
   
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -118,6 +140,17 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
             >
               <FileText size={16} className="inline mr-1" />
               Note
+            </button>
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'edit'
+                  ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Edit3 size={16} className="inline mr-1" />
+              Edit
             </button>
           </div>
           
@@ -289,6 +322,146 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                   >
                     Save Note
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'edit' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-4">
+                    Edit {isEquipmentOrVehicle ? 'Equipment' : 'Personnel'} Details
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editedResource?.name || ''}
+                        onChange={(e) => handleEditChange('name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {isEquipmentOrVehicle ? 'Unit Number' : 'Identifier'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editedResource?.identifier || ''}
+                        onChange={(e) => handleEditChange('identifier', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={isEquipmentOrVehicle ? 'e.g., 502, 815' : 'Employee ID'}
+                      />
+                    </div>
+                    
+                    {isEquipmentOrVehicle && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Model
+                          </label>
+                          <input
+                            type="text"
+                            value={editedResource?.model || ''}
+                            onChange={(e) => handleEditChange('model', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., AP-1055F, T800"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            VIN
+                          </label>
+                          <input
+                            type="text"
+                            value={editedResource?.vin || ''}
+                            onChange={(e) => handleEditChange('vin', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Vehicle identification number"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Location
+                          </label>
+                          <input
+                            type="text"
+                            value={editedResource?.location || ''}
+                            onChange={(e) => handleEditChange('location', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., Pine, Lydel, 180"
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Type
+                      </label>
+                      <select
+                        value={editedResource?.type || ''}
+                        onChange={(e) => handleEditChange('type', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <optgroup label="Personnel">
+                          <option value="operator">Operator</option>
+                          <option value="driver">Driver</option>
+                          <option value="privateDriver">Private Driver</option>
+                          <option value="striper">Striper</option>
+                          <option value="foreman">Foreman</option>
+                          <option value="laborer">Laborer</option>
+                        </optgroup>
+                        <optgroup label="Equipment">
+                          <option value="skidsteer">Skid Steer</option>
+                          <option value="paver">Paver</option>
+                          <option value="excavator">Excavator</option>
+                          <option value="sweeper">Sweeper</option>
+                          <option value="millingMachine">Milling Machine</option>
+                          <option value="grader">Grader</option>
+                          <option value="dozer">Dozer</option>
+                          <option value="payloader">Payloader</option>
+                          <option value="roller">Roller</option>
+                          <option value="equipment">Equipment</option>
+                        </optgroup>
+                        <optgroup label="Vehicles">
+                          <option value="truck">Truck</option>
+                        </optgroup>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {hasUnsavedChanges && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ You have unsaved changes. Click "Save Changes" to apply them.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={!hasUnsavedChanges}
+                    className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save size={16} className="mr-2" />
+                    Save Changes
                   </button>
                 </div>
               </div>
