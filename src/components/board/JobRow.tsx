@@ -180,32 +180,16 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         }
         
         if (item.type === ItemTypes.RESOURCE) {
-          // For second shift (Ctrl+drag), allow creating additional assignments
-          if (!item.isSecondShift) {
-            // Check if this resource is already assigned to this exact job/row (only for normal drops)
-            const existingAssignment = assignments.find(a => 
-              a.resourceId === item.resource.id && 
-              a.jobId === jobId && 
-              !a.attachedTo
-            );
-            
-            if (existingAssignment) {
-              console.log('🎯 Resource already assigned to this job, skipping');
-              return { jobId, rowType, assignmentId: existingAssignment.id, duplicate: true };
-            }
-          } else {
-            console.log('🌙 Second shift drop - allowing additional assignment');
-            // For second shift, also check for existing assignment in the same job
-            const existingJobAssignment = assignments.find(a => 
-              a.resourceId === item.resource.id && 
-              a.jobId === jobId &&
-              !a.attachedTo
-            );
-            
-            if (existingJobAssignment) {
-              console.log('🎯 Resource already assigned to this job, skipping second shift');
-              return { jobId, rowType, assignmentId: existingJobAssignment.id, duplicate: true };
-            }
+          // Always check if this resource is already assigned to this job (prevent duplicates within same job)
+          const existingJobAssignment = assignments.find(a => 
+            a.resourceId === item.resource.id && 
+            a.jobId === jobId &&
+            !a.attachedTo
+          );
+          
+          if (existingJobAssignment) {
+            console.log('🎯 Resource already assigned to this job, preventing duplicate');
+            return { jobId, rowType, assignmentId: existingJobAssignment.id, duplicate: true };
           }
           
           let position = assignments.length;
