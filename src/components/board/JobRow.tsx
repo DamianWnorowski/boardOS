@@ -956,74 +956,24 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
               </div>
             </>
           ) : (
-            /* Two-column layout: equipment on left, personnel on right */
-            <div className="flex space-x-4">
-              {/* Left side: Equipment and attached groups */}
-              <div className="flex-1 space-y-2">
-                <AnimatePresence>
-                  {sortedAssignments
-                    .filter(assignment => {
-                      const resource = getResourceById(assignment.resourceId);
-                      if (!resource) return false;
-                      
-                      // Show attached groups and unattached equipment on the left
-                      if (assignment.attachments && assignment.attachments.length > 0) {
-                        return true; // Attached groups go on left
-                      }
-                      
-                      return equipmentTypes.includes(resource.type);
-                    })
-                    .map(assignment => (
-                      <motion.div
-                        key={assignment.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="block"
-                      >
-                        <AssignmentCard 
-                          assignment={assignment}
-                          onOpenPersonModal={handleOpenPersonModal}
-                        />
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              </div>
-              
-              {/* Right side: Unattached personnel */}
-              <div className="flex-1 space-y-2">
-                <AnimatePresence>
-                  {sortedAssignments
-                    .filter(assignment => {
-                      const resource = getResourceById(assignment.resourceId);
-                      if (!resource) return false;
-                      
-                      // Only show unattached personnel on the right
-                      if (assignment.attachments && assignment.attachments.length > 0) {
-                        return false; // Attached groups already shown on left
-                      }
-                      
-                      return !equipmentTypes.includes(resource.type) && resource.type !== 'truck';
-                    })
-                    .map(assignment => (
-                      <motion.div
-                        key={assignment.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="block"
-                      >
-                        <AssignmentCard 
-                          assignment={assignment}
-                          onOpenPersonModal={handleOpenPersonModal}
-                        />
-                      </motion.div>
-                    ))}
-                </AnimatePresence>
-              </div>
-            </div>
+            /* Vertical layout for all non-split rows */
+            <AnimatePresence>
+              {sortedAssignments.map(assignment => (
+                <motion.div
+                  key={assignment.id}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="block"
+                >
+                  <AssignmentCard 
+                    assignment={assignment}
+                    onOpenPersonModal={handleOpenPersonModal}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
         
