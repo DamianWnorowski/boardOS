@@ -54,6 +54,13 @@ const MobileDragLayer: React.FC = () => {
     // Check current assignments for this resource
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
     console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
+    console.log('🎨 MobileDragLayer All resource assignments:', resourceAssignments.map(a => ({
+      id: a.id,
+      jobId: a.jobId,
+      jobName: getJobById(a.jobId)?.name,
+      shift: getJobById(a.jobId)?.shift,
+      row: a.row
+    })));
     console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
       id: a.id,
       jobId: a.jobId,
