@@ -971,7 +971,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
                         return true; // Attached groups go on left
                       }
                       
-                      return equipmentTypes.includes(resource.type);
+                      // Only show unattached equipment on the left (NOT operators)
+                      return equipmentTypes.includes(resource.type) || resource.type === 'truck';
                     })
                     .map(assignment => (
                       <motion.div
@@ -1004,6 +1005,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
                         return false; // Attached groups already shown on left
                       }
                       
+                      // Show all unattached personnel on the right (including operators)
                       return !equipmentTypes.includes(resource.type) && resource.type !== 'truck';
                     })
                     .map(assignment => (
