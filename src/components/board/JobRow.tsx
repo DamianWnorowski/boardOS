@@ -222,7 +222,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             const position = assignments.length;
             const assignmentId = assignResource(item.resource.id, jobId, rowType, position);
             console.log('✅ Second shift assignment created:', assignmentId);
-            return { jobId, rowType, assignmentId, isSecondShift: true };
+            return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {
             console.log('📍 Moving assignment group');
             (item as any)._handled = true;
