@@ -37,20 +37,29 @@ const MobileDragLayer: React.FC = () => {
       isSecondShift: item?.isSecondShift
     });
     
-    if (!item || item.type !== ItemTypes.RESOURCE) {
+    if (!item) {
+      console.log('🎨 MobileDragLayer → Blue: No item');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
-    const resource = item.resource;
+    // Handle both resource and assignment drag types
+    const resource = item.resource || (item.type === ItemTypes.ASSIGNMENT ? getResourceById(item.assignments?.[0]?.resourceId) : null);
     console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
     
     if (!resource) {
+      console.log('🎨 MobileDragLayer → Blue: No resource found');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
     // Check current assignments for this resource
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
     console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
+    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
+      id: a.id,
+      jobId: a.jobId,
+      jobName: getJobById(a.jobId)?.name,
+      shift: getJobById(a.jobId)?.shift
+    })));
     
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
     console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
@@ -111,12 +120,15 @@ const MobileDragLayer: React.FC = () => {
     console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
     if (resourceAssignments.length === 0) {
       // First assignment
+      console.log('🎨 MobileDragLayer → Blue: First assignment');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     } else if (isCurrentlyWorkingDouble) {
       // Already working double, moving assignment
+      console.log('🎨 MobileDragLayer → Purple: Moving double shift');
       return { message: 'Moving double shift', color: 'text-purple-600', icon: '🔄' };
     } else {
       // Has one job, moving assignment
+      console.log('🎨 MobileDragLayer → Blue: Moving assignment');
       return { message: 'Moving assignment', color: 'text-blue-600', icon: '🔄' };
     }
   };
