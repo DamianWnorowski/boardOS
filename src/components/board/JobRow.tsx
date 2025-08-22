@@ -215,12 +215,22 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         }
         
         if (item.type === ItemTypes.ASSIGNMENT) {
-          console.log('📍 Moving assignment group');
-          (item as any)._handled = true;
-          const assignmentIds = item.assignments.map(a => a.id);
-          const newAssignmentId = moveAssignmentGroup(item.assignments, jobId, rowType);
-          console.log('✅ Assignment group moved:', newAssignmentId);
-          return { jobId, rowType, assignmentId: newAssignmentId };
+          // For second shift (Ctrl+drag), create a new assignment instead of moving existing
+          if (item.isSecondShift) {
+            console.log('🌙 Second shift assignment - creating new assignment for resource');
+            (item as any)._handled = true;
+            const position = assignments.length;
+            const assignmentId = assignResource(item.resource.id, jobId, rowType, position);
+            console.log('✅ Second shift assignment created:', assignmentId);
+            return { jobId, rowType, assignmentId, isSecondShift: true };
+          } else {
+            console.log('📍 Moving assignment group');
+            (item as any)._handled = true;
+            const assignmentIds = item.assignments.map(a => a.id);
+            const newAssignmentId = moveAssignmentGroup(item.assignments, jobId, rowType);
+            console.log('✅ Assignment group moved:', newAssignmentId);
+            return { jobId, rowType, assignmentId: newAssignmentId };
+          }
         }
         
         console.log('⚠️ No handler for item type:', item.type);
