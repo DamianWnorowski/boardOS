@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { Resource, ItemTypes } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import { useMobile } from '../../context/MobileContext';
+import { useDragContext } from '../../context/DragContext';
 import { getMobileDragSourceOptions } from '../../utils/dndBackend';
 
 interface ResourceCardProps {
@@ -36,6 +37,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
 }) => {
   const { getTruckDriver } = useScheduler();
   const { isMobile, touchEnabled } = useMobile();
+  const { getIsCtrlHeld } = useDragContext();
   
   // Function to determine truck type based on unit number
   const getTruckType = (unitNumber: string) => {
@@ -80,7 +82,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     type: ItemTypes.RESOURCE,
     item: (monitor) => {
      console.log('🚀 ResourceCard drag STARTED for:', resource.name, resource.type);
-      const isCtrlHeld = (window as any).dragCtrlKey || false;
+      const isCtrlHeld = getIsCtrlHeld();
       
       const dragItem = { 
         type: ItemTypes.RESOURCE,
@@ -367,11 +369,10 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
         onClick={handleClick}
         onDragStart={(e) => {
           // Store Ctrl key state globally for drag operations
-          (window as any).dragCtrlKey = e.ctrlKey;
           // Also store the current drag item for visual feedback with enhanced context
           (window as any).currentDragItem = {
             resource,
-            isSecondShift: e.ctrlKey,
+            isSecondShift: getIsCtrlHeld()
             dragStartTime: Date.now(),
             sourceLocation: 'resource-pool'
           };

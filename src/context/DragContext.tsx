@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 
 interface DragState {
-  isCtrlHeld: boolean;
   currentDragItem: any;
   dragCount: number;
 }
 
 interface DragContextType {
   dragState: DragState;
-  setCtrlHeld: (value: boolean) => void;
+  getIsCtrlHeld: () => boolean;
   setCurrentDragItem: (item: any) => void;
   incrementDragCount: () => void;
   resetDragState: () => void;
@@ -17,14 +16,14 @@ interface DragContextType {
 const DragContext = createContext<DragContextType | undefined>(undefined);
 
 export const DragProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isCtrlHeldRef = useRef<boolean>(false);
   const [dragState, setDragState] = useState<DragState>({
-    isCtrlHeld: false,
     currentDragItem: null,
     dragCount: 0
   });
 
-  const setCtrlHeld = (value: boolean) => {
-    setDragState(prev => ({ ...prev, isCtrlHeld: value }));
+  const getIsCtrlHeld = () => {
+    return isCtrlHeldRef.current;
   };
 
   const setCurrentDragItem = (item: any) => {
@@ -36,8 +35,8 @@ export const DragProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetDragState = () => {
+    isCtrlHeldRef.current = false;
     setDragState({
-      isCtrlHeld: false,
       currentDragItem: null,
       dragCount: 0
     });
@@ -47,13 +46,13 @@ export const DragProvider: React.FC<{ children: React.ReactNode }> = ({ children
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
-        setCtrlHeld(true);
+        isCtrlHeldRef.current = true;
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) {
-        setCtrlHeld(false);
+        isCtrlHeldRef.current = false;
       }
     };
 
@@ -69,7 +68,7 @@ export const DragProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DragContext.Provider value={{
       dragState,
-      setCtrlHeld,
+      getIsCtrlHeld,
       setCurrentDragItem,
       incrementDragCount,
       resetDragState

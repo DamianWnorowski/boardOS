@@ -479,7 +479,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   const attachedAssignments = getAttachedAssignments(assignment.id);
   const job = getJobById(assignment.jobId);
   
-  const { dragState, setCurrentDragItem } = useDragContext();
+  const { dragState, setCurrentDragItem, getIsCtrlHeld } = useDragContext();
   
   const [isScrewmanModalOpen, setIsScrewmanModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
@@ -575,7 +575,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.ASSIGNMENT,
     item: (monitor) => {
-      const isCtrlHeld = dragState.isCtrlHeld;
+      const isCtrlHeld = getIsCtrlHeld();
       const resource = getResourceById(assignment.resourceId);
       const dragItem = { 
         type: ItemTypes.ASSIGNMENT, 
