@@ -443,6 +443,11 @@ const MobileDragLayer: React.FC = () => {
     if (!item) return null;
 
     const feedbackInfo = getDragFeedbackInfo();
+   const borderColorClass = feedbackInfo.color.includes('red') ? 'border-red-400' :
+     feedbackInfo.color.includes('orange') ? 'border-orange-400' :
+     feedbackInfo.color.includes('purple') ? 'border-purple-400' :
+     feedbackInfo.color.includes('teal') ? 'border-teal-400' : 'border-blue-400';
+     
     const borderColorClass = feedbackInfo.color.includes('red') ? 'border-red-400' :
       feedbackInfo.color.includes('orange') ? 'border-orange-400' :
       feedbackInfo.color.includes('purple') ? 'border-purple-400' :
@@ -466,11 +471,7 @@ const MobileDragLayer: React.FC = () => {
     switch (itemType) {
       case ItemTypes.RESOURCE:
         return (
-          <div className={`transform scale-110 shadow-2xl border-4 rounded-lg bg-white p-2 ${
-            feedbackInfo.color.includes('red') ? 'border-red-400' :
-            feedbackInfo.color.includes('orange') ? 'border-orange-400' :
-            feedbackInfo.color.includes('purple') ? 'border-purple-400' : 'border-blue-400'
-          }`}>
+          <div className={`transform scale-110 shadow-2xl border-4 rounded-lg bg-white p-2 ${borderColorClass}`}>
             <ResourceCard 
               resource={item.resource} 
               isDragging={true}
