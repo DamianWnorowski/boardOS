@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Play, Database, Users, Briefcase, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { DatabaseService } from '../../services/DatabaseService';
-import { supabase, assignResourceToJob } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface TestResult {
   test: string;

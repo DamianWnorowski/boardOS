@@ -8,7 +8,6 @@ import { magnetManager } from '../classes/Magnet';
 import { buildStandardConstructionRules, buildStandardDropRules } from '../utils/ruleCreator';
 import { getLegacyResourceColors } from '../utils/colorSystem';
 import { DatabaseService } from '../services/DatabaseService';
-import { ScheduleService } from '../services/ScheduleService';
 import { supabase } from '../lib/supabase';
 
 interface SchedulerContextType {
@@ -134,7 +133,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setError(null);
 
       // Load all schedule data
-      const scheduleData = await ScheduleService.getAllScheduleData();
+      const scheduleData = await DatabaseService.getAllScheduleData();
       
       setJobs(scheduleData.jobs);
       setResources(scheduleData.resources);
@@ -143,11 +142,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setDropRules(scheduleData.dropRules);
 
       // Load truck driver assignments
-      const truckDriverData = await ScheduleService.getTruckDriverAssignments();
+      const truckDriverData = await DatabaseService.getTruckDriverAssignments();
       setTruckDriverAssignments(truckDriverData);
 
       // Load job row configs
-      const jobRowConfigData = await ScheduleService.getJobRowConfigs();
+      const jobRowConfigData = await DatabaseService.getJobRowConfigs();
       setJobRowConfigs(jobRowConfigData);
 
       logger.info('Schedule data loaded from database', {
@@ -177,7 +176,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Set up real-time subscriptions
   useEffect(() => {
-    const cleanup = ScheduleService.subscribeToScheduleChanges({
+    const cleanup = DatabaseService.subscribeToScheduleChanges({
       onResourceChange: (payload) => {
         logger.debug('Real-time resource change:', payload);
         if (payload.eventType === 'INSERT') {
@@ -636,7 +635,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Truck-driver assignment actions
   const assignDriverToTruck = async (truckId: string, driverId: string) => {
     try {
-      await ScheduleService.updateTruckDriverAssignment(truckId, driverId);
+      await DatabaseService.updateTruckDriverAssignment(truckId, driverId);
       logger.info('Driver assigned to truck:', driverId, 'to', truckId);
     } catch (err: any) {
       logger.error('Error assigning driver to truck:', err);
@@ -647,7 +646,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const unassignDriverFromTruck = async (truckId: string) => {
     try {
-      await ScheduleService.removeTruckDriverAssignment(truckId);
+      await DatabaseService.removeTruckDriverAssignment(truckId);
       logger.info('Driver unassigned from truck:', truckId);
     } catch (err: any) {
       logger.error('Error unassigning driver from truck:', err);
@@ -659,7 +658,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Rule management actions - all database operations
   const updateMagnetInteractionRule = async (rule: MagnetInteractionRule) => {
     try {
-      await ScheduleService.updateMagnetRule(rule);
+      await DatabaseService.updateMagnetRule(rule);
       logger.info('Magnet interaction rule updated:', rule.sourceType, '->', rule.targetType);
     } catch (err: any) {
       logger.error('Error updating magnet rule:', err);
@@ -670,7 +669,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateDropRule = async (rowType: RowType, allowedTypes: ResourceType[]) => {
     try {
-      await ScheduleService.updateDropRule(rowType, allowedTypes);
+      await DatabaseService.updateDropRule(rowType, allowedTypes);
       logger.info('Drop rule updated:', rowType, 'allows:', allowedTypes);
     } catch (err: any) {
       logger.error('Error updating drop rule:', err);
@@ -681,7 +680,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateJobRowConfig = async (config: JobRowConfig) => {
     try {
-      await ScheduleService.updateJobRowConfig(config);
+      await DatabaseService.updateJobRowConfig(config);
       logger.info('Job row config updated:', config.jobId, config.rowType);
     } catch (err: any) {
       logger.error('Error updating job row config:', err);

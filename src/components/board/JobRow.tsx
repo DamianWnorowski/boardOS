@@ -156,7 +156,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
 
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: [ItemTypes.RESOURCE, ItemTypes.ASSIGNMENT],
-    drop: (item: DragItem, monitor: DropTargetMonitor) => {
+    drop: async (item: DragItem, monitor: DropTargetMonitor) => {
       try {
         logger.debug('🟢 Drop happened:', {
           resourceType: item.resource?.type,
