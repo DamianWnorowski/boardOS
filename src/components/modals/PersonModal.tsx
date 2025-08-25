@@ -3,6 +3,7 @@ import { X, User, FileText, Clock, MapPin, Edit3, Save } from 'lucide-react';
 import { Assignment } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import Portal from '../common/Portal';
+import { logger } from '../../utils/logger';
 
 interface PersonModalProps {
   assignment: Assignment;
