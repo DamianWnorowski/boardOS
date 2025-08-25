@@ -16,6 +16,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<{ address: string; lat: number; lng: number } | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
@@ -25,6 +27,9 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
   useEffect(() => {
     const initMap = () => {
       if (mapRef.current && window.google) {
+        setIsMapLoading(true);
+        setMapError(null);
+        
         const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: 39.8283, lng: -98.5795 }, // Center of US
           zoom: 4,
@@ -38,6 +43,11 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
         });
 
         mapInstance.current = map;
+        
+        // Set loading to false once map is ready
+        map.addListener('idle', () => {
+          setIsMapLoading(false);
+        });
 
         // Add click listener to map
         map.addListener('click', (event: any) => {
@@ -58,6 +68,9 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
             }
           });
         });
+      } else {
+        setMapError('Google Maps API not available');
+        setIsMapLoading(false);
       }
     };
 
@@ -66,15 +79,20 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
     
     // Load Google Maps script if not already loaded and not already in DOM
     if (!window.google && !existingScript && GOOGLE_MAPS_API_KEY) {
+      setIsMapLoading(true);
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry`;
       script.onload = initMap;
       script.onerror = () => {
         logger.error('Failed to load Google Maps API');
+        setMapError('Failed to load Google Maps API');
+        setIsMapLoading(false);
       };
       document.head.appendChild(script);
     } else if (!GOOGLE_MAPS_API_KEY) {
       logger.warn('Google Maps API key not found in environment variables');
+      setMapError('Google Maps API key not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your environment variables.');
+      setIsMapLoading(false);
     } else {
       initMap();
     }
@@ -240,10 +258,43 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
           
           {/* Map Panel */}
           <div className="flex-1 relative">
-            <div ref={mapRef} className="w-full h-full" />
-            <div className="absolute top-4 left-4 bg-white p-2 rounded-md shadow-md text-sm text-gray-600">
-              Click on the map to select a location
-            </div>
+            {isMapLoading ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                  <p className="text-gray-600">Loading map...</p>
+                </div>
+              </div>
+            ) : mapError ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center p-8">
+                  <div className="text-red-500 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Map Not Available</h3>
+                  <p className="text-gray-600 mb-4">{mapError}</p>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-left">
+                    <p className="text-sm text-yellow-800">
+                      <strong>To enable location selection:</strong>
+                    </p>
+                    <ol className="text-sm text-yellow-700 mt-2 space-y-1">
+                      <li>1. Get a Google Maps API key from Google Cloud Console</li>
+                      <li>2. Add it to your .env file as VITE_GOOGLE_MAPS_API_KEY</li>
+                      <li>3. Restart the development server</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div ref={mapRef} className="w-full h-full" />
+                <div className="absolute top-4 left-4 bg-white p-2 rounded-md shadow-md text-sm text-gray-600">
+                  Click on the map to select a location
+                </div>
+              </>
+            )}
           </div>
         </div>
         
