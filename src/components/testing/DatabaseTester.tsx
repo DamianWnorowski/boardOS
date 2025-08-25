@@ -273,11 +273,6 @@ const DatabaseTester: React.FC = () => {
           </button>
         </div>
         
-        {stats.jobs > 0 && (
-          <div className="mt-3 text-sm text-gray-600">
-            Database contains: {stats.jobs} jobs, {stats.resources} resources, {stats.assignments} assignments
-          </div>
-        )}
       </div>
 
       <div className="p-4">
