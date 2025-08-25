@@ -407,38 +407,21 @@ const MobileDragLayer: React.FC = () => {
       } else if (hasNightJob && !hasDayJob) {
         // Has only night job, Ctrl+dragging will create double shift (orange)
         console.log('🎨 MobileDragLayer → Orange: Has night job, creating double shift');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
-        return { 
+        return {
           message: 'Creating double shift', 
           color: 'text-orange-600', 
-          icon: '🌙' 
+          icon: '🌙☀️'
         };
       } else if (hasDayJob && !hasNightJob) {
         // Has only day job, Ctrl+dragging will create double shift (orange)
         console.log('🎨 MobileDragLayer → Orange: Has day job, creating double shift');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
+        return {
           message: 'Creating double shift', 
           color: 'text-orange-600', 
-          icon: '🌙' 
-            icon: '🌙☀️' 
+          icon: '☀️🌙'
+        };
       } else {
         // No current jobs, Ctrl+dragging for first assignment
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
-            icon: '☀️🌙' 
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         return {
           message: 'Drag to assign', 
