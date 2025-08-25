@@ -438,8 +438,16 @@ export function convertEquipmentToResources(): Resource[] {
   
   Object.entries(EQUIPMENT_DATA).forEach(([category, items]) => {
     items.forEach(item => {
-      // Handle trucks specially to use 'truck' type
-      const resourceType = category === 'trucks' ? 'truck' : category.slice(0, -1);
+      // Map category names to correct resource types
+      let resourceType: string;
+      if (category === 'trucks') {
+        resourceType = 'truck';
+      } else if (category === 'equipment') {
+        resourceType = 'equipment';
+      } else {
+        // For other categories, remove the 's' suffix (e.g., 'pavers' -> 'paver')
+        resourceType = category.slice(0, -1);
+      }
       
       resources.push({
         id: `${category}-${uuidv4()}`,
