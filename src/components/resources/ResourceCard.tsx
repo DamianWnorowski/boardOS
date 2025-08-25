@@ -274,7 +274,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     }
     
     // Teal border for multiple jobs of the same shift type
-    if (hasMultipleDayJobs || hasMultipleNightJobs) {
+    if (hasMultipleDayJobs) {
       return 'border-2 border-teal-500';
     }
     
