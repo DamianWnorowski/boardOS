@@ -265,10 +265,17 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const isWorkingDouble = hasNightJob && hasDayJob;
+    const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
+    const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
     
     // Red border for double shift (working both day and night)
     if (isWorkingDouble) {
       return 'border-2 border-red-500';
+    }
+    
+    // Teal border for multiple jobs of the same shift type
+    if (hasMultipleDayJobs || hasMultipleNightJobs) {
+      return 'border-2 border-teal-500';
     }
     
     // Orange border for night shift only
