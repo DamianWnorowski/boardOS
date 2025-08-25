@@ -76,3 +76,5 @@ export const useModal = () => {
   }
   return context;
 };
+
+export { ModalContext };

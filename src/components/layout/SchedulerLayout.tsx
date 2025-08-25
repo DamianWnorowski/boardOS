@@ -8,15 +8,23 @@ import Board from '../board/Board';
 
 const SchedulerLayout: React.FC = () => {
   const { isDesktop } = useMobile();
-  const { isLoading, error, refreshData } = useScheduler();
+  const { isLoading, error, refreshData, jobs, resources } = useScheduler();
+  const [hasInitialLoad, setHasInitialLoad] = React.useState(false);
+  
+  // Track when we've done the initial load
+  React.useEffect(() => {
+    if (!isLoading && (jobs.length > 0 || resources.length > 0)) {
+      setHasInitialLoad(true);
+    }
+  }, [isLoading, jobs.length, resources.length]);
   
   // Only render desktop layout on desktop
   if (!isDesktop) {
     return null;
   }
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only show on very first load
+  if (isLoading && !hasInitialLoad) {
     return (
       <div className="flex flex-col h-screen bg-slate-50">
         <Navbar />

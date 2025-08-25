@@ -11,10 +11,18 @@ type MobileTab = 'jobs' | 'resources' | 'schedule';
 
 const MobileSchedulerLayout: React.FC = () => {
   const { isMobile } = useMobile();
-  const { jobs, isLoading, error, refreshData } = useScheduler();
+  const { jobs, resources, isLoading, error, refreshData } = useScheduler();
   const [activeTab, setActiveTab] = useState<MobileTab>('jobs');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [hasInitialLoad, setHasInitialLoad] = React.useState(false);
+  
+  // Track when we've done the initial load
+  React.useEffect(() => {
+    if (!isLoading && (jobs.length > 0 || resources.length > 0)) {
+      setHasInitialLoad(true);
+    }
+  }, [isLoading, jobs.length, resources.length]);
 
   const handleEditJob = (job: Job) => {
     setSelectedJob(job);
@@ -32,8 +40,8 @@ const MobileSchedulerLayout: React.FC = () => {
     { id: 'schedule' as const, label: 'Schedule', icon: Calendar, count: null },
   ];
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only show on very first load
+  if (isLoading && !hasInitialLoad) {
     return (
       <div className="h-screen flex flex-col bg-gray-100">
         <header className="bg-slate-800 text-white shadow-lg">

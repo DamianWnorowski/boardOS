@@ -85,3 +85,5 @@ export const useDragContext = () => {
   }
   return context;
 };
+
+export { DragContext };

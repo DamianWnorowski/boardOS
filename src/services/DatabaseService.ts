@@ -111,6 +111,25 @@ export class DatabaseService {
     };
   }
 
+  static transformDbMagnetRule(dbRule: DbMagnetRule): MagnetInteractionRule {
+    return {
+      id: dbRule.id,
+      sourceType: dbRule.source_type as ResourceType,
+      targetType: dbRule.target_type as ResourceType,
+      canAttach: dbRule.can_attach,
+      isRequired: dbRule.is_required,
+      maxCount: dbRule.max_count
+    };
+  }
+
+  static transformDbDropRule(dbRule: DbDropRule): DropRule {
+    return {
+      id: dbRule.id,
+      rowType: dbRule.row_type as RowType,
+      allowedTypes: dbRule.allowed_types as ResourceType[]
+    };
+  }
+
   // Get all schedule data
   static async getAllScheduleData() {
     try {
@@ -545,7 +564,6 @@ export class DatabaseService {
 
   // Assignment operations
   static async createAssignment(assignment: Omit<Assignment, 'id' | 'attachments'>): Promise<Assignment> {
-    logger.debug('📝 Creating assignment in database:', assignment);
     const { data, error } = await supabase
       .from('assignments')
       .insert([{
@@ -566,7 +584,6 @@ export class DatabaseService {
       throw error;
     }
 
-    logger.debug('📝 Assignment created in database:', data);
     const transformedAssignment = this.transformDbAssignment(data);
     
     // Get attachments
@@ -616,7 +633,6 @@ export class DatabaseService {
   }
 
   static async deleteAssignment(id: string): Promise<void> {
-    logger.debug('🗑️ Deleting assignment from database:', id);
     const { error } = await supabase
       .from('assignments')
       .delete()
@@ -626,8 +642,6 @@ export class DatabaseService {
       logger.error('Error deleting assignment:', error);
       throw error;
     }
-    
-    logger.debug('✅ Assignment deleted from database:', id);
   }
 
   // Rule operations
@@ -672,70 +686,88 @@ export class DatabaseService {
     onJobChange?: (payload: any) => void;
     onAssignmentChange?: (payload: any) => void;
     onRuleChange?: (payload: any) => void;
+    onDropRuleChange?: (payload: any) => void;
+    onJobRowConfigChange?: (payload: any) => void;
+    onTruckDriverAssignmentChange?: (payload: any) => void;
   }) {
-    logger.debug('🔔 Setting up real-time subscriptions...');
+    logger.info('🔌 Setting up Supabase real-time channels...');
     const channels = [];
 
-    // Use single channel with multiple listeners for better reliability
-    const mainChannel = supabase.channel(`schedule-changes-${Date.now()}`);
-
     if (callbacks.onResourceChange) {
-      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, (payload) => {
-          logger.debug('🔔 Resource subscription triggered:', payload);
-          callbacks.onResourceChange!(payload);
-      });
-      logger.debug('🔔 Resource listener added');
+      logger.info('📻 Creating resources channel...');
+      const resourceChannel = supabase
+        .channel('resources-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, (payload) => {
+          logger.info('🎯 Resources channel event:', payload);
+          callbacks.onResourceChange(payload);
+        })
+        .subscribe((status) => {
+          logger.info('📻 Resources channel status:', status);
+        });
+      channels.push(resourceChannel);
     }
 
     if (callbacks.onJobChange) {
-      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, (payload) => {
-          logger.debug('🔔 Job subscription triggered:', payload);
-          callbacks.onJobChange!(payload);
-      });
-      logger.debug('🔔 Job listener added');
+      logger.info('📻 Creating jobs channel...');
+      const jobChannel = supabase
+        .channel('jobs-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, (payload) => {
+          logger.info('🎯 Jobs channel event:', payload);
+          callbacks.onJobChange(payload);
+        })
+        .subscribe((status) => {
+          logger.info('📻 Jobs channel status:', status);
+        });
+      channels.push(jobChannel);
     }
 
     if (callbacks.onAssignmentChange) {
-      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, (payload) => {
-          logger.debug('🔔 Assignment subscription triggered:', payload);
-        logger.debug('🔔 Assignment payload details:', {
-          eventType: payload.eventType,
-          new: payload.new,
-          old: payload.old
+      logger.info('📻 Creating assignments channel...');
+      const assignmentChannel = supabase
+        .channel('assignments-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, (payload) => {
+          logger.info('🎯 Assignments channel event:', payload);
+          callbacks.onAssignmentChange(payload);
+        })
+        .subscribe((status) => {
+          logger.info('📻 Assignments channel status:', status);
         });
-          callbacks.onAssignmentChange!(payload);
-      });
-      logger.debug('🔔 Assignment listener added');
+      channels.push(assignmentChannel);
     }
 
     if (callbacks.onRuleChange) {
-      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, (payload) => {
-          logger.debug('🔔 Magnet rule subscription triggered:', payload);
-          callbacks.onRuleChange!(payload);
-      });
-      
-      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, (payload) => {
-          logger.debug('🔔 Drop rule subscription triggered:', payload);
-          callbacks.onRuleChange!(payload);
-      });
-      logger.debug('🔔 Rule listeners added');
+      const ruleChannel = supabase
+        .channel('rules-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, callbacks.onRuleChange)
+        .subscribe();
+      channels.push(ruleChannel);
     }
 
-    // Subscribe to the main channel
-    mainChannel.subscribe((status) => {
-      logger.debug('🔔 Channel subscription status:', status);
-      if (status === 'SUBSCRIBED') {
-        logger.debug('🔔 Successfully subscribed to real-time changes');
-      } else if (status === 'CHANNEL_ERROR') {
-        logger.error('🔔 Real-time subscription error');
-      }
-    });
-    
-    channels.push(mainChannel);
-    logger.debug('🔔 All subscriptions setup complete');
-    
+    if (callbacks.onDropRuleChange) {
+      const dropRuleChannel = supabase
+        .channel('drop-rules-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, callbacks.onDropRuleChange)
+        .subscribe();
+      channels.push(dropRuleChannel);
+    }
+
+    if (callbacks.onJobRowConfigChange) {
+      const jobRowConfigChannel = supabase
+        .channel('job-row-configs-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'job_row_configs' }, callbacks.onJobRowConfigChange)
+        .subscribe();
+      channels.push(jobRowConfigChannel);
+    }
+
+    if (callbacks.onTruckDriverAssignmentChange) {
+      const truckDriverChannel = supabase
+        .channel('truck-driver-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'truck_driver_assignments' }, callbacks.onTruckDriverAssignmentChange)
+        .subscribe();
+      channels.push(truckDriverChannel);
+    }
+
     return () => {
-      logger.debug('🔔 Cleaning up subscriptions...');
       channels.forEach(channel => supabase.removeChannel(channel));
     };
   }

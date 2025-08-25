@@ -4,14 +4,26 @@ import { DndProvider } from 'react-dnd';
 import { MultiBackend } from 'react-dnd-multi-backend';
 import { dndBackendOptions } from './utils/dndBackend';
 import { useMobile } from './context/MobileContext';
+import { useScheduler } from './context/SchedulerContext';
 import SchedulerLayout from './components/layout/SchedulerLayout';
 import MobileSchedulerLayout from './components/mobile/MobileSchedulerLayout';
 import MobileDragLayer from './components/mobile/MobileDragLayer';
 import DatabaseTestPage from './components/layout/DatabaseTestPage';
+import { RefreshCw } from 'lucide-react';
 
 function App() {
   const { isMobile } = useMobile();
+  const { refreshData } = useScheduler();
   const [showDatabaseTest, setShowDatabaseTest] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    console.log('🔄 Manual refresh triggered...');
+    await refreshData();
+    console.log('✅ Refresh complete');
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   if (showDatabaseTest) {
     return <DatabaseTestPage onBack={() => setShowDatabaseTest(false)} />;
@@ -20,13 +32,28 @@ function App() {
   return (
     <div id="app-root" style={{ position: 'relative', width: '100%', height: '100%' }}>
       <DndProvider backend={MultiBackend} options={dndBackendOptions}>
-        {/* Database Test Toggle Button */}
-        <button
-          onClick={() => setShowDatabaseTest(true)}
-          className="fixed top-4 right-4 z-50 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md shadow-lg text-sm font-medium"
-        >
-          Database Test
-        </button>
+        {/* Control Buttons */}
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md shadow-lg text-sm font-medium flex items-center gap-2 ${
+              isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+          
+          {/* Database Test Toggle Button */}
+          <button
+            onClick={() => setShowDatabaseTest(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md shadow-lg text-sm font-medium"
+          >
+            Database Test
+          </button>
+        </div>
         
         {isMobile ? <MobileSchedulerLayout /> : <SchedulerLayout />}
         <MobileDragLayer />

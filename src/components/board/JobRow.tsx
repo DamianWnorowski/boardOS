@@ -524,14 +524,12 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     const templateCards = getTemplateCards();
     
     return (
-      <div className="p-2 border-b border-gray-200 min-h-[60px] transition-colors relative">
-        {/* Main drop target */}
-        <div
-          ref={drop}
-          className={`w-full h-full ${
-            isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
-          }`}
-        >
+      <div 
+        ref={drop}
+        className={`p-2 border-b border-gray-200 min-h-[60px] transition-colors relative ${
+          isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
+        }`}
+      >
         <div className="w-full flex justify-between items-center mb-1">
           <div className="flex items-center">
             <span className={`text-xs font-medium ${isActive ? 'text-gray-500' : 'text-gray-400'} ${!isActive ? 'line-through' : ''}`}>
@@ -805,7 +803,6 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             onClose={handleClosePersonModal}
           />
         )}
-        </div>
       </div>
     );
   }
@@ -813,16 +810,14 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const templateCards = getTemplateCards();
   
   return (
-    <div className={`border-b border-gray-200 transition-colors duration-200 relative ${
-      !isActive ? 'p-1 min-h-[24px]' : 'p-2 min-h-[60px]'
-    }`}>
-      {/* Main drop target */}
-      <div
-        ref={drop}
-        className={`w-full ${
-          isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
-        }`}
-      >
+    <div 
+      ref={drop}
+      className={`border-b border-gray-200 transition-colors duration-200 relative ${
+        !isActive ? 'p-1 min-h-[24px]' : 'p-2 min-h-[60px]'
+      } ${
+        isOver && canDrop ? 'bg-blue-100' : isOver ? 'bg-red-100' : ''
+      }`}
+    >
       <div className={`w-full flex justify-between items-center ${!isActive ? 'mb-0' : 'mb-1'}`}>
         <div className="flex items-center">
           <span className={`${!isActive ? 'text-[10px]' : 'text-xs'} font-medium ${isActive ? 'text-gray-500' : 'text-gray-400'} ${!isActive ? 'line-through' : ''}`}>
@@ -1035,7 +1030,6 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           onClose={handleClosePersonModal}
         />
       )}
-      </div>
     </div>
   );
 };

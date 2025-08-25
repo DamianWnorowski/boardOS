@@ -83,3 +83,5 @@ export const useMobile = () => {
   }
   return context;
 };
+
+export { MobileContext };
