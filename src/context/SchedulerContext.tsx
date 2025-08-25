@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Job, Resource, Assignment, RowType, RowOverride, TimeSlot, ResourceType, MagnetInteractionRule, DropRule, JobRowConfig } from '../types';
 import { convertPersonnelToResources, convertEquipmentToResources } from '../data/resourceData';
 import { isRowNeededForJobType } from '../utils/jobUtils';
-import logger from '../utils/logger';
+import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { magnetManager } from '../classes/Magnet';
 import { buildStandardConstructionRules, buildStandardDropRules } from '../utils/ruleCreator';

@@ -47,6 +47,160 @@ export interface Database {
           updated_at?: string
         }
       }
+      employees: {
+        Row: {
+          id: string
+          user_id: string | null
+          type: string
+          name: string
+          employee_id: string | null
+          phone_number: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          email: string | null
+          address: string | null
+          hire_date: string | null
+          role: string
+          certifications: Json
+          skills: Json
+          permissions: Json
+          performance_reviews: Json
+          training_records: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          type: string
+          name: string
+          employee_id?: string | null
+          phone_number?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          email?: string | null
+          address?: string | null
+          hire_date?: string | null
+          role?: string
+          certifications?: Json
+          skills?: Json
+          permissions?: Json
+          performance_reviews?: Json
+          training_records?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          type?: string
+          name?: string
+          employee_id?: string | null
+          phone_number?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          email?: string | null
+          address?: string | null
+          hire_date?: string | null
+          role?: string
+          certifications?: Json
+          skills?: Json
+          permissions?: Json
+          performance_reviews?: Json
+          training_records?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      equipment: {
+        Row: {
+          id: string
+          type: string
+          name: string
+          identifier: string | null
+          model: string | null
+          make: string | null
+          year: number | null
+          vin: string | null
+          serial_number: string | null
+          location: string | null
+          on_site: boolean
+          acquisition_date: string | null
+          purchase_price: number | null
+          current_value: number | null
+          fuel_type: string | null
+          engine_hours: number
+          last_maintenance_date: string | null
+          next_maintenance_date: string | null
+          maintenance_notes: string | null
+          insurance_policy: string | null
+          registration_expiry: string | null
+          inspection_date: string | null
+          is_operational: boolean
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          type: string
+          name: string
+          identifier?: string | null
+          model?: string | null
+          make?: string | null
+          year?: number | null
+          vin?: string | null
+          serial_number?: string | null
+          location?: string | null
+          on_site?: boolean
+          acquisition_date?: string | null
+          purchase_price?: number | null
+          current_value?: number | null
+          fuel_type?: string | null
+          engine_hours?: number
+          last_maintenance_date?: string | null
+          next_maintenance_date?: string | null
+          maintenance_notes?: string | null
+          insurance_policy?: string | null
+          registration_expiry?: string | null
+          inspection_date?: string | null
+          is_operational?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          name?: string
+          identifier?: string | null
+          model?: string | null
+          make?: string | null
+          year?: number | null
+          vin?: string | null
+          serial_number?: string | null
+          location?: string | null
+          on_site?: boolean
+          acquisition_date?: string | null
+          purchase_price?: number | null
+          current_value?: number | null
+          fuel_type?: string | null
+          engine_hours?: number
+          last_maintenance_date?: string | null
+          next_maintenance_date?: string | null
+          maintenance_notes?: string | null
+          insurance_policy?: string | null
+          registration_expiry?: string | null
+          inspection_date?: string | null
+          is_operational?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
       resources: {
         Row: {
           id: string

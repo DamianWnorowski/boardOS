@@ -21,6 +21,61 @@ export type PersonnelRole = 'operator' | 'driver' | 'striper' | 'foreman' | 'lab
 export type EquipmentCategory = 'skidsteer' | 'paver' | 'excavator' | 'sweeper' | 'millingMachine' | 'grader' | 'dozer' | 'payloader' | 'roller' | 'equipment' | 'truck';
 export type ResourceType = PersonnelRole | EquipmentCategory;
 
+// Employee interface for personnel
+export interface Employee {
+  id: string;
+  userId?: string; // Link to auth.users
+  type: PersonnelRole;
+  name: string;
+  employeeId?: string;
+  phoneNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  email?: string;
+  address?: string;
+  hireDate?: string;
+  role: string;
+  certifications: string[];
+  skills: string[];
+  permissions: string[];
+  performanceReviews?: any[];
+  trainingRecords?: any[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Equipment interface for machinery and vehicles
+export interface Equipment {
+  id: string;
+  type: EquipmentCategory;
+  name: string;
+  identifier?: string; // Unit number
+  model?: string;
+  make?: string;
+  year?: number;
+  vin?: string;
+  serialNumber?: string;
+  location?: string;
+  onSite: boolean;
+  acquisitionDate?: string;
+  purchasePrice?: number;
+  currentValue?: number;
+  fuelType?: string;
+  engineHours?: number;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  maintenanceNotes?: string;
+  insurancePolicy?: string;
+  registrationExpiry?: string;
+  inspectionDate?: string;
+  isOperational: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Unified resource interface for backward compatibility
 export interface Resource {
   id: string;
   type: ResourceType;

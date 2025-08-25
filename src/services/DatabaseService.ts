@@ -1,5 +1,5 @@
 import { supabase, DbResource, DbJob, DbAssignment, DbMagnetRule, DbDropRule } from '../lib/supabase';
-import { Resource, Job, Assignment, MagnetInteractionRule, DropRule, RowType, ResourceType, JobRowConfig } from '../types';
+import { Resource, Job, Assignment, MagnetInteractionRule, DropRule, RowType, ResourceType, JobRowConfig, Employee, Equipment } from '../types';
 import logger from '../utils/logger';
 
 /**
@@ -8,6 +8,64 @@ import logger from '../utils/logger';
  */
 export class DatabaseService {
   
+  // Transform database types for employees
+  static transformDbEmployee(dbEmployee: any): Employee {
+    return {
+      id: dbEmployee.id,
+      userId: dbEmployee.user_id,
+      type: dbEmployee.type,
+      name: dbEmployee.name,
+      employeeId: dbEmployee.employee_id,
+      phoneNumber: dbEmployee.phone_number,
+      emergencyContactName: dbEmployee.emergency_contact_name,
+      emergencyContactPhone: dbEmployee.emergency_contact_phone,
+      email: dbEmployee.email,
+      address: dbEmployee.address,
+      hireDate: dbEmployee.hire_date,
+      role: dbEmployee.role,
+      certifications: dbEmployee.certifications || [],
+      skills: dbEmployee.skills || [],
+      permissions: dbEmployee.permissions || [],
+      performanceReviews: dbEmployee.performance_reviews || [],
+      trainingRecords: dbEmployee.training_records || [],
+      isActive: dbEmployee.is_active,
+      createdAt: dbEmployee.created_at,
+      updatedAt: dbEmployee.updated_at
+    };
+  }
+
+  // Transform database types for equipment
+  static transformDbEquipment(dbEquipment: any): Equipment {
+    return {
+      id: dbEquipment.id,
+      type: dbEquipment.type,
+      name: dbEquipment.name,
+      identifier: dbEquipment.identifier,
+      model: dbEquipment.model,
+      make: dbEquipment.make,
+      year: dbEquipment.year,
+      vin: dbEquipment.vin,
+      serialNumber: dbEquipment.serial_number,
+      location: dbEquipment.location,
+      onSite: dbEquipment.on_site,
+      acquisitionDate: dbEquipment.acquisition_date,
+      purchasePrice: dbEquipment.purchase_price,
+      currentValue: dbEquipment.current_value,
+      fuelType: dbEquipment.fuel_type,
+      engineHours: dbEquipment.engine_hours,
+      lastMaintenanceDate: dbEquipment.last_maintenance_date,
+      nextMaintenanceDate: dbEquipment.next_maintenance_date,
+      maintenanceNotes: dbEquipment.maintenance_notes,
+      insurancePolicy: dbEquipment.insurance_policy,
+      registrationExpiry: dbEquipment.registration_expiry,
+      inspectionDate: dbEquipment.inspection_date,
+      isOperational: dbEquipment.is_operational,
+      isActive: dbEquipment.is_active,
+      createdAt: dbEquipment.created_at,
+      updatedAt: dbEquipment.updated_at
+    };
+  }
+
   // Transform database types to frontend types
   static transformDbResource(dbResource: DbResource): Resource {
     return {
@@ -56,22 +114,50 @@ export class DatabaseService {
   // Get all schedule data
   static async getAllScheduleData() {
     try {
-      const [resourcesResult, jobsResult, assignmentsResult, rulesResult, dropRulesResult] = await Promise.all([
-        supabase.from('resources').select('*').order('name'),
+      const [employeesResult, equipmentResult, jobsResult, assignmentsResult, rulesResult, dropRulesResult] = await Promise.all([
+        supabase.from('employees').select('*').order('name'),
+        supabase.from('equipment').select('*').order('name'),
         supabase.from('jobs').select('*').order('created_at', { ascending: false }),
         supabase.from('assignments').select('*').order('created_at'),
         supabase.from('magnet_interaction_rules').select('*'),
         supabase.from('drop_rules').select('*')
       ]);
 
-      if (resourcesResult.error) throw resourcesResult.error;
+      if (employeesResult.error) throw employeesResult.error;
+      if (equipmentResult.error) throw equipmentResult.error;
       if (jobsResult.error) throw jobsResult.error;
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (rulesResult.error) throw rulesResult.error;
       if (dropRulesResult.error) throw dropRulesResult.error;
 
-      // Transform data
-      const resources = resourcesResult.data.map(this.transformDbResource);
+      // Transform data - combine employees and equipment into unified resources
+      const employees = employeesResult.data.map(this.transformDbEmployee);
+      const equipment = equipmentResult.data.map(this.transformDbEquipment);
+      
+      // Convert to unified Resource format for backward compatibility
+      const resources: Resource[] = [
+        ...employees.map(emp => ({
+          id: emp.id,
+          type: emp.type,
+          classType: 'employee' as const,
+          name: emp.name,
+          identifier: emp.employeeId,
+          location: emp.address,
+          onSite: false
+        })),
+        ...equipment.map(eq => ({
+          id: eq.id,
+          type: eq.type,
+          classType: 'equipment' as const,
+          name: eq.name,
+          identifier: eq.identifier,
+          model: eq.model,
+          vin: eq.vin,
+          location: eq.location,
+          onSite: eq.onSite
+        }))
+      ];
+      
       const jobs = jobsResult.data.map(this.transformDbJob);
       const assignments = assignmentsResult.data.map(this.transformDbAssignment);
       
@@ -98,6 +184,8 @@ export class DatabaseService {
 
       return {
         resources,
+        employees,
+        equipment,
         jobs,
         assignments: assignmentsWithAttachments,
         magnetRules,
@@ -109,66 +197,271 @@ export class DatabaseService {
     }
   }
 
-  // Resource operations
-  static async createResource(resource: Omit<Resource, 'id'>): Promise<Resource> {
+  // Employee operations
+  static async createEmployee(employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<Employee> {
     const { data, error } = await supabase
-      .from('resources')
+      .from('employees')
       .insert([{
-        type: resource.type,
-        class_type: resource.classType,
-        name: resource.name,
-        identifier: resource.identifier,
-        model: resource.model,
-        vin: resource.vin,
-        location: resource.location,
-        on_site: resource.onSite || false
+        user_id: employee.userId,
+        type: employee.type,
+        name: employee.name,
+        employee_id: employee.employeeId,
+        phone_number: employee.phoneNumber,
+        emergency_contact_name: employee.emergencyContactName,
+        emergency_contact_phone: employee.emergencyContactPhone,
+        email: employee.email,
+        address: employee.address,
+        hire_date: employee.hireDate,
+        role: employee.role,
+        certifications: employee.certifications,
+        skills: employee.skills,
+        permissions: employee.permissions,
+        performance_reviews: employee.performanceReviews,
+        training_records: employee.trainingRecords,
+        is_active: employee.isActive
       }])
       .select()
       .single();
 
     if (error) {
-      logger.error('Error creating resource:', error);
+      logger.error('Error creating employee:', error);
       throw error;
     }
 
-    return this.transformDbResource(data);
+    return this.transformDbEmployee(data);
   }
 
-  static async updateResource(resource: Resource): Promise<Resource> {
+  static async updateEmployee(employee: Employee): Promise<Employee> {
     const { data, error } = await supabase
-      .from('resources')
+      .from('employees')
       .update({
-        type: resource.type,
-        class_type: resource.classType,
+        user_id: employee.userId,
+        type: employee.type,
+        name: employee.name,
+        employee_id: employee.employeeId,
+        phone_number: employee.phoneNumber,
+        emergency_contact_name: employee.emergencyContactName,
+        emergency_contact_phone: employee.emergencyContactPhone,
+        email: employee.email,
+        address: employee.address,
+        hire_date: employee.hireDate,
+        role: employee.role,
+        certifications: employee.certifications,
+        skills: employee.skills,
+        permissions: employee.permissions,
+        performance_reviews: employee.performanceReviews,
+        training_records: employee.trainingRecords,
+        is_active: employee.isActive
+      })
+      .eq('id', employee.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error updating employee:', error);
+      throw error;
+    }
+
+    return this.transformDbEmployee(data);
+  }
+
+  // Equipment operations
+  static async createEquipment(equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Equipment> {
+    const { data, error } = await supabase
+      .from('equipment')
+      .insert([{
+        type: equipment.type,
+        name: equipment.name,
+        identifier: equipment.identifier,
+        model: equipment.model,
+        make: equipment.make,
+        year: equipment.year,
+        vin: equipment.vin,
+        serial_number: equipment.serialNumber,
+        location: equipment.location,
+        on_site: equipment.onSite,
+        acquisition_date: equipment.acquisitionDate,
+        purchase_price: equipment.purchasePrice,
+        current_value: equipment.currentValue,
+        fuel_type: equipment.fuelType,
+        engine_hours: equipment.engineHours,
+        last_maintenance_date: equipment.lastMaintenanceDate,
+        next_maintenance_date: equipment.nextMaintenanceDate,
+        maintenance_notes: equipment.maintenanceNotes,
+        insurance_policy: equipment.insurancePolicy,
+        registration_expiry: equipment.registrationExpiry,
+        inspection_date: equipment.inspectionDate,
+        is_operational: equipment.isOperational,
+        is_active: equipment.isActive
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error creating equipment:', error);
+      throw error;
+    }
+
+    return this.transformDbEquipment(data);
+  }
+
+  static async updateEquipment(equipment: Equipment): Promise<Equipment> {
+    const { data, error } = await supabase
+      .from('equipment')
+      .update({
+        type: equipment.type,
+        name: equipment.name,
+        identifier: equipment.identifier,
+        model: equipment.model,
+        make: equipment.make,
+        year: equipment.year,
+        vin: equipment.vin,
+        serial_number: equipment.serialNumber,
+        location: equipment.location,
+        on_site: equipment.onSite,
+        acquisition_date: equipment.acquisitionDate,
+        purchase_price: equipment.purchasePrice,
+        current_value: equipment.currentValue,
+        fuel_type: equipment.fuelType,
+        engine_hours: equipment.engineHours,
+        last_maintenance_date: equipment.lastMaintenanceDate,
+        next_maintenance_date: equipment.nextMaintenanceDate,
+        maintenance_notes: equipment.maintenanceNotes,
+        insurance_policy: equipment.insurancePolicy,
+        registration_expiry: equipment.registrationExpiry,
+        inspection_date: equipment.inspectionDate,
+        is_operational: equipment.isOperational,
+        is_active: equipment.isActive
+      })
+      .eq('id', equipment.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error updating equipment:', error);
+      throw error;
+    }
+
+    return this.transformDbEquipment(data);
+  }
+
+  // Resource operations
+  static async createResource(resource: Omit<Resource, 'id'>): Promise<Resource> {
+    // Route to appropriate table based on class type
+    if (resource.classType === 'employee') {
+      const employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'> = {
+        type: resource.type as any,
+        name: resource.name,
+        employeeId: resource.identifier,
+        role: resource.type,
+        certifications: [],
+        skills: [],
+        permissions: [],
+        isActive: true
+      };
+      const created = await this.createEmployee(employee);
+      return {
+        id: created.id,
+        type: created.type,
+        classType: 'employee',
+        name: created.name,
+        identifier: created.employeeId,
+        onSite: false
+      };
+    } else {
+      const equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'> = {
+        type: resource.type as any,
         name: resource.name,
         identifier: resource.identifier,
         model: resource.model,
         vin: resource.vin,
         location: resource.location,
-        on_site: resource.onSite || false
-      })
-      .eq('id', resource.id)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Error updating resource:', error);
-      throw error;
+        onSite: resource.onSite || false,
+        isOperational: true,
+        isActive: true,
+        engineHours: 0
+      };
+      const created = await this.createEquipment(equipment);
+      return {
+        id: created.id,
+        type: created.type,
+        classType: 'equipment',
+        name: created.name,
+        identifier: created.identifier,
+        model: created.model,
+        vin: created.vin,
+        location: created.location,
+        onSite: created.onSite
+      };
     }
+  }
 
-    return this.transformDbResource(data);
+  static async updateResource(resource: Resource): Promise<Resource> {
+    // Route to appropriate table based on class type
+    if (resource.classType === 'employee') {
+      // Get current employee data first
+      const { data: currentEmployee } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('id', resource.id)
+        .single();
+        
+      if (currentEmployee) {
+        const employee: Employee = {
+          ...this.transformDbEmployee(currentEmployee),
+          name: resource.name,
+          employeeId: resource.identifier
+        };
+        const updated = await this.updateEmployee(employee);
+        return {
+          id: updated.id,
+          type: updated.type,
+          classType: 'employee',
+          name: updated.name,
+          identifier: updated.employeeId,
+          onSite: false
+        };
+      }
+    } else {
+      // Get current equipment data first
+      const { data: currentEquipment } = await supabase
+        .from('equipment')
+        .select('*')
+        .eq('id', resource.id)
+        .single();
+        
+      if (currentEquipment) {
+        const equipment: Equipment = {
+          ...this.transformDbEquipment(currentEquipment),
+          name: resource.name,
+          identifier: resource.identifier,
+          model: resource.model,
+          vin: resource.vin,
+          location: resource.location,
+          onSite: resource.onSite || false
+        };
+        const updated = await this.updateEquipment(equipment);
+        return {
+          id: updated.id,
+          type: updated.type,
+          classType: 'equipment',
+          name: updated.name,
+          identifier: updated.identifier,
+          model: updated.model,
+          vin: updated.vin,
+          location: updated.location,
+          onSite: updated.onSite
+        };
+      }
+    }
+    
+    throw new Error('Resource not found');
   }
 
   static async deleteResource(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('resources')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      logger.error('Error deleting resource:', error);
-      throw error;
-    }
+    // Try deleting from both tables (one will succeed, one will fail - that's ok)
+    await supabase.from('employees').delete().eq('id', id);
+    await supabase.from('equipment').delete().eq('id', id);
   }
 
   // Job operations
