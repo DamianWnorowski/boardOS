@@ -35,7 +35,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   hasNote = false,
   showDoubleShift = false
 }) => {
-  const { getTruckDriver } = useScheduler();
+  const { getTruckDriver, assignments, getJobById } = useScheduler();
   const { isMobile, touchEnabled } = useMobile();
   const { getIsCtrlHeld } = useDragContext();
   
@@ -257,6 +257,23 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   const getBorderStyle = () => {
     if (isDisabled) {
       return 'border border-gray-400';
+    }
+    
+    // Check if this resource is working a night shift or double shift
+    const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+    const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
+    const hasNightJob = assignedJobs.some(job => job.shift === 'night');
+    const hasDayJob = assignedJobs.some(job => job.shift === 'day');
+    const isWorkingDouble = hasNightJob && hasDayJob;
+    
+    // Red border for double shift (working both day and night)
+    if (isWorkingDouble) {
+      return 'border-2 border-red-500';
+    }
+    
+    // Orange border for night shift only
+    if (hasNightJob && !hasDayJob) {
+      return 'border-2 border-orange-500';
     }
     
     // Trucks get light gray border on black background
