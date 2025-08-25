@@ -116,7 +116,12 @@ export class DatabaseService {
     try {
       const [resourcesResult, jobsResult, assignmentsResult, rulesResult, dropRulesResult] = await Promise.all([
         supabase.from('resources').select('*').order('name'),
+        supabase.from('jobs').select('*').order('name'),
         supabase.from('assignments').select('*').order('created_at'),
+        supabase.from('magnet_interaction_rules').select('*'),
+        supabase.from('drop_rules').select('*')
+      ]);
+      
       if (resourcesResult.error) {
         logger.error('Error fetching resources:', resourcesResult.error);
         throw resourcesResult.error;
@@ -148,6 +153,20 @@ export class DatabaseService {
       
       const equipment = resources.filter(r => r.classType === 'equipment').map(r => ({
         id: r.id,
+        type: r.type,
+        name: r.name,
+        identifier: r.identifier,
+        model: r.model,
+        vin: r.vin,
+        location: r.location,
+        onSite: r.onSite || false,
+        isOperational: true,
+        isActive: true,
+        engineHours: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      
       logger.debug('Transformed data:', {
         resourcesCount: resources.length,
         employeesCount: employees.length,
@@ -401,67 +420,21 @@ export class DatabaseService {
         .select('*')
         .eq('id', resource.id)
         .single();
-      // Transform all resources first
-      const resources: Resource[] = resourcesResult.data.map(this.transformDbResource);
-      
-      // Split resources by class type
-      const employeeResources = resources.filter(r => r.classType === 'employee');
-      const equipmentResources = resources.filter(r => r.classType === 'equipment');
-      
-      // Transform to Employee objects
-      const employees: Employee[] = employeeResources.map(r => ({
-        id: r.id,
-        userId: undefined, // Will be populated from user_id if available
-        type: r.type as any,
-        name: r.name,
-        employeeId: r.identifier,
-        phoneNumber: undefined,
-        emergencyContactName: undefined,
-        emergencyContactPhone: undefined,
-        email: undefined,
-        address: undefined,
-        hireDate: undefined,
-        role: r.type,
-        certifications: [],
-        skills: [],
-        permissions: [],
-        performanceReviews: [],
-        trainingRecords: [],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
-      
-      // Transform to Equipment objects
-      const equipment: Equipment[] = equipmentResources.map(r => ({
-        id: r.id,
-        type: r.type as any,
-        name: r.name,
-        identifier: r.identifier,
-        model: r.model,
-        make: undefined,
-        year: undefined,
-        vin: r.vin,
-        serialNumber: undefined,
-        location: r.location,
-        onSite: r.onSite || false,
-        acquisitionDate: undefined,
-        purchasePrice: undefined,
-        currentValue: undefined,
-        fuelType: undefined,
-        engineHours: 0,
-        lastMaintenanceDate: undefined,
-        nextMaintenanceDate: undefined,
-        maintenanceNotes: undefined,
-        insurancePolicy: undefined,
-        registrationExpiry: undefined,
-        inspectionDate: undefined,
-        isOperational: true,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
+        
+      if (currentEmployee) {
+        const employee: Employee = {
+          ...this.transformDbEmployee(currentEmployee),
+          name: resource.name,
           employeeId: resource.identifier
+        };
+        const updated = await this.updateEmployee(employee);
+        return {
+          id: updated.id,
+          type: updated.type,
+          classType: 'employee',
+          name: updated.name,
+          identifier: updated.employeeId,
+          onSite: false
         };
       }
     } else {
