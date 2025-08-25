@@ -122,6 +122,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasPopulatedResources, setHasPopulatedResources] = useState<boolean>(false);
 
   // Use centralized color system
   const resourceColors = React.useMemo(() => getLegacyResourceColors(), []);
@@ -176,31 +177,32 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
-    // Prevent multiple concurrent population attempts
-    if (checkAndPopulateResources._isRunning) {
-      logger.debug('Resource population already in progress, skipping');
+    // Prevent multiple population attempts
+    if (hasPopulatedResources) {
+      logger.debug('Resources already populated, skipping');
       return;
     }
-    checkAndPopulateResources._isRunning = true;
 
     try {
       logger.debug('Checking if resources need to be populated...');
       const { data: existingResources, error } = await supabase
         .from('resources')
         .select('id')
-        .limit(10); // Check more than 1 to be sure
+        .limit(50); // Check for substantial data
 
       if (error) {
         logger.error('Error checking existing resources:', error);
-        checkAndPopulateResources._isRunning = false;
         return;
       }
 
       logger.debug('Existing resources check result:', { count: existingResources?.length || 0 });
 
-      // Only populate if we have fewer than 10 resources to avoid duplicates
-      if (!existingResources || existingResources.length < 10) {
+      // Only populate if we have fewer than 50 resources to avoid duplicates
+      if (!existingResources || existingResources.length < 50) {
         logger.info('No resources found in database, populating from data files...');
+        
+        // Mark as started to prevent concurrent runs
+        setHasPopulatedResources(true);
         
         const personnelResources = convertPersonnelToResources();
         const equipmentResources = convertEquipmentToResources();
@@ -212,61 +214,46 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           totalCount: allResources.length
         });
 
-        // Insert resources in smaller batches to avoid overwhelming the database
-        const batchSize = 50;
+        // Insert all resources in one operation to avoid partial inserts
         let insertedCount = 0;
-        
-        for (let i = 0; i < allResources.length; i += batchSize) {
-          const batch = allResources.slice(i, i + batchSize);
-          
-          const { error: insertError } = await supabase
-            .from('resources')
-            .insert(batch.map(resource => ({
-              type: resource.type,
-              class_type: resource.classType,
-              name: resource.name,
-              identifier: resource.identifier,
-              model: resource.model,
-              vin: resource.vin,
-              location: resource.location,
-              on_site: resource.onSite || false
-            })));
 
-          if (insertError) {
-            logger.error(`Error inserting batch ${i}-${i + batch.length}:`, insertError);
-            // Continue with other batches instead of failing completely
-          } else {
-            insertedCount += batch.length;
-            logger.debug(`Inserted batch ${i}-${i + batch.length} successfully`);
-          }
-        }
+        const { error: insertError } = await supabase
+          .from('resources')
+          .insert(allResources.map(resource => ({
+            type: resource.type,
+            class_type: resource.classType,
+            name: resource.name,
+            identifier: resource.identifier,
+            model: resource.model,
+            vin: resource.vin,
+            location: resource.location,
+            on_site: resource.onSite || false
+          })));
 
-        if (insertedCount > 0) {
-          logger.info('Successfully populated resources from data files', {
-            count: insertedCount
-          });
+        if (insertError) {
+          logger.error('Error inserting resources:', insertError);
+          setHasPopulatedResources(false); // Reset flag on error
+        } else {
+          insertedCount = allResources.length;
+          logger.info('Successfully inserted all resources:', { count: insertedCount });
           // Reload data to get the newly inserted resources
           await loadScheduleData();
-        } else {
-          logger.error('Failed to insert any resources');
         }
+
       } else {
         logger.debug('Resources already exist in database, skipping population');
+        setHasPopulatedResources(true); // Mark as completed since resources exist
       }
     } catch (err) {
       logger.error('Error in checkAndPopulateResources:', err);
-    } finally {
-      checkAndPopulateResources._isRunning = false;
+      setHasPopulatedResources(false); // Reset flag on error
     }
-  }, [loadScheduleData]);
-
-  // Add a flag to prevent concurrent execution
-  (checkAndPopulateResources as any)._isRunning = false;
+  }, [loadScheduleData, hasPopulatedResources]);
 
   // Check and populate resources after initial load with debouncing
   useEffect(() => {
-    // Only run if not loading, no error, no resources, and not already running
-    if (!isLoading && !error && resources.length === 0 && !(checkAndPopulateResources as any)._isRunning) {
+    // Only run if not loading, no error, no resources, and haven't populated yet
+    if (!isLoading && !error && resources.length === 0 && !hasPopulatedResources) {
       // Add a small delay to prevent rapid-fire execution
       const timer = setTimeout(() => {
         checkAndPopulateResources();
@@ -274,7 +261,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       return () => clearTimeout(timer);
     }
-  }, [isLoading, error, resources.length, checkAndPopulateResources]);
+  }, [isLoading, error, resources.length, hasPopulatedResources, checkAndPopulateResources]);
 
   // Set up real-time subscriptions
   useEffect(() => {
