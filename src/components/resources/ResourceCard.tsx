@@ -231,8 +231,19 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
     const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
     
-    // Use the complete border style that prevents conflicts
-    return getCompleteBorderStyle(resource.type, hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
+    // Priority order: Red (double) > Teal (multiple day) > Orange (night only) > Normal
+    if (hasDayJob && hasNightJob) {
+      return 'border-2 border-red-500'; // Double shift - highest priority
+    }
+    if (hasMultipleDayJobs) {
+      return 'border-2 border-teal-500'; // Multiple day jobs
+    }
+    if (hasNightJob && !hasDayJob) {
+      return 'border-2 border-orange-500'; // Night shift only
+    }
+    
+    // Default resource border
+    return `border ${getResourceColors(resource.type).border}`;
   };
   
   // Add specific styling based on the card's role in the attachment group

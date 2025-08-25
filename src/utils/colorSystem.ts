@@ -1,207 +1,492 @@
-import { ResourceType } from '../types';
+import React from 'react';
+import { useDrag } from 'react-dnd';
+import { StickyNote } from 'lucide-react';
+import { logger } from '../../utils/logger';
+import { Resource, ItemTypes } from '../../types';
+import { useScheduler } from '../../context/SchedulerContext';
+import { useMobile } from '../../context/MobileContext';
+import { useDragContext } from '../../context/DragContext';
+import { getMobileDragSourceOptions } from '../../utils/dndBackend';
+import { getResourceStyle, getResourceBorder, getShiftStatusBorder } from '../../utils/colorSystem';
+import { getCompleteBorderStyle } from '../../utils/colorSystem';
 
-/**
- * Centralized color system for all resource types
- * This eliminates duplicates and provides a single source of truth
- */
-
-export interface ResourceColors {
-  background: string;
-  text: string;
-  border: string;
+interface ResourceCardProps {
+  resource: Resource;
+  isDragging: boolean;
+  isMain?: boolean;
+  isAttached?: boolean;
+  isCompact?: boolean;
+  isDisabled?: boolean;
+  assignmentId?: string; // Add assignment ID prop
+  assignedTruckNumber?: string; // Add assigned truck number prop
+  onPersonClick?: () => void; // Add click handler for personnel
+  hasNote?: boolean; // Add prop to indicate if assignment has a note
+  showDoubleShift?: boolean; // Add prop to show double shift indicator
 }
 
-/**
- * Master color definitions for all resource types
- */
-export const RESOURCE_COLORS: Record<ResourceType, ResourceColors> = {
-  // Personnel
-  operator: {
-    background: 'bg-white',
-    text: 'text-black',
-    border: 'border-gray-400'
-  },
-  driver: {
-    background: 'bg-green-500',
-    text: 'text-black',
-    border: 'border-green-700'
-  },
-  privateDriver: {
-    background: 'bg-red-500',
-    text: 'text-white',
-    border: 'border-red-700'
-  },
-  laborer: {
-    background: 'bg-white',
-    text: 'text-green-600',
-    border: 'border-green-600'
-  },
-  striper: {
-    background: 'bg-white',
-    text: 'text-blue-600',
-    border: 'border-blue-600'
-  },
-  foreman: {
-    background: 'bg-orange-500',
-    text: 'text-black',
-    border: 'border-orange-700'
-  },
+const ResourceCard: React.FC<ResourceCardProps> = ({ 
+  resource, 
+  isDragging, 
+  isMain = false,
+  isAttached = false,
+  isCompact = false,
+  isDisabled = false,
+  assignmentId,
+  assignedTruckNumber,
+  onPersonClick,
+  hasNote = false,
+  showDoubleShift = false
+}) => {
+  const { getTruckDriver, assignments, getJobById } = useScheduler();
+  const { isMobile, touchEnabled } = useMobile();
+  const { getIsCtrlHeld } = useDragContext();
   
-  // Vehicles
-  truck: {
-    background: 'bg-black',
-    text: 'text-white',
-    border: 'border-gray-300'
-  },
-  
-  // Equipment (all yellow with black text)
-  skidsteer: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  paver: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  excavator: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  sweeper: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  millingMachine: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  grader: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  dozer: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  payloader: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  roller: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  },
-  equipment: {
-    background: 'bg-yellow-400',
-    text: 'text-black',
-    border: 'border-yellow-600'
-  }
-};
-
-/**
- * Shift status border colors
- */
-export const SHIFT_STATUS_BORDERS = {
-  doubleShift: 'border-2 border-red-500',            // Red for day + night
-  multipleDayJobs: 'border-2 border-teal-500',       // Teal for 2+ day jobs  
-  nightShiftOnly: 'border-2 border-orange-500'       // Orange for night only
-};
-
-/**
- * Helper functions to get consistent colors
- */
-export const getResourceColors = (resourceType: ResourceType): ResourceColors => {
-  return RESOURCE_COLORS[resourceType] || {
-    background: 'bg-gray-200',
-    text: 'text-gray-800',
-    border: 'border-gray-400'
+  // Function to determine truck type based on unit number
+  const getTruckType = (unitNumber: string) => {
+    const num = unitNumber;
+    
+    // Attenuator trucks
+    if (['124', '125', '126', '127', '128', '160', '162'].includes(num)) {
+      return 'Attenuator';
+    }
+    
+    // Crew trucks  
+    if (['12', '15', '25', '35', '45'].includes(num)) {
+      return 'Crew Truck';
+    }
+    
+    // Compressor trucks
+    if (['120', '130', '140'].includes(num)) {
+      return 'Compressor';
+    }
+    
+    // Concrete trucks
+    if (['161', '164'].includes(num)) {
+      return 'Concrete';
+    }
+    
+    // Trac trucks
+    if (num === '43' || num === '44' || (parseInt(num) >= 49 && parseInt(num) <= 76)) {
+      return 'Trac';
+    }
+    
+    // All others
+    return 'TBD';
   };
-};
-
-/**
- * Get combined style classes for a resource
- */
-export const getResourceStyle = (resourceType: ResourceType): string => {
-  const colors = getResourceColors(resourceType);
-  return `${colors.background} ${colors.text}`;
-};
-
-/**
- * Get base border style for a resource
- */
-export const getResourceBorder = (resourceType: ResourceType): string => {
-  const colors = getResourceColors(resourceType);
-  return `border ${colors.border}`;
-};
-
-/**
- * Get shift status border override
- */
-export const getShiftStatusBorder = (
-  hasDayJob: boolean,
-  hasNightJob: boolean,
-  hasMultipleDayJobs: boolean,
-  hasMultipleNightJobs: boolean
-): string => {
-  // Red border for double shift (working both day and night)
-  if (hasDayJob && hasNightJob) {
-    return SHIFT_STATUS_BORDERS.doubleShift;
-  }
   
-  // Teal border for multiple day jobs only
-  if (hasMultipleDayJobs) {
-    return SHIFT_STATUS_BORDERS.multipleDayJobs;
-  }
+  // Determine if we're in a normal view (in the resource pool) or a compact view (attached)
+  const isResourcePool = !isMain && !isAttached;
   
-  // Orange border for night shift only
-  if (hasNightJob && !hasDayJob) {
-    return SHIFT_STATUS_BORDERS.nightShiftOnly;
-  }
+  const isEquipmentOrVehicle = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 
+                                'dozer', 'payloader', 'roller', 'equipment', 'truck'].includes(resource.type);
   
-  // Return empty string for normal border (single day job or unassigned)
-  return '';
-};
-
-/**
- * Get complete border style with shift status override
- * This prevents border color conflicts by returning only one border class
- */
-export const getCompleteBorderStyle = (
-  resourceType: ResourceType,
-  hasDayJob: boolean,
-  hasNightJob: boolean,
-  hasMultipleDayJobs: boolean,
-  hasMultipleNightJobs: boolean
-): string => {
-  // Check for shift status border first
-  const shiftBorder = getShiftStatusBorder(hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
-  if (shiftBorder) return shiftBorder;
-  
-  // Use standard resource border if no shift override
-  return getResourceBorder(resourceType);
-};
-
-/**
- * Legacy compatibility functions for SchedulerContext
- */
-export const getLegacyResourceColors = () => {
-  const legacyFormat: Record<ResourceType, { color: string; borderColor: string }> = {} as any;
-  
-  Object.entries(RESOURCE_COLORS).forEach(([type, colors]) => {
-    legacyFormat[type as ResourceType] = {
-      color: colors.background,
-      borderColor: colors.border
-    };
+  const [{ opacity, isDragging: dragIsDragging }, drag] = useDrag({
+    type: ItemTypes.RESOURCE,
+    item: (monitor) => {
+     console.log('🚀 ResourceCard drag STARTED for:', resource.name, resource.type);
+      const isCtrlHeld = getIsCtrlHeld();
+      
+      const dragItem = { 
+        type: ItemTypes.RESOURCE,
+        id: resource.id,
+        resource,
+        isSecondShift: isCtrlHeld,
+        _handled: false // Add tracking flag
+      };
+      
+      // Store drag item globally for visual feedback
+      (window as any).currentDragItem = dragItem;
+      
+     console.log('🚀 ResourceCard created drag item:', dragItem);
+      
+      return dragItem;
+    },
+    options: touchEnabled ? getMobileDragSourceOptions() : undefined,
+   end: (item, monitor) => {
+     console.log('🚀 ResourceCard drag END for:', resource.name, 'didDrop:', monitor.didDrop(), 'dropResult:', monitor.getDropResult());
+     // Reset the handled flag for next drag
+     if (item) {
+       (item as any)._handled = false;
+     }
+   },
+    collect: (monitor) => ({
+      opacity: monitor.isDragging() ? 0.4 : 1,
+      isDragging: monitor.isDragging(),
+    }),
+    canDrag: !isDisabled || (window.event as any)?.ctrlKey, // Allow dragging even if assigned when Ctrl is held
   });
   
-  return legacyFormat;
+  // Add visual feedback when Ctrl is held
+  const [isCtrlHeld, setIsCtrlHeld] = React.useState(false);
+  
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        setIsCtrlHeld(true);
+      }
+    };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.metaKey) {
+        setIsCtrlHeld(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+  
+  const isEquipment = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
+                       'roller', 'dozer', 'payloader', 'equipment'].includes(resource.type);
+  
+  // Get truck configuration if this is a truck
+  const getTruckConfiguration = () => {
+    if (resource.type !== 'truck') return null;
+    
+    // Check if this is a 10W truck - they don't have F/B or D/T configurations
+    const tenWheelUnits = ['389', '390', '391', '392', '393', '394', '395', '396', '397', '398', '399'];
+    const unitNumber = resource.identifier || '';
+    if (tenWheelUnits.includes(unitNumber)) {
+      return null; // 10W trucks don't have configurations
+    }
+    
+    // If we have an assignment ID, get the specific config for this assignment
+    if (assignmentId) {
+      const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
+      const config = truckConfigs[assignmentId];
+      console.log(`ResourceCard - Getting truck config for assignment ${assignmentId}:`, config);
+      console.log('All truck configs in localStorage:', truckConfigs);
+      return config || null;
+    }
+    
+    // If no assignment ID (resource pool), return null
+    return null;
+  };
+  
+  // Get the truck configuration
+  const truckConfig = getTruckConfiguration();
+ 
+  // Check if this truck type can have configurations
+  const canHaveTrailerConfig = () => {
+    if (resource.type !== 'truck') return false;
+    
+    // Only trac trucks can have flowboy/dump-trailer configurations
+    const tracTruckUnits = ['43', '44', ...Array.from({length: 28}, (_, i) => (49 + i).toString())]; // 49-76
+    const unitNumber = resource.identifier || '';
+    
+    return tracTruckUnits.includes(unitNumber);
+  };
+  
+  // Only return config if truck can have trailer configurations
+  const finalTruckConfig = canHaveTrailerConfig() ? truckConfig : null;
+  
+  // Clean up invalid configurations from localStorage
+  if (resource.type === 'truck' && assignmentId && truckConfig && !canHaveTrailerConfig()) {
+    console.log('🧹 Cleaning invalid truck config for non-trac truck:', resource.identifier);
+  }
+  
+  // Handle click for personnel
+  const handleClick = (e: React.MouseEvent) => {
+    // Handle clicks for any resource when onPersonClick is provided and not disabled
+    // This includes personnel AND trucks (for adding notes to assignments)
+    if (onPersonClick && !isDisabled) {
+      e.stopPropagation();
+      e.preventDefault();
+      console.log('ResourceCard clicked, calling onPersonClick for:', resource.name);
+      onPersonClick();
+    }
+  };
+  
+  // Debug log for truck display
+  if (resource.type === 'truck' && assignmentId) {
+    console.log(`ResourceCard rendering truck ${resource.identifier} with assignmentId ${assignmentId} and config:`, finalTruckConfig);
+  }
+  
+  // Get assigned driver for trucks
+  const assignedDriver = resource.type === 'truck' ? getTruckDriver(resource.id) : null;
+  
+  // Clean driver name
+  const cleanDriverName = (name: string) => {
+    return name.replace(/\([^)]*\)\s*/g, '');
+  };
+  
+  const getCardStyle = () => {
+    return isDisabled ? 'bg-gray-300 text-gray-500' : getResourceStyle(resource.type);
+  };
+  
+  // Border style based on resource type
+  const getBorderStyle = () => {
+    if (isDisabled) return 'border border-gray-400';
+    
+    // Check if this resource is working a night shift or double shift
+    const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+    const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
+    const hasNightJob = assignedJobs.some(job => job.shift === 'night');
+    const hasDayJob = assignedJobs.some(job => job.shift === 'day');
+    const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
+    const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
+    
+  };
+  
+  // Add specific styling based on the card's role in the attachment group
+  const attachmentStyle = () => {
+    if (isMain) {
+      return 'rounded-md shadow-md';
+    } else if (isAttached) {
+      return 'rounded-md shadow-sm';
+    }
+    return 'rounded-md shadow-sm';
+  };
+  
+  // Clean parenthetical names like "(Monte) Alexander Sabo" to just "Alexander Sabo"
+  const cleanName = (name: string) => {
+    return name.replace(/\([^)]*\)\s*/g, '');
+  };
+  
+  // Parse name into components for display (max 2 lines)
+  const parseNameForDisplay = (fullName: string) => {
+    const cleanedName = cleanName(fullName).trim();
+    const nameParts = cleanedName.split(' ');
+    
+    // For names with 2 or fewer parts, use standard first/last split
+    if (nameParts.length <= 2) {
+      return { 
+        line1: nameParts[0] || '', 
+        line2: nameParts[1] || ''
+      };
+    }
+    
+    // For names with more than 2 parts, put first name on line 1, rest on line 2
+    return {
+      line1: nameParts[0],
+      line2: nameParts.slice(1).join(' ')
+    };
+  };
+  
+  const { line1, line2 } = parseNameForDisplay(resource.name);
+  
+  // Width style - using fixed width rather than full width
+  const widthStyle = isMobile ? 'w-20' : 'w-24'; // Smaller on mobile
+  const compactStyle = isCompact ? 'scale-90 origin-left' : '';
+  
+  // Extract model and number for equipment display
+  const parseEquipmentName = () => {
+    if (!isEquipment && resource.type !== 'truck') return { model: "", number: "" };
+    
+    // For trucks, handle the display with configuration
+    if (resource.type === 'truck') {
+      // Get unit number for truck type determination
+      const unitNumber = resource.identifier || '';
+      const truckType = getTruckType(unitNumber);
+      
+      return { 
+        model: `#${unitNumber}`, 
+        number: truckType 
+      };
+    }
+    
+    const match = resource.name.match(/^(.+)\s+#(.+)$/);
+    if (match) {
+      return { model: match[1], number: match[2] };
+    }
+    return { model: resource.name, number: "" };
+  };
+  
+  const { model, number } = parseEquipmentName();
+  
+  const isPersonnel = !isEquipment && resource.type !== 'truck';
+  
+  // Resource pool view
+  if (isResourcePool) {
+    // Resource pool card with consistent height for both personnel and equipment
+    return (
+      <div 
+        ref={drag}
+        style={{ opacity }}
+        className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyle()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
+          isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-move'
+        } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${
+          isPersonnel && !isDisabled && onPersonClick ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
+        }`}
+        onClick={handleClick}
+        onDragStart={(e) => {
+          // Store Ctrl key state globally for drag operations
+          // Also store the current drag item for visual feedback with enhanced context
+          (window as any).currentDragItem = {
+            resource,
+            isSecondShift: getIsCtrlHeld(),
+            dragStartTime: Date.now(),
+            sourceLocation: 'resource-pool'
+          };
+        }}
+      >
+        {(isEquipment || resource.type === 'truck') ? (
+          <>
+            <div className={`text-xs font-medium text-center truncate ${resource.type === 'truck' ? 'text-white' : ''}`} 
+                 title={resource.type === 'truck' ? `Config: ${finalTruckConfig || 'none'}` : undefined}>
+              {resource.type === 'truck' ? 
+                `#${resource.identifier || ''}${finalTruckConfig === 'flowboy' ? ' F/B' : finalTruckConfig === 'dump-trailer' ? ' D/T' : ''}` : 
+                model}
+            </div>
+            {resource.type !== 'truck' && (
+              <div className={`text-[9px] text-center font-bold`}>
+                {number ? `#${number}` : ''}
+              </div>
+            )}
+            {/* Show assigned driver for trucks */}
+            {resource.type === 'truck' && assignedDriver && (
+              <div className="text-[9px] text-center text-gray-300 truncate">
+                {cleanName(assignedDriver.name)}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="text-xs font-medium text-center truncate">
+              {line1}
+            </div>
+            {line2 && (
+              <div className="text-[7px] text-center opacity-80 truncate">
+                {line2}
+              </div>
+            )}
+            {assignedTruckNumber ? (
+              <div className="text-[6px] text-center text-red-600 font-semibold truncate">
+                Assigned #{assignedTruckNumber}
+              </div>
+            ) : (!line2 && resource.identifier) ? (
+              <div className="text-[9px] text-center opacity-80 truncate">
+                {resource.identifier}
+              </div>
+            ) : null}
+          </>
+        )}
+        
+        {/* On-site indicator for vehicles */}
+        {(resource.type === 'truck' || resource.type === 'sweeper') && resource.onSite === true && (
+          <div className="absolute bottom-0.5 right-0.5 bg-green-600 text-white text-[8px] font-bold px-1 py-0.5 rounded z-40">
+            O.S
+          </div>
+        )}
+        
+        {/* Note indicator */}
+        {hasNote && (
+          <StickyNote 
+            size={16} 
+            className="absolute -bottom-1 -right-1 text-yellow-600 bg-yellow-100 rounded-full p-0.5 shadow-md border border-yellow-300 z-40" 
+          />
+        )}
+        
+        {/* Double shift indicator */}
+        {showDoubleShift && (
+          <div className="absolute -top-1 -left-1 bg-purple-600 text-white text-[8px] font-bold px-1 py-0.5 rounded-full shadow-md z-40">
+            2X
+          </div>
+        )}
+        
+        {/* Off-site warning indicator */}
+        {(dragIsDragging || !isResourcePool) && ['skidsteer', 'paver', 'excavator', 'millingMachine', 'roller', 'dozer', 'payloader', 'equipment'].includes(resource.type) && resource.onSite !== true && (
+          <div 
+            className="absolute -top-2 -left-2 bg-orange-500 text-white p-0.5 rounded-full shadow-md z-40"
+            title={`Needs to be moved from ${resource.location || 'current location'}`}
+          >
+            <span className="text-[10px] font-bold">⚠</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Assignment view - keep same height as resource pool for consistency
+  return (
+    <div 
+      ref={isMain || isAttached ? null : drag}
+      style={{ opacity }}
+      className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyle()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
+        isDisabled ? 'cursor-not-allowed opacity-60' : (isMain || isAttached ? 'cursor-default' : 'cursor-move')
+      } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${
+        isPersonnel && !isDisabled && onPersonClick ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
+      }`}
+      onClick={handleClick}
+      onDragStart={(e) => {
+        // Store Ctrl key state globally for drag operations
+        (window as any).dragCtrlKey = e.ctrlKey;
+        // Also store the current drag item for visual feedback
+        (window as any).currentDragItem = {
+          resource,
+          isSecondShift: e.ctrlKey
+        };
+      }}
+    >
+      {resource.type === 'truck' ? (
+        <>
+          <div className="text-[9px] font-medium text-center truncate text-white" title={`Truck config: ${finalTruckConfig || 'none'}`}>
+            #{resource.identifier || ''}{finalTruckConfig === 'flowboy' ? ' F/B' : finalTruckConfig === 'dump-trailer' ? ' D/T' : ''}
+          </div>
+          {assignedDriver && (
+            <div className="text-[9px] text-center text-gray-300 truncate">
+              {cleanDriverName(assignedDriver.name)}
+            </div>
+          )}
+        </>
+      ) : (isEquipment ? (
+        <>
+          <div className="text-xs font-medium text-center truncate">
+            {model}
+          </div>
+          <div className="text-[9px] text-center font-bold">
+            {number ? `#${number}` : ''}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="text-xs font-medium text-center truncate">
+            {line1}
+          </div>
+          {line2 && (
+            <div className="text-[9px] text-center opacity-80 truncate">
+              {line2}
+            </div>
+          )}
+          {!line2 && resource.identifier && (
+            <div className="text-[9px] text-center opacity-80 truncate">
+              {resource.identifier}
+            </div>
+          )}
+        </>
+      ))}
+      
+      {/* On-site indicator for vehicles */}
+      {(resource.type === 'truck' || resource.type === 'sweeper') && resource.onSite === true && (
+        <div className="absolute bottom-0.5 right-0.5 bg-green-600 text-white text-[8px] font-bold px-1 py-0.5 rounded z-40">
+          O.S
+        </div>
+      )}
+      
+      {/* Note indicator */}
+      {hasNote && (
+        <StickyNote 
+          size={16} 
+          className="absolute -bottom-1 -right-1 text-yellow-600 bg-yellow-100 rounded-full p-0.5 shadow-md border border-yellow-300 z-40" 
+        />
+      )}
+      
+      {/* Off-site warning indicator */}
+      {(dragIsDragging || !isResourcePool) && isEquipment && resource.onSite !== true && (
+        <div 
+          className="absolute -top-2 -left-2 bg-orange-500 text-white p-0.5 rounded-full shadow-md z-40"
+          title={`Needs to be moved from ${resource.location || 'current location'}`}
+        >
+          <span className="text-[10px] font-bold">⚠</span>
+        </div>
+      )}
+    </div>
+  );
 };
+
+export default ResourceCard;
