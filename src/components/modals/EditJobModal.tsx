@@ -11,6 +11,7 @@ interface EditJobModalProps {
 
 const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose }) => {
   const { updateJob } = useScheduler();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [editedJob, setEditedJob] = useState<Job>({
     id: job.id,
@@ -46,8 +47,11 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose }) => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    setIsSubmitting(true);
+    try {
     // Add competitor plant to plants array if specified
     const basePlants = (editedJob.plants || []).filter(plant => 
       ['Lydel', 'East Island'].includes(plant)
@@ -57,11 +61,16 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose }) => {
       finalPlants.push(competitorPlant.trim());
     }
     
-    updateJob({
+    await updateJob({
       ...editedJob,
       plants: finalPlants
     });
     onClose();
+    } catch (error) {
+      console.error('Error updating job:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
@@ -290,9 +299,17 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Update Job
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Updating...
+                </>
+              ) : (
+                'Update Job'
+              )}
             </button>
           </div>
         </form>

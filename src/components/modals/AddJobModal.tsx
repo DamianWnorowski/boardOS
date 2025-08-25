@@ -10,6 +10,7 @@ interface AddJobModalProps {
 
 const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
   const { addJob } = useScheduler();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newJob, setNewJob] = useState<Omit<Job, 'id'>>({
     name: '',
@@ -38,19 +39,28 @@ const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    setIsSubmitting(true);
+    try {
     // Add competitor plant to plants array if specified
     const finalPlants = [...(newJob.plants || [])];
     if (competitorPlant.trim()) {
       finalPlants.push(competitorPlant.trim());
     }
     
-    addJob({
+    await addJob({
       ...newJob,
       plants: finalPlants
     });
     onClose();
+    } catch (error) {
+      console.error('Error creating job:', error);
+      // Error handling is done in the context, just show user feedback here if needed
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
@@ -269,9 +279,17 @@ const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Add Job
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Add Job'
+              )}
             </button>
           </div>
         </form>

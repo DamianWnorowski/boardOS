@@ -29,7 +29,6 @@ interface JobRowProps {
 const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const { 
     getResourcesByAssignment, 
-    assignResource,
     assignResourceWithTruckConfig,
     moveAssignmentGroup,
     getJobById,
@@ -202,7 +201,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           // Mark as handled to prevent duplicate processing
           (item as any)._handled = true;
           
-          const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
+          const assignmentId = await assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
           logger.debug('Assignment created:', assignmentId);
           return { jobId, rowType, assignmentId };
         }
@@ -213,14 +212,14 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             logger.debug('Second shift assignment - creating new assignment for resource');
             (item as any)._handled = true;
             const position = assignments.length;
-            const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
+            const assignmentId = await assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
             logger.debug('Second shift assignment created:', assignmentId);
             return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {
             logger.debug('Moving assignment group');
             (item as any)._handled = true;
             const assignmentIds = item.assignments.map(a => a.id);
-            const newAssignmentId = moveAssignmentGroup(item.assignments, jobId, rowType);
+            const newAssignmentId = await moveAssignmentGroup(item.assignments, jobId, rowType);
             logger.debug('Assignment group moved:', newAssignmentId);
             return { jobId, rowType, assignmentId: newAssignmentId };
           }
@@ -341,24 +340,19 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     logger.debug('handleTruckConfigSelect called with config:', config, 'for truck:', pendingTruckDrop.resourceId);
    
     // Create the assignment
-    const assignmentId = assignResource(
+    assignResourceWithTruckConfig(
       pendingTruckDrop.resourceId, 
       pendingTruckDrop.jobId, 
-      pendingTruckDrop.rowType, 
+      pendingTruckDrop.rowType,
+      config,
       pendingTruckDrop.position
-    );
+    ).then(assignmentId => {
+      logger.debug('Assignment created with ID:', assignmentId);
+      setPendingTruckDrop(null);
+    }).catch(error => {
+      logger.error('Error creating truck assignment:', error);
+    });
     
-    logger.debug('Assignment created with ID:', assignmentId);
-   
-    // Store the configuration
-    const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
-    truckConfigs[assignmentId] = config;
-    localStorage.setItem('truck-configurations', JSON.stringify(truckConfigs));
-    
-    logger.debug('Stored truck config:', config, 'for assignment:', assignmentId);
-    logger.debug('All truck configs:', truckConfigs);
-   
-    setPendingTruckDrop(null);
   };
   
   // Handle truck config modal close

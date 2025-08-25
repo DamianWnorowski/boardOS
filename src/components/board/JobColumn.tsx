@@ -15,11 +15,12 @@ interface JobColumnProps {
 }
 
 const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
-  const { removeJob, getJobNotes, finalizeJob, unfinalizeJob, assignments, getResourceById } = useScheduler();
+  const { removeJob, getJobNotes, finalizeJob, unfinalizeJob, assignments, getResourceById, isLoading } = useScheduler();
   const { openModal, closeModal, getZIndex } = useModal();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSendSMSModalOpen, setIsSendSMSModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Get all notes for this job
   const jobNotes = getJobNotes(job.id);
@@ -63,9 +64,16 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
     setIsExpanded(!isExpanded);
   };
   
-  const handleRemoveJob = () => {
+  const handleRemoveJob = async () => {
     if (confirm('Are you sure you want to remove this job?')) {
-      removeJob(job.id);
+      setIsProcessing(true);
+      try {
+        await removeJob(job.id);
+      } catch (error) {
+        console.error('Error removing job:', error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
   
@@ -79,10 +87,17 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
     closeModal('edit-job');
   };
 
-  const handleFinalizeJob = () => {
+  const handleFinalizeJob = async () => {
     if (job.finalized) {
       if (confirm('Are you sure you want to unfinalize this job? This will allow editing again.')) {
-        unfinalizeJob(job.id);
+        setIsProcessing(true);
+        try {
+          await unfinalizeJob(job.id);
+        } catch (error) {
+          console.error('Error unfinalizing job:', error);
+        } finally {
+          setIsProcessing(false);
+        }
       }
     } else {
       // Check if job has assignments
@@ -93,7 +108,14 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
       }
       
       if (confirm('Are you sure you want to finalize this job? This will lock it from editing and mark it ready for export.')) {
-        finalizeJob(job.id);
+        setIsProcessing(true);
+        try {
+          await finalizeJob(job.id);
+        } catch (error) {
+          console.error('Error finalizing job:', error);
+        } finally {
+          setIsProcessing(false);
+        }
       }
     }
   };

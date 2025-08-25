@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { useModal } from '../../context/ModalContext';
 import JobColumn from './JobColumn';
@@ -7,7 +7,7 @@ import AddJobModal from '../modals/AddJobModal';
 import ErrorBoundary from '../common/ErrorBoundary';
 
 const Board: React.FC = () => {
-  const { jobs } = useScheduler();
+  const { jobs, isLoading } = useScheduler();
   const { openModal, closeModal, getZIndex } = useModal();
   const [isAddJobModalOpen, setIsAddJobModalOpen] = useState(false);
   
@@ -24,6 +24,14 @@ const Board: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="flex-1 overflow-x-auto bg-slate-100">
+        {isLoading && (
+          <div className="p-4 bg-blue-50 border border-blue-200">
+            <div className="flex items-center space-x-2">
+              <Loader2 size={16} className="animate-spin text-blue-600" />
+              <span className="text-blue-800 text-sm">Syncing with database...</span>
+            </div>
+          </div>
+        )}
         <div className="p-4 min-w-max">
           <div className="flex space-x-4">
             {jobs.map(job => (

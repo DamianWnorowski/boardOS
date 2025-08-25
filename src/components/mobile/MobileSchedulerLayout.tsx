@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Calendar, Users, Briefcase, Menu, X } from 'lucide-react';
+import { Calendar, Users, Briefcase, Menu, X, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useMobile } from '../../context/MobileContext';
+import { useScheduler } from '../../context/SchedulerContext';
 import MobileJobCard from './MobileJobCard';
 import MobileResourcePool from './MobileResourcePool';
 import EditJobModal from '../modals/EditJobModal';
-import { useOptimizedScheduler } from '../../hooks/useOptimizedScheduler';
 import { Job } from '../../types';
 
 type MobileTab = 'jobs' | 'resources' | 'schedule';
 
 const MobileSchedulerLayout: React.FC = () => {
   const { isMobile } = useMobile();
-  const { jobs } = useOptimizedScheduler();
+  const { jobs, isLoading, error, refreshData } = useScheduler();
   const [activeTab, setActiveTab] = useState<MobileTab>('jobs');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -32,6 +32,51 @@ const MobileSchedulerLayout: React.FC = () => {
     { id: 'schedule' as const, label: 'Schedule', icon: Calendar, count: null },
   ];
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen flex flex-col bg-gray-100">
+        <header className="bg-slate-800 text-white shadow-lg">
+          <div className="px-4 py-3">
+            <h1 className="text-lg font-bold">Construction Scheduler</h1>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4 mx-auto"></div>
+            <p className="text-gray-600">Loading schedule data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="h-screen flex flex-col bg-gray-100">
+        <header className="bg-slate-800 text-white shadow-lg">
+          <div className="px-4 py-3">
+            <h1 className="text-lg font-bold">Construction Scheduler</h1>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md mx-4">
+            <AlertTriangle size={48} className="text-red-500 mb-4 mx-auto" />
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Database Connection Error</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={refreshData}
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors mx-auto"
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* Header */}
