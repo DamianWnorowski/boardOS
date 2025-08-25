@@ -443,6 +443,11 @@ const MobileDragLayer: React.FC = () => {
     if (!item) return null;
 
     const feedbackInfo = getDragFeedbackInfo();
+    const borderColorClass = feedbackInfo.color.includes('red') ? 'border-red-400' :
+      feedbackInfo.color.includes('orange') ? 'border-orange-400' :
+      feedbackInfo.color.includes('purple') ? 'border-purple-400' :
+      feedbackInfo.color.includes('teal') ? 'border-teal-400' : 'border-blue-400';
+      
     console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
     console.log('🎨 MobileDragLayer color check:', {
       color: feedbackInfo.color,
