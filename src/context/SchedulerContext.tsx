@@ -176,22 +176,30 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
+    // Prevent multiple concurrent population attempts
+    if (checkAndPopulateResources._isRunning) {
+      logger.debug('Resource population already in progress, skipping');
+      return;
+    }
+    checkAndPopulateResources._isRunning = true;
+
     try {
       logger.debug('Checking if resources need to be populated...');
       const { data: existingResources, error } = await supabase
         .from('resources')
         .select('id')
-        .limit(1);
+        .limit(10); // Check more than 1 to be sure
 
       if (error) {
         logger.error('Error checking existing resources:', error);
+        checkAndPopulateResources._isRunning = false;
         return;
       }
 
       logger.debug('Existing resources check result:', { count: existingResources?.length || 0 });
 
-      // If no resources exist, populate from data files
-      if (!existingResources || existingResources.length === 0) {
+      // Only populate if we have fewer than 10 resources to avoid duplicates
+      if (!existingResources || existingResources.length < 10) {
         logger.info('No resources found in database, populating from data files...');
         
         const personnelResources = convertPersonnelToResources();
@@ -204,8 +212,69 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           totalCount: allResources.length
         });
 
-        // Insert all resources
-        const { error: insertError } = await supabase
+        // Insert resources in smaller batches to avoid overwhelming the database
+        const batchSize = 50;
+        let insertedCount = 0;
+        
+        for (let i = 0; i < allResources.length; i += batchSize) {
+          const batch = allResources.slice(i, i + batchSize);
+          
+          const { error: insertError } = await supabase
+            .from('resources')
+            .insert(batch.map(resource => ({
+              type: resource.type,
+              class_type: resource.classType,
+              name: resource.name,
+              identifier: resource.identifier,
+              model: resource.model,
+              vin: resource.vin,
+              location: resource.location,
+              on_site: resource.onSite || false
+            })));
+
+          if (insertError) {
+            logger.error(`Error inserting batch ${i}-${i + batch.length}:`, insertError);
+            // Continue with other batches instead of failing completely
+          } else {
+            insertedCount += batch.length;
+            logger.debug(`Inserted batch ${i}-${i + batch.length} successfully`);
+          }
+        }
+
+        if (insertedCount > 0) {
+          logger.info('Successfully populated resources from data files', {
+            count: insertedCount
+          });
+          // Reload data to get the newly inserted resources
+          await loadScheduleData();
+        } else {
+          logger.error('Failed to insert any resources');
+        }
+      } else {
+        logger.debug('Resources already exist in database, skipping population');
+      }
+    } catch (err) {
+      logger.error('Error in checkAndPopulateResources:', err);
+    } finally {
+      checkAndPopulateResources._isRunning = false;
+    }
+  }, [loadScheduleData]);
+
+  // Add a flag to prevent concurrent execution
+  (checkAndPopulateResources as any)._isRunning = false;
+
+  // Check and populate resources after initial load with debouncing
+  useEffect(() => {
+    // Only run if not loading, no error, no resources, and not already running
+    if (!isLoading && !error && resources.length === 0 && !(checkAndPopulateResources as any)._isRunning) {
+      // Add a small delay to prevent rapid-fire execution
+      const timer = setTimeout(() => {
+        checkAndPopulateResources();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, error, resources.length, checkAndPopulateResources]);
           .from('resources')
           .insert(allResources.map(resource => ({
             type: resource.type,
