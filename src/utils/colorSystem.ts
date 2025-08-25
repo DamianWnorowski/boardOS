@@ -111,9 +111,9 @@ export const RESOURCE_COLORS: Record<ResourceType, ResourceColors> = {
  * Shift status border colors
  */
 export const SHIFT_STATUS_BORDERS = {
-  doubleShift: 'border-2 border-red-500',        // Red for day + night
-  multipleDayJobs: 'border-2 border-teal-500',   // Teal for 2+ day jobs  
-  nightShiftOnly: 'border-2 border-orange-500'   // Orange for night only
+  doubleShift: 'border-2 border-red-500',            // Red for day + night
+  multipleDayJobs: 'border-2 border-teal-500',       // Teal for 2+ day jobs  
+  nightShiftOnly: 'border-2 border-orange-500'       // Orange for night only
 };
 
 /**
