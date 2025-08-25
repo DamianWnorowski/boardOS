@@ -114,49 +114,65 @@ export class DatabaseService {
   // Get all schedule data
   static async getAllScheduleData() {
     try {
-      const [employeesResult, equipmentResult, jobsResult, assignmentsResult, rulesResult, dropRulesResult] = await Promise.all([
-        supabase.from('employees').select('*').order('name'),
-        supabase.from('equipment').select('*').order('name'),
+      const [resourcesResult, jobsResult, assignmentsResult, rulesResult, dropRulesResult] = await Promise.all([
+        supabase.from('resources').select('*').order('name'),
         supabase.from('jobs').select('*').order('created_at', { ascending: false }),
         supabase.from('assignments').select('*').order('created_at'),
         supabase.from('magnet_interaction_rules').select('*'),
         supabase.from('drop_rules').select('*')
       ]);
 
-      if (employeesResult.error) throw employeesResult.error;
-      if (equipmentResult.error) throw equipmentResult.error;
+      if (resourcesResult.error) {
+        logger.error('Error fetching resources:', resourcesResult.error);
+        throw resourcesResult.error;
+      }
       if (jobsResult.error) throw jobsResult.error;
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (rulesResult.error) throw rulesResult.error;
       if (dropRulesResult.error) throw dropRulesResult.error;
 
-      // Transform data - combine employees and equipment into unified resources
-      const employees = employeesResult.data.map(this.transformDbEmployee);
-      const equipment = equipmentResult.data.map(this.transformDbEquipment);
+      logger.debug('Raw resources data from DB:', resourcesResult.data);
       
-      // Convert to unified Resource format for backward compatibility
-      const resources: Resource[] = [
-        ...employees.map(emp => ({
-          id: emp.id,
-          type: emp.type,
-          classType: 'employee' as const,
-          name: emp.name,
-          identifier: emp.employeeId,
-          location: emp.address,
-          onSite: false
-        })),
-        ...equipment.map(eq => ({
-          id: eq.id,
-          type: eq.type,
-          classType: 'equipment' as const,
-          name: eq.name,
-          identifier: eq.identifier,
-          model: eq.model,
-          vin: eq.vin,
-          location: eq.location,
-          onSite: eq.onSite
-        }))
-      ];
+      // Transform resources data
+      const resources: Resource[] = resourcesResult.data.map(this.transformDbResource);
+      
+      // Split into employees and equipment for compatibility
+      const employees = resources.filter(r => r.classType === 'employee').map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        type: r.type,
+        name: r.name,
+        employeeId: r.identifier,
+        role: r.type,
+        certifications: [],
+        skills: [],
+        permissions: [],
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      
+      const equipment = resources.filter(r => r.classType === 'equipment').map(r => ({
+        id: r.id,
+        type: r.type,
+        name: r.name,
+        identifier: r.identifier,
+        model: r.model,
+        vin: r.vin,
+        location: r.location,
+        onSite: r.onSite || false,
+        isOperational: true,
+        isActive: true,
+        engineHours: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      
+      logger.debug('Transformed data:', {
+        resourcesCount: resources.length,
+        employeesCount: employees.length,
+        equipmentCount: equipment.length
+      });
       
       const jobs = jobsResult.data.map(this.transformDbJob);
       const assignments = assignmentsResult.data.map(this.transformDbAssignment);

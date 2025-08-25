@@ -177,6 +177,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
     try {
+      logger.debug('Checking if resources need to be populated...');
       const { data: existingResources, error } = await supabase
         .from('resources')
         .select('id')
@@ -187,6 +188,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
+      logger.debug('Existing resources check result:', { count: existingResources?.length || 0 });
+
       // If no resources exist, populate from data files
       if (!existingResources || existingResources.length === 0) {
         logger.info('No resources found in database, populating from data files...');
@@ -195,11 +198,18 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const equipmentResources = convertEquipmentToResources();
         const allResources = [...personnelResources, ...equipmentResources];
 
+        logger.debug('Resources to insert:', {
+          personnelCount: personnelResources.length,
+          equipmentCount: equipmentResources.length,
+          totalCount: allResources.length
+        });
+
         // Insert all resources
         const { error: insertError } = await supabase
           .from('resources')
           .insert(allResources.map(resource => ({
             type: resource.type,
+            class_type: resource.classType,
             name: resource.name,
             identifier: resource.identifier,
             model: resource.model,
@@ -217,6 +227,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           // Reload data to get the newly inserted resources
           await loadScheduleData();
         }
+      } else {
+        logger.debug('Resources already exist in database, skipping population');
       }
     } catch (err) {
       logger.error('Error in checkAndPopulateResources:', err);
