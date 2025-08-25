@@ -387,20 +387,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             await loadScheduleData();
           }
         }
-      } catch (err) {
-        // Ignore polling errors
-      }
-    }, 5000); // Poll every 5 seconds
-
-    logger.debug('Real-time subscriptions setup complete');
-    return () => {
-      cleanup();
-      clearInterval(pollInterval);
-    };
-  }, [loadScheduleData, assignments.length]);
-            const updated = prev.filter(a => a.id !== payload.old.id);
-            logger.debug('🔄 Assignments after DELETE:', { count: updated.length });
-            return updated;
+            const filtered = prev.filter(a => a.id !== payload.old.id);
+            logger.debug('🔄 Assignments after DELETE:', { count: filtered.length });
+            return filtered;
           });
         }
       },
