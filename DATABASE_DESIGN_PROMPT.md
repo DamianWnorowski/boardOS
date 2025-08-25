@@ -102,6 +102,36 @@ Design a complete PostgreSQL database schema for a construction workforce manage
 - **Dashboards**: Real-time operational dashboards, executive summaries, trend analysis
 - **Custom Reporting**: Ad-hoc queries, scheduled reports, data exports, integration APIs
 
+## Current System Analysis
+
+### Existing Tables (to be enhanced)
+1. **users**: Basic user profiles - needs expansion for complete personnel management
+2. **resources**: Equipment and personnel catalog - needs detailed specifications and maintenance tracking
+3. **jobs**: Project basic info - needs comprehensive project management features
+4. **assignments**: Resource-job mappings - needs enhanced scheduling and time tracking
+5. **magnet_interaction_rules**: Business rules - needs expansion for complex scenarios
+6. **drop_rules**: UI interaction rules - adequate but could be enhanced
+7. **job_row_configs**: Job layout configuration - needs more flexibility
+8. **audit_logs**: Change tracking - needs enhancement for compliance
+9. **truck_driver_assignments**: Vehicle-operator mapping - needs generalization
+
+### Missing Critical Tables
+1. **contacts**: Phone numbers, addresses, emergency contacts
+2. **certifications**: License and certification management
+3. **skills**: Skill tracking and proficiency assessment
+4. **equipment_maintenance**: Maintenance schedules and history
+5. **projects**: Full project lifecycle management
+6. **clients**: Customer relationship management
+7. **contracts**: Legal and financial agreements
+8. **materials**: Inventory and supply chain management
+9. **safety_incidents**: Safety program management
+10. **time_tracking**: Detailed time and attendance
+11. **financial_transactions**: Cost and billing management
+12. **documents**: Document storage and management
+13. **communication_log**: Message and notification history
+14. **weather_data**: Weather impact tracking
+15. **quality_control**: Quality assurance and testing
+
 ## Database Design Requirements
 
 ### Technology Stack
@@ -170,6 +200,44 @@ Design a complete PostgreSQL database schema for a construction workforce manage
 - **Materialized Views**: Complex reporting and analytics
 - **Partitioning**: Large table performance optimization
 - **Replication**: High availability and disaster recovery
+
+## Specific Construction Industry Requirements
+
+### Equipment Management
+- **Asset Hierarchy**: Equipment categories, subcategories, and models
+- **Operational Status**: On-site, off-site, in-transit, maintenance, retired
+- **Configuration Tracking**: Truck configurations (flowboy, dump-trailer, 10W)
+- **Attachment Relationships**: Equipment-to-equipment connections (paver + roller)
+- **Maintenance Schedules**: Preventive maintenance, inspections, repairs
+- **Performance Metrics**: Hours operated, fuel consumption, productivity
+
+### Workforce Specialization
+- **Role Hierarchies**: Foreman → Operator → Laborer progression
+- **Skill Certifications**: Equipment operation, safety, specialized tasks
+- **Union Integration**: Local membership, dues, work rules
+- **Safety Training**: OSHA compliance, equipment-specific training
+- **Performance Reviews**: Productivity, safety record, reliability
+
+### Project Types & Workflows
+- **Construction Types**: Milling, paving, drainage, stripping, maintenance
+- **Shift Operations**: Day/night crews, overtime management, rotation
+- **Resource Allocation**: Equipment-crew combinations, efficiency optimization
+- **Quality Control**: Material testing, work inspection, compliance verification
+- **Weather Integration**: Weather-dependent scheduling, delay tracking
+
+### Financial & Contract Management
+- **Project Costing**: Labor, equipment, materials, overhead allocation
+- **Change Orders**: Scope changes, cost adjustments, approval workflows
+- **Progress Billing**: Milestone-based invoicing, retention tracking
+- **Vendor Management**: Subcontractors, suppliers, service providers
+- **Insurance Tracking**: Coverage verification, claims management
+
+### Safety & Regulatory Compliance
+- **Incident Reporting**: Accidents, near-misses, property damage
+- **Training Records**: Safety certifications, refresher training
+- **Inspection Logs**: Equipment inspections, site safety audits
+- **Regulatory Reporting**: OSHA reporting, environmental compliance
+- **Risk Assessment**: Hazard identification, mitigation planning
 
 ## Expected Deliverables
 
