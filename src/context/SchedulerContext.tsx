@@ -177,10 +177,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
     try {
-      // Skip population - data should come from migration
-      logger.info('Skipping resource population - using database migration data');
-      return;
-      
       const { data: existingResources, error } = await supabase
         .from('resources')
         .select('id')
@@ -229,10 +225,10 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Check and populate resources after initial load
   useEffect(() => {
-    if (!isLoading && resources.length === 0) {
+    if (!isLoading && !error && resources.length === 0) {
       checkAndPopulateResources();
     }
-  }, [isLoading, resources.length, checkAndPopulateResources]);
+  }, [isLoading, error, resources.length, checkAndPopulateResources]);
 
   // Set up real-time subscriptions
   useEffect(() => {
