@@ -324,11 +324,14 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           old: payload.old
         });
         
+        // Force immediate state update for assignments
         if (payload.eventType === 'INSERT') {
           const newAssignment = DatabaseService.transformDbAssignment(payload.new);
           logger.debug('🔄 Adding new assignment to state:', newAssignment);
           setAssignments(prev => {
-            const updated = [...prev, { ...newAssignment, attachments: [] }];
+            // Ensure we don't add duplicates
+            const filtered = prev.filter(a => a.id !== newAssignment.id);
+            const updated = [...filtered, { ...newAssignment, attachments: [] }];
             logger.debug('🔄 Assignments after INSERT:', { count: updated.length });
             return updated;
           });
@@ -347,6 +350,54 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } else if (payload.eventType === 'DELETE') {
           logger.debug('🔄 Removing assignment from state:', payload.old.id);
           setAssignments(prev => {
+            // Also remove any assignments that were attached to this one
+            const filtered = prev.filter(a => a.id !== payload.old.id && a.attachedTo !== payload.old.id);
+            logger.debug('🔄 Assignments after DELETE:', { count: filtered.length });
+            return filtered;
+          });
+          
+          // Update remaining assignments to remove references to deleted assignment
+          setAssignments(prev => prev.map(a => ({
+            ...a,
+            attachments: (a.attachments || []).filter(id => id !== payload.old.id)
+          })));
+        }
+      }
+    });
+
+    // Also set up a manual polling fallback in case real-time fails
+    const pollInterval = setInterval(async () => {
+      try {
+        // Get current assignment count from database
+        const { data: dbAssignments, error } = await supabase
+          .from('assignments')
+          .select('id')
+          .limit(1000);
+          
+        if (!error && dbAssignments) {
+          const dbCount = dbAssignments.length;
+          const localCount = assignments.length;
+          
+          // If counts differ significantly, reload data
+          if (Math.abs(dbCount - localCount) > 2) {
+            logger.warn('🔄 Assignment count mismatch detected, reloading:', {
+              database: dbCount,
+              local: localCount
+            });
+            await loadScheduleData();
+          }
+        }
+      } catch (err) {
+        // Ignore polling errors
+      }
+    }, 5000); // Poll every 5 seconds
+
+    logger.debug('Real-time subscriptions setup complete');
+    return () => {
+      cleanup();
+      clearInterval(pollInterval);
+    };
+  }, [loadScheduleData, assignments.length]);
             const updated = prev.filter(a => a.id !== payload.old.id);
             logger.debug('🔄 Assignments after DELETE:', { count: updated.length });
             return updated;
@@ -568,6 +619,16 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         row,
         truckConfig
       });
+      
+      // Force immediate UI update by adding to local state
+      // This provides instant feedback while real-time sync catches up
+      setAssignments(prev => {
+        const filtered = prev.filter(a => a.id !== newAssignment.id);
+        const updated = [...filtered, newAssignment];
+        logger.debug('🔄 Force updating assignments state:', { count: updated.length });
+        return updated;
+      });
+      
       return newAssignment.id;
     } catch (err: any) {
       logger.error('Error assigning resource with truck config:', err);
@@ -590,6 +651,33 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const removeAssignment = async (assignmentId: string) => {
     try {
       logger.debug('🗑️ removeAssignment called:', assignmentId);
+      
+      // Force immediate UI update by removing from local state
+      // This provides instant feedback while database operation completes
+      setAssignments(prev => {
+        const assignment = prev.find(a => a.id === assignmentId);
+        if (assignment?.attachments?.length) {
+          // Remove attached assignments too
+          const filtered = prev.filter(a => 
+            a.id !== assignmentId && 
+            !assignment.attachments!.includes(a.id)
+          );
+          logger.debug('🔄 Force removing assignment group from state:', { 
+            removedMain: assignmentId,
+            removedAttached: assignment.attachments,
+            remainingCount: filtered.length 
+          });
+          return filtered;
+        } else {
+          const filtered = prev.filter(a => a.id !== assignmentId);
+          logger.debug('🔄 Force removing single assignment from state:', { 
+            removedId: assignmentId,
+            remainingCount: filtered.length 
+          });
+          return filtered;
+        }
+      });
+      
       // Get assignment to check for attachments
       const assignment = getAssignmentById(assignmentId);
       logger.debug('🗑️ Assignment to remove:', assignment);
@@ -607,6 +695,10 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error removing assignment:', err);
       setError(`Failed to remove assignment: ${err.message}`);
+      
+      // On error, reload data to ensure state consistency
+      logger.debug('🔄 Reloading data due to error...');
+      await loadScheduleData();
       throw err;
     }
   };

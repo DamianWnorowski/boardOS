@@ -676,63 +676,63 @@ export class DatabaseService {
     logger.debug('🔔 Setting up real-time subscriptions...');
     const channels = [];
 
+    // Use single channel with multiple listeners for better reliability
+    const mainChannel = supabase.channel(`schedule-changes-${Date.now()}`);
+
     if (callbacks.onResourceChange) {
-      const resourceChannel = supabase
-        .channel('resources-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, (payload) => {
+      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, (payload) => {
           logger.debug('🔔 Resource subscription triggered:', payload);
           callbacks.onResourceChange!(payload);
-        })
-        .subscribe();
-      logger.debug('🔔 Resource subscription created');
-      channels.push(resourceChannel);
+      });
+      logger.debug('🔔 Resource listener added');
     }
 
     if (callbacks.onJobChange) {
-      const jobChannel = supabase
-        .channel('jobs-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, (payload) => {
+      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, (payload) => {
           logger.debug('🔔 Job subscription triggered:', payload);
           callbacks.onJobChange!(payload);
-        })
-        .subscribe();
-      logger.debug('🔔 Job subscription created');
-      channels.push(jobChannel);
+      });
+      logger.debug('🔔 Job listener added');
     }
 
     if (callbacks.onAssignmentChange) {
-      const assignmentChannel = supabase
-        .channel('assignments-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, (payload) => {
+      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, (payload) => {
           logger.debug('🔔 Assignment subscription triggered:', payload);
+        logger.debug('🔔 Assignment payload details:', {
+          eventType: payload.eventType,
+          new: payload.new,
+          old: payload.old
+        });
           callbacks.onAssignmentChange!(payload);
-        })
-        .subscribe();
-      logger.debug('🔔 Assignment subscription created');
-      channels.push(assignmentChannel);
+      });
+      logger.debug('🔔 Assignment listener added');
     }
 
     if (callbacks.onRuleChange) {
-      const ruleChannel = supabase
-        .channel('rules-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, (payload) => {
+      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, (payload) => {
           logger.debug('🔔 Magnet rule subscription triggered:', payload);
           callbacks.onRuleChange!(payload);
-        })
-        .subscribe();
-      channels.push(ruleChannel);
-
-      const dropRuleChannel = supabase
-        .channel('drop-rules-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, (payload) => {
+      });
+      
+      mainChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, (payload) => {
           logger.debug('🔔 Drop rule subscription triggered:', payload);
           callbacks.onRuleChange!(payload);
-        })
-        .subscribe();
-      channels.push(dropRuleChannel);
+      });
+      logger.debug('🔔 Rule listeners added');
     }
 
-    logger.debug('🔔 All subscriptions setup complete, channel count:', channels.length);
+    // Subscribe to the main channel
+    mainChannel.subscribe((status) => {
+      logger.debug('🔔 Channel subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        logger.debug('🔔 Successfully subscribed to real-time changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        logger.error('🔔 Real-time subscription error');
+      }
+    });
+    
+    channels.push(mainChannel);
+    logger.debug('🔔 All subscriptions setup complete');
     
     return () => {
       logger.debug('🔔 Cleaning up subscriptions...');
