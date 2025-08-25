@@ -51,8 +51,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   // Get assignments for this job and row type
   const assignments = getResourcesByAssignment(jobId, rowType);
   
-  const { dragState } = useDragContext();
-  const { openModal, closeModal, getZIndex } = useModal();
+  const { dragState, setHoveredJobId } = useDragContext();
   
   // Test drop target
   const [{ isTestOver }, testDrop] = useDrop({
