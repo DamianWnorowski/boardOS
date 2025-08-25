@@ -51,6 +51,7 @@ export interface Database {
         Row: {
           id: string
           type: string
+          class_type: 'employee' | 'equipment'
           name: string
           identifier: string | null
           model: string | null
@@ -64,6 +65,7 @@ export interface Database {
         Insert: {
           id?: string
           type: string
+          class_type?: 'employee' | 'equipment'
           name: string
           identifier?: string | null
           model?: string | null
@@ -77,6 +79,7 @@ export interface Database {
         Update: {
           id?: string
           type?: string
+          class_type?: 'employee' | 'equipment'
           name?: string
           identifier?: string | null
           model?: string | null

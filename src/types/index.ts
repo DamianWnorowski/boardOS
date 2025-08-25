@@ -24,6 +24,7 @@ export type ResourceType = PersonnelRole | EquipmentCategory;
 export interface Resource {
   id: string;
   type: ResourceType;
+  classType: 'employee' | 'equipment';
   name: string;
   identifier?: string;
   location?: string;

@@ -423,6 +423,7 @@ export function convertPersonnelToResources(): Resource[] {
       resources.push({
         id: `${role}-${uuidv4()}`,
         type: getResourceType(role),
+        classType: 'employee',
         name,
         onSite: false, // Default to off-site for all personnel
       });
@@ -452,6 +453,7 @@ export function convertEquipmentToResources(): Resource[] {
       resources.push({
         id: `${category}-${uuidv4()}`,
         type: resourceType as 'skidsteer' | 'paver' | 'excavator' | 'sweeper' | 'millingMachine' | 'grader' | 'dozer' | 'payloader' | 'roller' | 'equipment' | 'truck',
+        classType: 'equipment',
         name: `${item.model} #${item.unitNumber}`,
         identifier: item.unitNumber,
         model: item.model,

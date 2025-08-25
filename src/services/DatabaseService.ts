@@ -13,6 +13,7 @@ export class DatabaseService {
     return {
       id: dbResource.id,
       type: dbResource.type as ResourceType,
+      classType: dbResource.class_type,
       name: dbResource.name,
       identifier: dbResource.identifier || undefined,
       model: dbResource.model || undefined,
@@ -114,6 +115,7 @@ export class DatabaseService {
       .from('resources')
       .insert([{
         type: resource.type,
+        class_type: resource.classType,
         name: resource.name,
         identifier: resource.identifier,
         model: resource.model,
@@ -137,6 +139,7 @@ export class DatabaseService {
       .from('resources')
       .update({
         type: resource.type,
+        class_type: resource.classType,
         name: resource.name,
         identifier: resource.identifier,
         model: resource.model,
