@@ -36,7 +36,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   return (
     <div 
       onClick={onClick}
-      className={`px-1 py-1 transition-all duration-200 ${getCardStyle()} rounded-md hover:bg-gray-300 cursor-pointer h-10 flex flex-col justify-center ${widthClass} opacity-70 hover:opacity-100`}
+      className={`relative px-1 py-1 transition-all duration-200 ${getCardStyle()} rounded-md hover:bg-gray-300 cursor-pointer h-10 flex flex-col justify-center ${widthClass} opacity-70 hover:opacity-100`}
     >
       <div className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-medium text-center flex items-center justify-center`}>
         <span className="mr-1">{getEmojiForType()}</span>
@@ -44,6 +44,11 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       </div>
       <div className={`${isCompact ? 'text-[7px]' : 'text-[8px]'} text-center`}>
         Click to add
+      </div>
+      
+      {/* Any numbers would go here in top-right corner */}
+      <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center shadow-sm z-30 text-[9px]">
+        1
       </div>
     </div>
   );
