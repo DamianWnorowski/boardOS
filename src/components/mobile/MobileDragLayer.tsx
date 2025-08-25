@@ -9,7 +9,7 @@ import { useMobile } from '../../context/MobileContext';
 
 const MobileDragLayer: React.FC = () => {
   const { isMobile, touchEnabled } = useMobile();
-  const { dragState } = useDragContext();
+  const { dragState, hoveredJobId } = useDragContext();
   const { assignments, getJobById, getResourceById } = useScheduler();
   
   const {
@@ -271,6 +271,8 @@ const MobileDragLayer: React.FC = () => {
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const isCurrentlyWorkingDouble = hasDayJob && hasNightJob;
     
+    // Get the job being hovered over
+    const hoveredJob = hoveredJobId ? getJobById(hoveredJobId) : null;
     console.log('🎨 MobileDragLayer Job status:', { 
       hasDayJob, 
       hasNightJob, 
@@ -331,6 +333,53 @@ const MobileDragLayer: React.FC = () => {
 
     // If Ctrl is held, this will be a second assignment
     if (item.isSecondShift === true) {
+      // Use hovered job to determine the actual target shift
+      if (hoveredJob) {
+        if (isCurrentlyWorkingDouble) {
+          // Already working double, adding a third job
+          return { 
+            message: 'Adding 3rd job', 
+            color: 'text-red-600', 
+            icon: '🔥' 
+          };
+        } else if (hasDayJob && hoveredJob.shift === 'night') {
+          // Has day job, hovering over night job → creating double shift
+          return { 
+            message: 'Creating double shift', 
+            color: 'text-orange-600', 
+            icon: '☀️🌙' 
+          };
+        } else if (hasNightJob && hoveredJob.shift === 'day') {
+          // Has night job, hovering over day job → creating double shift
+          return { 
+            message: 'Creating double shift', 
+            color: 'text-orange-600', 
+            icon: '🌙☀️' 
+          };
+        } else if (hasDayJob && hoveredJob.shift === 'day') {
+          // Has day job, hovering over another day job → 2nd day location
+          return { 
+            message: '2nd day shift location', 
+            color: 'text-teal-600', 
+            icon: '☀️➕' 
+          };
+        } else if (hasNightJob && hoveredJob.shift === 'night') {
+          // Has night job, hovering over another night job → 2nd night location
+          return { 
+            message: '2nd night shift location', 
+            color: 'text-teal-600', 
+            icon: '🌙➕' 
+          };
+        } else {
+          // No current jobs, first assignment
+          return {
+            message: 'Drag to assign', 
+            color: 'text-blue-600', 
+            icon: '📋' 
+          };
+        }
+      } else {
+        // No hover target, use generic logic
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
@@ -379,20 +428,16 @@ const MobileDragLayer: React.FC = () => {
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
-        return { 
           message: 'Creating double shift', 
           color: 'text-orange-600', 
           icon: '🌙' 
-        };
+            icon: '🌙☀️' 
       } else {
         // No current jobs, Ctrl+dragging for first assignment
-        console.log('🎨 MobileDragLayer → Blue: No jobs, first assignment');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
+            icon: '☀️🌙' 
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         return {
@@ -400,6 +445,7 @@ const MobileDragLayer: React.FC = () => {
           color: 'text-blue-600', 
           icon: '📋' 
         };
+      }
       }
     }
 
