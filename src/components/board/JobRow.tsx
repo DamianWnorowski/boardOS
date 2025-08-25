@@ -159,7 +159,6 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     accept: [ItemTypes.RESOURCE, ItemTypes.ASSIGNMENT],
     drop: (item: DragItem, monitor: DropTargetMonitor) => {
       try {
-        console.log('🎯 MAIN DROP FUNCTION CALLED!', {
           itemType: item.type,
           resourceType: item.resource?.type,
           resourceName: item.resource?.name,
@@ -168,14 +167,14 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         
         // Check if this drop was already handled by a nested component
         if ((item as any)._handled) {
-          console.log('🎯 Drop already handled by nested component, skipping');
+          logger.debug('Drop already handled by nested component, skipping');
           return { jobId, rowType, alreadyHandled: true };
         }
         
         // Give assignment cards priority - check if drop was handled
         const nestedDropResult = monitor.getDropResult() as { handled?: boolean } | null;
         if (nestedDropResult?.handled) {
-          console.log('🎯 Drop already handled by nested target, skipping JobRow handling');
+          logger.debug('Drop already handled by nested target, skipping JobRow handling');
           return nestedDropResult;
         }
         
@@ -188,12 +187,12 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           );
           
           if (existingJobAssignment) {
-            console.log('🎯 Resource already assigned to this job, preventing duplicate');
+            logger.debug('Resource already assigned to this job, preventing duplicate');
             return { jobId, rowType, assignmentId: existingJobAssignment.id, duplicate: true };
           }
           
           let position = assignments.length;
-          console.log('📍 About to call assignResource with:', {
+          logger.debug('About to call assignResource with:', {
             resourceId: item.resource.id,
             jobId,
             rowType,
@@ -204,39 +203,39 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           (item as any)._handled = true;
           
           const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
-          console.log('✅ Assignment created:', assignmentId);
+          logger.debug('Assignment created:', assignmentId);
           return { jobId, rowType, assignmentId };
         }
         
         if (item.type === ItemTypes.ASSIGNMENT) {
           // For second shift (Ctrl+drag), create a new assignment instead of moving existing
           if (item.isSecondShift) {
-            console.log('🌙 Second shift assignment - creating new assignment for resource');
+            logger.debug('Second shift assignment - creating new assignment for resource');
             (item as any)._handled = true;
             const position = assignments.length;
             const assignmentId = assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
-            console.log('✅ Second shift assignment created:', assignmentId);
+            logger.debug('Second shift assignment created:', assignmentId);
             return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {
-            console.log('📍 Moving assignment group');
+            logger.debug('Moving assignment group');
             (item as any)._handled = true;
             const assignmentIds = item.assignments.map(a => a.id);
             const newAssignmentId = moveAssignmentGroup(item.assignments, jobId, rowType);
-            console.log('✅ Assignment group moved:', newAssignmentId);
+            logger.debug('Assignment group moved:', newAssignmentId);
             return { jobId, rowType, assignmentId: newAssignmentId };
           }
         }
         
-        console.log('⚠️ No handler for item type:', item.type);
+        logger.debug('No handler for item type:', item.type);
         return { jobId, rowType };
 
       } catch (error) {
-        console.error('❌ Error in main drop function:', error);
+        logger.error('Error in main drop function:', error);
         return undefined;
       }
     },
     canDrop: (item: DragItem) => {
-      console.log('🤔 JobRow canDrop check', { 
+      logger.debug('JobRow canDrop check', { 
         rowType, 
         itemType: item.type, 
         resourceType: item.resource?.type,
@@ -247,7 +246,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       
       // If row is not active or job is finalized, don't allow drops
       if (!isActive || isJobFinalized) {
-        console.log('🚫 Drop rejected: row not active or job finalized', {
+        logger.debug('Drop rejected: row not active or job finalized', {
           isActive,
           isJobFinalized
         });
@@ -257,7 +256,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       // Check drop rules for this row type
       if (item.type === ItemTypes.RESOURCE) {
         if (!canDropOnRow(item.resource.type, rowType)) {
-          console.log('🚫 Drop rejected: resource type not allowed in this row', {
+          logger.debug('Drop rejected: resource type not allowed in this row', {
             resourceType: item.resource.type,
             rowType,
             allowedTypes: getDropRule(rowType)
@@ -268,7 +267,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       
       // For second shift (Ctrl+drag), allow drops regardless of current assignment
       if (item.isSecondShift) {
-        console.log('✅ Second shift drop allowed');
+        logger.debug('Second shift drop allowed');
         return true;
       }
       
@@ -280,7 +279,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         if (item.resource.type === 'truck' && rowType === 'trucks') {
           const truckDriver = getTruckDriver(item.resource.id);
           if (!truckDriver) {
-            console.log('🚫 Drop rejected: truck without driver');
+            logger.debug('Drop rejected: truck without driver');
             return false; // Don't allow trucks without drivers
           }
         }
@@ -297,7 +296,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         return true;
       }
       
-      console.log('✅ Drop allowed by default');
+      logger.debug('Drop allowed by default');
       return true;
     },
     collect: (monitor) => ({
@@ -308,7 +307,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
 
   // Add test drop target just for debugging
   useEffect(() => {
-    console.log('🎯 JobRow useEffect - Drop target monitor states:', { 
+    logger.debug('JobRow useEffect - Drop target monitor states:', { 
       rowType, 
       isOver, 
       canDrop,
@@ -339,7 +338,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const handleTruckConfigSelect = (config: 'flowboy' | 'dump-trailer') => {
     if (!pendingTruckDrop) return;
     
-    console.log('handleTruckConfigSelect called with config:', config, 'for truck:', pendingTruckDrop.resourceId);
+    logger.debug('handleTruckConfigSelect called with config:', config, 'for truck:', pendingTruckDrop.resourceId);
    
     // Create the assignment
     const assignmentId = assignResource(
@@ -349,15 +348,15 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       pendingTruckDrop.position
     );
     
-    console.log('Assignment created with ID:', assignmentId);
+    logger.debug('Assignment created with ID:', assignmentId);
    
     // Store the configuration
     const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
     truckConfigs[assignmentId] = config;
     localStorage.setItem('truck-configurations', JSON.stringify(truckConfigs));
     
-    console.log('Stored truck config:', config, 'for assignment:', assignmentId);
-    console.log('All truck configs:', truckConfigs);
+    logger.debug('Stored truck config:', config, 'for assignment:', assignmentId);
+    logger.debug('All truck configs:', truckConfigs);
    
     setPendingTruckDrop(null);
   };
@@ -369,15 +368,15 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   
   // Handle opening person modal
   const handleOpenPersonModal = (assignment: Assignment) => {
-    console.log('JobRow openPersonModal called with assignment:', assignment);
-    console.log('Setting modal state - assignment ID:', assignment.id);
+    logger.debug('JobRow openPersonModal called with assignment:', assignment);
+    logger.debug('Setting modal state - assignment ID:', assignment.id);
     setSelectedPersonAssignment(assignment);
     setIsPersonModalOpen(true);
-    console.log('Modal state set - isPersonModalOpen should be true');
+    logger.debug('Modal state set - isPersonModalOpen should be true');
   };
   
   const handleClosePersonModal = () => {
-    console.log('Closing person modal');
+    logger.debug('Closing person modal');
     setIsPersonModalOpen(false);
     setSelectedPersonAssignment(null);
   };
