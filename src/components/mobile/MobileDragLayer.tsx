@@ -355,9 +355,9 @@ const MobileDragLayer: React.FC = () => {
           color: 'text-red-600', 
           icon: '🔥' 
         };
-      } else if (hasNightJob) {
-        // Has night job, Ctrl+dragging will add day job → night ↔ day (orange)
-        console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
+      } else if (hasNightJob && !hasDayJob) {
+        // Has only night job, Ctrl+dragging will create double shift (orange)
+        console.log('🎨 MobileDragLayer → Orange: Has night job, creating double shift');
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
         console.log('🎨 MobileDragLayer → Orange: Has night job, adding day job');
@@ -370,9 +370,9 @@ const MobileDragLayer: React.FC = () => {
           color: 'text-orange-600', 
           icon: '🌙' 
         };
-      } else if (hasDayJob) {
-        // Has day job, Ctrl+dragging will add another day job → day ↔ day (teal)
-        console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
+      } else if (hasDayJob && !hasNightJob) {
+        // Has only day job, Ctrl+dragging will create double shift (orange)
+        console.log('🎨 MobileDragLayer → Orange: Has day job, creating double shift');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
@@ -381,13 +381,13 @@ const MobileDragLayer: React.FC = () => {
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         console.log('🎨 MobileDragLayer → Teal: Has day job, adding another day job');
         return { 
-          message: 'Adding 2nd day job', 
-          color: 'text-teal-600', 
-          icon: '☀️' 
+          message: 'Creating double shift', 
+          color: 'text-orange-600', 
+          icon: '🌙' 
         };
       } else {
-        // No current jobs, Ctrl+dragging assumes day ↔ day (teal)
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
+        // No current jobs, Ctrl+dragging for first assignment
+        console.log('🎨 MobileDragLayer → Blue: No jobs, first assignment');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
@@ -396,9 +396,9 @@ const MobileDragLayer: React.FC = () => {
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         return {
-          message: 'Adding 2nd day job', 
-          color: 'text-teal-600', 
-          icon: '☀️' 
+          message: 'Drag to assign', 
+          color: 'text-blue-600', 
+          icon: '📋' 
         };
       }
     }
@@ -443,10 +443,10 @@ const MobileDragLayer: React.FC = () => {
     if (!item) return null;
 
     const feedbackInfo = getDragFeedbackInfo();
-    const borderColorClass = feedbackInfo.color.includes('red') ? 'border-red-400' :
-      feedbackInfo.color.includes('orange') ? 'border-orange-400' :
-      feedbackInfo.color.includes('purple') ? 'border-purple-400' :
-      feedbackInfo.color.includes('teal') ? 'border-teal-400' : 'border-blue-400';
+   const borderColorClass = feedbackInfo.color.includes('red') ? 'border-red-400' :
+     feedbackInfo.color.includes('orange') ? 'border-orange-400' :
+     feedbackInfo.color.includes('purple') ? 'border-purple-400' :
+     feedbackInfo.color.includes('teal') ? 'border-teal-400' : 'border-blue-400';
       
     console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
     console.log('🎨 MobileDragLayer color check:', {
@@ -466,11 +466,7 @@ const MobileDragLayer: React.FC = () => {
     switch (itemType) {
       case ItemTypes.RESOURCE:
         return (
-          <div className={`transform scale-110 shadow-2xl border-4 rounded-lg bg-white p-2 ${
-            feedbackInfo.color.includes('red') ? 'border-red-400' :
-            feedbackInfo.color.includes('orange') ? 'border-orange-400' :
-            feedbackInfo.color.includes('purple') ? 'border-purple-400' : 'border-blue-400'
-          }`}>
+          <div className={`transform scale-110 shadow-2xl border-4 rounded-lg bg-white p-2 ${borderColorClass}`}>
             <ResourceCard 
               resource={item.resource} 
               isDragging={true}
