@@ -145,12 +145,21 @@ const testJob: Job = {
   notes: 'This is a test job'
 };
 
+// Second test job for night shift
+const testJob2: Job = {
+  id: `job-${uuidv4()}`,
+  name: 'Test Job 2',
+  type: 'milling',
+  shift: 'night',
+  notes: 'This is a night shift test job'
+};
+
 // Use the modular rule creator to build default rules
 const defaultMagnetInteractionRules: MagnetInteractionRule[] = buildStandardConstructionRules();
 const defaultDropRules: DropRule[] = buildStandardDropRules();
 
 export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [jobs, setJobs] = useState<Job[]>([testJob]);
+  const [jobs, setJobs] = useState<Job[]>([testJob, testJob2]);
   const [resources, setResources] = useState<Resource[]>([
     ...convertPersonnelToResources(),
     ...convertEquipmentToResources()
