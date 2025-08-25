@@ -275,41 +275,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return () => clearTimeout(timer);
     }
   }, [isLoading, error, resources.length, checkAndPopulateResources]);
-          .from('resources')
-          .insert(allResources.map(resource => ({
-            type: resource.type,
-            class_type: resource.classType,
-            name: resource.name,
-            identifier: resource.identifier,
-            model: resource.model,
-            vin: resource.vin,
-            location: resource.location,
-            on_site: resource.onSite || false
-          })));
-
-        if (insertError) {
-          logger.error('Error populating resources:', insertError);
-        } else {
-          logger.info('Successfully populated resources from data files', {
-            count: allResources.length
-          });
-          // Reload data to get the newly inserted resources
-          await loadScheduleData();
-        }
-      } else {
-        logger.debug('Resources already exist in database, skipping population');
-      }
-    } catch (err) {
-      logger.error('Error in checkAndPopulateResources:', err);
-    }
-  }, [loadScheduleData]);
-
-  // Check and populate resources after initial load
-  useEffect(() => {
-    if (!isLoading && !error && resources.length === 0) {
-      checkAndPopulateResources();
-    }
-  }, [isLoading, error, resources.length, checkAndPopulateResources]);
 
   // Set up real-time subscriptions
   useEffect(() => {
