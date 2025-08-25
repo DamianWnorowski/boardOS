@@ -218,7 +218,7 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
       {/* Show time slot if available */}
       {timeSlot && (
         <div
-          className={`absolute -bottom-1 -right-1 ${timeIndicatorColor} text-white px-1 py-0.5 rounded-sm text-[8px] shadow-sm z-40`}
+          className={`absolute -top-1 -right-1 ${timeIndicatorColor} text-white px-1 py-0.5 rounded-sm text-[8px] shadow-sm z-40`}
           title="Click to edit time schedule"
         >
           {formatTime(timeSlot.startTime)} - {formatTime(timeSlot.endTime)}
