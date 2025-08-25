@@ -174,6 +174,62 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     loadScheduleData();
   }, [loadScheduleData]);
 
+  // Check if resources need to be populated from the data files
+  const checkAndPopulateResources = useCallback(async () => {
+    try {
+      const { data: existingResources, error } = await supabase
+        .from('resources')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        logger.error('Error checking existing resources:', error);
+        return;
+      }
+
+      // If no resources exist, populate from data files
+      if (!existingResources || existingResources.length === 0) {
+        logger.info('No resources found in database, populating from data files...');
+        
+        const personnelResources = convertPersonnelToResources();
+        const equipmentResources = convertEquipmentToResources();
+        const allResources = [...personnelResources, ...equipmentResources];
+
+        // Insert all resources
+        const { error: insertError } = await supabase
+          .from('resources')
+          .insert(allResources.map(resource => ({
+            type: resource.type,
+            name: resource.name,
+            identifier: resource.identifier,
+            model: resource.model,
+            vin: resource.vin,
+            location: resource.location,
+            on_site: resource.onSite || false
+          })));
+
+        if (insertError) {
+          logger.error('Error populating resources:', insertError);
+        } else {
+          logger.info('Successfully populated resources from data files', {
+            count: allResources.length
+          });
+          // Reload data to get the newly inserted resources
+          await loadScheduleData();
+        }
+      }
+    } catch (err) {
+      logger.error('Error in checkAndPopulateResources:', err);
+    }
+  }, [loadScheduleData]);
+
+  // Check and populate resources after initial load
+  useEffect(() => {
+    if (!isLoading && resources.length === 0) {
+      checkAndPopulateResources();
+    }
+  }, [isLoading, resources.length, checkAndPopulateResources]);
+
   // Set up real-time subscriptions
   useEffect(() => {
     const cleanup = DatabaseService.subscribeToScheduleChanges({
