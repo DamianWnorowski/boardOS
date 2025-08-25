@@ -219,31 +219,18 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     return isDisabled ? 'bg-gray-300 text-gray-500' : getResourceStyle(resource.type);
   };
   
-  // Border style based on resource type
-  const getBorderStyle = () => {
+  // Get border styling with shift status
+  const getBorderStyling = () => {
     if (isDisabled) return 'border border-gray-400';
     
-    // Check if this resource is working a night shift or double shift
+    // Check if this resource is working shifts
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
-    const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
     
-    // Priority order: Red (double) > Teal (multiple day) > Orange (night only) > Normal
-    if (hasDayJob && hasNightJob) {
-      return 'border-2 border-red-500'; // Double shift - highest priority
-    }
-    if (hasMultipleDayJobs) {
-      return 'border-2 border-teal-500'; // Multiple day jobs
-    }
-    if (hasNightJob && !hasDayJob) {
-      return 'border-2 border-orange-500'; // Night shift only
-    }
-    
-    // Default resource border
-    return `border ${getResourceColors(resource.type).border}`;
+    return getCompleteBorderStyle(resource.type, hasMultipleDayJobs, hasNightJob, hasDayJob);
   };
   
   // Add specific styling based on the card's role in the attachment group
@@ -321,7 +308,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       <div 
         ref={drag}
         style={{ opacity }}
-        className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyle()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
+        className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyling()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
           isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-move'
         } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${
           isPersonnel && !isDisabled && onPersonClick ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
@@ -420,7 +407,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     <div 
       ref={isMain || isAttached ? null : drag}
       style={{ opacity }}
-      className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyle()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
+      className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyling()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
         isDisabled ? 'cursor-not-allowed opacity-60' : (isMain || isAttached ? 'cursor-default' : 'cursor-move')
       } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${
         isPersonnel && !isDisabled && onPersonClick ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
