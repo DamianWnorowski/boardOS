@@ -362,6 +362,18 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             attachments: (a.attachments || []).filter(id => id !== payload.old.id)
           })));
         }
+      },
+      onRuleChange: (payload) => {
+        logger.debug('🔄 Real-time rule change:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          new: payload.new,
+          old: payload.old
+        });
+        // Reload rules when they change
+        if (payload.table === 'magnet_interaction_rules') {
+          loadScheduleData();
+        }
       }
     });
 
@@ -387,29 +399,17 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             await loadScheduleData();
           }
         }
-            const filtered = prev.filter(a => a.id !== payload.old.id);
-            logger.debug('🔄 Assignments after DELETE:', { count: filtered.length });
-            return filtered;
-          });
-        }
-      },
-      onRuleChange: (payload) => {
-        logger.debug('🔄 Real-time rule change:', {
-          eventType: payload.eventType,
-          table: payload.table,
-          new: payload.new,
-          old: payload.old
-        });
-        // Reload rules when they change
-        if (payload.table === 'magnet_interaction_rules') {
-          loadScheduleData();
-        }
+      } catch (err) {
+        logger.debug('Polling check failed:', err);
       }
-    });
+    }, 30000); // Check every 30 seconds
 
     logger.debug('Real-time subscriptions setup complete');
-    return cleanup;
-  }, [loadScheduleData]);
+    return () => {
+      cleanup();
+      clearInterval(pollInterval);
+    };
+  }, [loadScheduleData, assignments.length]);
 
   // Update magnetManager with current rules and colors
   useEffect(() => {
