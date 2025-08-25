@@ -300,9 +300,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const toggleResourceOnSite = (resourceId: string) => {
-    console.log('🔄 toggleResourceOnSite called for resourceId:', resourceId);
+    logger.debug('🔄 toggleResourceOnSite called for resourceId:', resourceId);
     const resource = resources.find(r => r.id === resourceId);
-    console.log('   - Current resource:', resource?.name, 'onSite:', resource?.onSite);
+    logger.debug('   - Current resource:', resource?.name, 'onSite:', resource?.onSite);
     setResources(resources.map(r => 
       r.id === resourceId ? { 
         ...r, 
@@ -310,7 +310,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } : r
     ));
     const updatedResource = resources.find(r => r.id === resourceId);
-    console.log('   ✅ Updated onSite to:', !resource?.onSite);
+    logger.debug('   ✅ Updated onSite to:', !resource?.onSite);
   };
 
   const removeResource = (resourceId: string) => {
@@ -651,7 +651,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const parentAssignment = assignments.find(a => a.id === parentAssignmentId);
     if (!parentAssignment) return null;
     
-    console.log('📎 assignResourceWithAttachment called:', {
+    logger.debug('📎 assignResourceWithAttachment called:', {
       resourceId,
       parentAssignmentId,
       parentAssignment: parentAssignment.resourceId
@@ -666,7 +666,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
     
     if (existingJobRowAssignment) {
-      console.log('📎 Found existing assignment, converting to attached:', existingJobRowAssignment.id);
+      logger.debug('📎 Found existing assignment, converting to attached:', existingJobRowAssignment.id);
       // Convert existing assignment to attached assignment
       setAssignments(prev => prev.map(a => {
         if (a.id === existingJobRowAssignment.id) {
@@ -695,7 +695,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
     
     if (existingAttachment) {
-      console.log('📎 Resource already attached to this parent:', existingAttachment.id);
+      logger.debug('📎 Resource already attached to this parent:', existingAttachment.id);
       return existingAttachment.id;
     }
     
@@ -715,7 +715,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       timeSlot: parentAssignment.timeSlot // Inherit parent's time slot
     };
     
-    console.log('📎 Creating new attached assignment:', newAssignment.id);
+    logger.debug('📎 Creating new attached assignment:', newAssignment.id);
     
     // Update assignments to add the new one and update parent's attachments
     setAssignments(prev => {
@@ -841,7 +841,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Prevent duplicates within the same job (regardless of Ctrl state)
     if (existingJobAssignment) {
-      console.log('🚫 Resource already assigned to this job, preventing duplicate', {
+      logger.debug('🚫 Resource already assigned to this job, preventing duplicate', {
         resourceId,
         jobId,
         existingAssignmentId: existingJobAssignment.id,
@@ -926,7 +926,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Attach resources horizontally
   const attachResources = (targetId: string, sourceId: string) => {
-    console.log('🔗 attachResources called:', { targetId, sourceId });
+    logger.debug('🔗 attachResources called:', { targetId, sourceId });
     
     // Prevent duplicate attachments
     const existingAttachment = assignments.find(a => 
@@ -934,7 +934,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
     
     if (existingAttachment) {
-      console.log('🔗 Resources already attached, skipping');
+      logger.debug('🔗 Resources already attached, skipping');
       return;
     }
     
@@ -943,24 +943,24 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const targetAssignment = prev.find(a => a.id === targetId);
       const sourceAssignment = prev.find(a => a.id === sourceId);
       
-      console.log('🔗 Found assignments:', {
+      logger.debug('🔗 Found assignments:', {
         target: targetAssignment?.resourceId,
         source: sourceAssignment?.resourceId
       });
     
       if (!targetAssignment || !sourceAssignment || targetId === sourceId) {
-        console.log('🚫 attachResources failed - missing assignments or same ID');
+        logger.debug('🚫 attachResources failed - missing assignments or same ID');
         return prev;
       }
     
       // Ensure they're in the same job and row
       if (targetAssignment.jobId !== sourceAssignment.jobId || 
           targetAssignment.row !== sourceAssignment.row) {
-        console.log('🚫 attachResources failed - different job/row');
+        logger.debug('🚫 attachResources failed - different job/row');
         return prev;
       }
       
-      console.log('✅ Proceeding with attachment');
+      logger.debug('✅ Proceeding with attachment');
       
       return prev.map(a => {
         // Update target assignment to include source in attachments

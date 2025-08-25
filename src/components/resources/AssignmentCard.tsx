@@ -65,7 +65,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
   const [customTime, setCustomTime] = useState<string>(defaultStartTime);
   const [isEditingTime, setIsEditingTime] = useState<boolean>(false);
   
-  console.log('🎨 AttachedResourcesGroup rendering:', {
+  logger.debug('🎨 AttachedResourcesGroup rendering:', {
     mainResource: assignment.resourceId,
     attachedCount: attachedAssignments.length,
     attachedIds: attachedAssignments.map(a => a.id)
@@ -103,7 +103,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
   
   // For trucks, display all attachments horizontally
   if (mainResource.type === 'truck') {
-    console.log('🚛 Rendering truck group with attachments:', attachedAssignments.length);
+    logger.debug('🚛 Rendering truck group with attachments:', attachedAssignments.length);
     return (
       <div 
         className="cursor-move group relative"
@@ -692,7 +692,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       if (item.type === ItemTypes.ASSIGNMENT && item.assignmentId !== assignment.id) {
         // Only attach if they're in the same job/row, otherwise it's handled by JobRow
         if (item.jobId === assignment.jobId && item.row === assignment.row) {
-          console.log('🔗 Attaching assignment to assignment:', {
+          logger.debug('🔗 Attaching assignment to assignment:', {
             sourceId: item.assignmentId,
             targetId: assignment.id
           });
@@ -725,7 +725,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         );
         
         if (existingAssignment) {
-          console.log('🔗 Resource already has assignment in this job/row, attaching existing assignment');
+          logger.debug('🔗 Resource already has assignment in this job/row, attaching existing assignment');
           (item as any)._handled = true;
           attachResources(assignment.id, existingAssignment.id);
           setTimeout(() => setIsDroppingItem(false), 300);
@@ -739,12 +739,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         
         if (rule?.canAttach) {
           // Create assignment already attached to this assignment  
-          console.log('🔗 Creating attached assignment for resource:', item.resource.name);
+          logger.debug('🔗 Creating attached assignment for resource:', item.resource.name);
           (item as any)._handled = true;
           const attachedAssignmentId = assignResourceWithAttachment(item.resource.id, assignment.id);
           if (attachedAssignmentId) {
             // Successfully attached
-            console.log('✅ Successfully attached resource to assignment:', {
+            logger.debug('✅ Successfully attached resource to assignment:', {
               resourceId: item.resource.id,
               parentAssignmentId: assignment.id,
               newAssignmentId: attachedAssignmentId
@@ -883,8 +883,8 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   
   // If this assignment has attached resources, render as a group
   if (attachedAssignments.length > 0) {
-    console.log('Rendering attached group for:', resource.name, 'mainResource.onSite:', resource.onSite);
-    console.log('Attached assignments:', attachedAssignments.map(a => ({
+    logger.debug('Rendering attached group for:', resource.name, 'mainResource.onSite:', resource.onSite);
+    logger.debug('Attached assignments:', attachedAssignments.map(a => ({
       id: a.id,
       resourceId: a.resourceId,
       resourceName: getResourceById(a.resourceId)?.name

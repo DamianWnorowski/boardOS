@@ -10,21 +10,21 @@ interface PersonModalProps {
 }
 
 const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
-  console.log('PersonModal component rendered with assignment:', assignment);
+  logger.debug('PersonModal component rendered with assignment:', assignment);
   const { getResourceById, getJobById, updateAssignmentNote, updateResource, toggleResourceOnSite, isWorkingDouble, getResourceDoubleShiftJobs } = useScheduler();
   const [activeTab, setActiveTab] = useState<'stats' | 'note' | 'edit'>('stats');
   const [noteText, setNoteText] = useState(assignment.note || '');
   const [editedResource, setEditedResource] = useState<any>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  console.log('PersonModal - assignment.resourceId:', assignment.resourceId);
-  console.log('PersonModal - getResourceById function type:', typeof getResourceById);
+  logger.debug('PersonModal - assignment.resourceId:', assignment.resourceId);
+  logger.debug('PersonModal - getResourceById function type:', typeof getResourceById);
   
   const resource = getResourceById(assignment.resourceId);
-  console.log('PersonModal - resource found:', resource);
+  logger.debug('PersonModal - resource found:', resource);
   
   if (!resource) {
-    console.warn('No resource found in PersonModal, closing');
+    logger.warn('No resource found in PersonModal, closing');
     onClose();
     return null;
   }
@@ -44,11 +44,11 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
     }
   }, [resource, editedResource]);
   
-  console.log('PersonModal rendering', { resourceName: resource?.name, assignmentId: assignment.id });
+  logger.debug('PersonModal rendering', { resourceName: resource?.name, assignmentId: assignment.id });
   
   if (!resource) {
-    console.warn('No resource found in PersonModal - assignment.resourceId:', assignment.resourceId);
-    console.warn('Available resource IDs:', getResourceById ? 'getResourceById available' : 'getResourceById not available');
+    logger.warn('No resource found in PersonModal - assignment.resourceId:', assignment.resourceId);
+    logger.warn('Available resource IDs:', getResourceById ? 'getResourceById available' : 'getResourceById not available');
     onClose();
     return null;
   }

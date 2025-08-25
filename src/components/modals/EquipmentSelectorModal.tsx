@@ -92,7 +92,7 @@ const EquipmentSelectorModal: React.FC<EquipmentSelectorModalProps> = ({
     return true;
   });
   
-  logger.debug('Filtered equipment count', { count: allEquipment.length });
+  logger.debug('EquipmentSelectorModal - Filtered equipment count', { count: allEquipment.length });
   
   // Get assigned resource IDs directly from assignments (ignore sidebar filters)
   const assignedResourceIds = new Set(assignments.map(a => a.resourceId));
@@ -138,7 +138,7 @@ const EquipmentSelectorModal: React.FC<EquipmentSelectorModalProps> = ({
         : undefined
     );
     
-    logger.debug('Equipment assignment created', { assignmentId, resourceId, truckConfig });
+    logger.debug('EquipmentSelectorModal - Equipment assignment created', { assignmentId, resourceId, truckConfig });
     
     onClose();
   };

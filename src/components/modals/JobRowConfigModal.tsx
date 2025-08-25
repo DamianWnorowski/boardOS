@@ -444,8 +444,8 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   
   // Debug logging
   React.useEffect(() => {
-    console.log('🔧 JobRowConfigModal mounted for:', { jobId, rowType });
-    console.log('🔧 Existing config:', getJobRowConfig(jobId, rowType));
+    logger.debug('🔧 JobRowConfigModal mounted for:', { jobId, rowType });
+    logger.debug('🔧 Existing config:', getJobRowConfig(jobId, rowType));
   }, [jobId, rowType]);
 
   const job = getJobById(jobId);
@@ -459,7 +459,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   
   // Debug config changes
   React.useEffect(() => {
-    console.log('🔧 Config state changed:', {
+    logger.debug('🔧 Config state changed:', {
       isSplit: config.isSplit,
       boxCount: config.boxes.length,
       boxes: config.boxes.map(box => ({
@@ -476,7 +476,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   const [box2Name, setBox2Name] = useState('Personnel');
 
   const handleSplitRow = () => {
-    console.log('🔧 handleSplitRow called with names:', { box1Name, box2Name });
+    logger.debug('🔧 handleSplitRow called with names:', { box1Name, box2Name });
     const newConfig: JobRowConfig = {
       jobId,
       rowType,
@@ -499,12 +499,12 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
       ]
     };
     
-    console.log('🔧 Setting new config:', newConfig);
+    logger.debug('🔧 Setting new config:', newConfig);
     setConfig(newConfig);
   };
 
   const handleUnsplitRow = () => {
-    console.log('🔧 handleUnsplitRow called');
+    logger.debug('🔧 handleUnsplitRow called');
     const newConfig: JobRowConfig = {
       jobId,
       rowType,
@@ -512,12 +512,12 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
       boxes: []
     };
     
-    console.log('🔧 Setting unsplit config:', newConfig);
+    logger.debug('🔧 Setting unsplit config:', newConfig);
     setConfig(newConfig);
   };
 
   const handleAddBox = () => {
-    console.log('🔧 handleAddBox called, current boxes:', config.boxes.length);
+    logger.debug('🔧 handleAddBox called, current boxes:', config.boxes.length);
     const newBox: JobRowBox = {
       id: `${jobId}-${rowType}-box${config.boxes.length + 1}`,
       name: `Box ${config.boxes.length + 1}`,
@@ -528,7 +528,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
       attachmentRules: []
     };
 
-    console.log('🔧 Adding new box:', newBox);
+    logger.debug('🔧 Adding new box:', newBox);
     setConfig(prev => ({
       ...prev,
       boxes: [...prev.boxes, newBox]
@@ -536,36 +536,36 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   };
 
   const handleUpdateBox = (path: number[], updates: Partial<JobRowBox>) => {
-    console.log('🔧 handleUpdateBox called:', { path, updates });
+    logger.debug('🔧 handleUpdateBox called:', { path, updates });
     setConfig(prev => {
       const newConfig = structuredClone(prev); // Deep clone to avoid mutation issues
-      console.log('🔧 Original config before update:', newConfig);
+      logger.debug('🔧 Original config before update:', newConfig);
       
       // Navigate to the box using the path
       let targetBox = newConfig.boxes[path[0]];
-      console.log('🔧 Target box at path[0]:', targetBox);
+      logger.debug('🔧 Target box at path[0]:', targetBox);
       
       // Navigate through sub-boxes if path is deeper
       for (let i = 1; i < path.length; i++) {
-          console.error('🔧 Invalid path - sub-box not found:', { path, currentIndex: i });
-        console.log(`🔧 Navigating to sub-box at path[${i}]:`, path[i]);
+          logger.error('🔧 Invalid path - sub-box not found:', { path, currentIndex: i });
+        logger.debug(`🔧 Navigating to sub-box at path[${i}]:`, path[i]);
         if (!targetBox.subBoxes || !targetBox.subBoxes[path[i]]) return prev;
         targetBox = targetBox.subBoxes[path[i]];
-        console.log('🔧 Found sub-box:', targetBox);
+        logger.debug('🔧 Found sub-box:', targetBox);
       }
       
       // Update the target box
-      console.log('🔧 Applying updates to target box:', { before: targetBox, updates });
+      logger.debug('🔧 Applying updates to target box:', { before: targetBox, updates });
       Object.assign(targetBox, updates);
-      console.log('🔧 Target box after updates:', targetBox);
+      logger.debug('🔧 Target box after updates:', targetBox);
       
-      console.log('🔧 Final config after update:', newConfig);
+      logger.debug('🔧 Final config after update:', newConfig);
       return newConfig;
     });
   };
 
   const handleSplitBox = (path: number[]) => {
-    console.log('🔧 handleSplitBox called for path:', path);
+    logger.debug('🔧 handleSplitBox called for path:', path);
     // Generate unique IDs for sub-boxes
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substr(2, 9);
@@ -591,7 +591,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
       }
     ];
 
-    console.log('🔧 Creating sub-boxes:', newSubBoxes);
+    logger.debug('🔧 Creating sub-boxes:', newSubBoxes);
     handleUpdateBox(path, { 
       isSplit: true, 
       subBoxes: newSubBoxes 
@@ -599,7 +599,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   };
 
   const handleUnsplitBox = (path: number[]) => {
-    console.log('🔧 handleUnsplitBox called for path:', path);
+    logger.debug('🔧 handleUnsplitBox called for path:', path);
     handleUpdateBox(path, { 
       isSplit: false, 
       subBoxes: [] 
@@ -607,7 +607,7 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
   };
 
   const handleRemoveBox = (path: number[]) => {
-    console.log('🔧 handleRemoveBox called for path:', path);
+    logger.debug('🔧 handleRemoveBox called for path:', path);
     if (path.length === 1) {
       // Removing a top-level box
       setConfig(prev => ({
@@ -617,12 +617,12 @@ const JobRowConfigModal: React.FC<JobRowConfigModalProps> = ({
     } else {
       // Removing a sub-box - this would be handled by the parent BoxConfig
       // The parent will update its subBoxes array
-      console.log('🔧 Sub-box removal will be handled by parent BoxConfig');
+      logger.debug('🔧 Sub-box removal will be handled by parent BoxConfig');
     }
   };
 
   const handleSave = () => {
-    console.log('🔧 handleSave called with config:', config);
+    logger.debug('🔧 handleSave called with config:', config);
     updateJobRowConfig(config);
     onClose();
   };

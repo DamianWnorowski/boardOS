@@ -83,7 +83,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   const [{ opacity, isDragging: dragIsDragging }, drag] = useDrag({
     type: ItemTypes.RESOURCE,
     item: (monitor) => {
-     console.log('🚀 ResourceCard drag STARTED for:', resource.name, resource.type);
+     logger.debug('🚀 ResourceCard drag STARTED for:', resource.name, resource.type);
       const isCtrlHeld = getIsCtrlHeld();
       
       const dragItem = { 
@@ -97,13 +97,13 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       // Store drag item globally for visual feedback
       (window as any).currentDragItem = dragItem;
       
-     console.log('🚀 ResourceCard created drag item:', dragItem);
+     logger.debug('🚀 ResourceCard created drag item:', dragItem);
       
       return dragItem;
     },
     options: touchEnabled ? getMobileDragSourceOptions() : undefined,
    end: (item, monitor) => {
-     console.log('🚀 ResourceCard drag END for:', resource.name, 'didDrop:', monitor.didDrop(), 'dropResult:', monitor.getDropResult());
+     logger.debug('🚀 ResourceCard drag END for:', resource.name, 'didDrop:', monitor.didDrop(), 'dropResult:', monitor.getDropResult());
      // Reset the handled flag for next drag
      if (item) {
        (item as any)._handled = false;
@@ -187,7 +187,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   
   // Clean up invalid configurations from localStorage
   if (resource.type === 'truck' && assignmentId && truckConfig && !canHaveTrailerConfig()) {
-    console.log('🧹 Cleaning invalid truck config for non-trac truck:', resource.identifier);
+    logger.debug('🧹 Cleaning invalid truck config for non-trac truck:', resource.identifier);
   }
   
   // Handle click for personnel
@@ -197,14 +197,14 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     if (onPersonClick && !isDisabled) {
       e.stopPropagation();
       e.preventDefault();
-      console.log('ResourceCard clicked, calling onPersonClick for:', resource.name);
+      logger.debug('ResourceCard clicked, calling onPersonClick for:', resource.name);
       onPersonClick();
     }
   };
   
   // Debug log for truck display
   if (resource.type === 'truck' && assignmentId) {
-    console.log(`ResourceCard rendering truck ${resource.identifier} with assignmentId ${assignmentId} and config:`, finalTruckConfig);
+    logger.debug(`ResourceCard rendering truck ${resource.identifier} with assignmentId ${assignmentId} and config:`, finalTruckConfig);
   }
   
   // Get assigned driver for trucks

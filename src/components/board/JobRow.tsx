@@ -58,7 +58,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const [{ isTestOver }, testDrop] = useDrop({
     accept: [ItemTypes.RESOURCE],
     drop: (item) => {
-      console.log('🟢 TEST DROP TARGET WORKED!', item);
+      logger.debug('🟢 TEST DROP TARGET WORKED!', item);
       return { test: true };
     },
     collect: (monitor) => ({
@@ -159,7 +159,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     accept: [ItemTypes.RESOURCE, ItemTypes.ASSIGNMENT],
     drop: (item: DragItem, monitor: DropTargetMonitor) => {
       try {
-          itemType: item.type,
+        logger.debug('🟢 Drop happened:', {
           resourceType: item.resource?.type,
           resourceName: item.resource?.name,
           targetRowType: rowType

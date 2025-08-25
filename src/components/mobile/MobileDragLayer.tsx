@@ -6,6 +6,7 @@ import { useScheduler } from '../../context/SchedulerContext';
 import ResourceCard from '../resources/ResourceCard';
 import { ItemTypes } from '../../types';
 import { useMobile } from '../../context/MobileContext';
+import logger from '../../utils/logger';
 
 const MobileDragLayer: React.FC = () => {
   const { isMobile, touchEnabled } = useMobile();
@@ -25,61 +26,7 @@ const MobileDragLayer: React.FC = () => {
   }));
 
   // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    isSecondShift: item?.isSecondShift,
-    currentOffset: !!currentOffset
-  });
-
-  // Debug logging for rendering
-  console.log('🎨 MobileDragLayer render check:', {
+  logger.debug('🎨 MobileDragLayer render check:', {
     isDragging,
     itemType,
     hasItem: !!item,
@@ -89,168 +36,36 @@ const MobileDragLayer: React.FC = () => {
 
   // Only show on mobile/touch devices
   if (!isDragging) {
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
-    console.log('🎨 MobileDragLayer not rendering - not dragging');
+    logger.debug('🎨 MobileDragLayer not rendering - not dragging');
     return null;
   }
 
   // Get drag feedback info
   const getDragFeedbackInfo = () => {
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
-      itemType: item?.type,
-      resourceName: item?.resource?.name,
-      isSecondShift: item?.isSecondShift
-    });
-    
-    console.log('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
+    logger.debug('🎨 MobileDragLayer getDragFeedbackInfo called with item:', {
       itemType: item?.type,
       resourceName: item?.resource?.name,
       isSecondShift: item?.isSecondShift
     });
     
     if (!item) {
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
-      console.log('🎨 MobileDragLayer → Blue: No item');
+      logger.debug('🎨 MobileDragLayer → Blue: No item');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
     // Handle both resource and assignment drag types
     const resource = item.resource || (item.type === ItemTypes.ASSIGNMENT ? getResourceById(item.assignments?.[0]?.resourceId) : null);
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
-    
-    console.log('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
+    logger.debug('🎨 MobileDragLayer Resource:', resource?.name, 'type:', resource?.type);
     
     if (!resource) {
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
-      console.log('🎨 MobileDragLayer → Blue: No resource found');
+      logger.debug('🎨 MobileDragLayer → Blue: No resource found');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     }
 
     // Check current assignments for this resource
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift
-    })));
-    console.log('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
-    console.log('🎨 MobileDragLayer All resource assignments:', resourceAssignments.map(a => ({
-      id: a.id,
-      jobId: a.jobId,
-      jobName: getJobById(a.jobId)?.name,
-      shift: getJobById(a.jobId)?.shift,
-      row: a.row
-    })));
-    console.log('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
+    logger.debug('🎨 MobileDragLayer Resource assignments:', resourceAssignments.length);
+    logger.debug('🎨 MobileDragLayer Assignment details:', resourceAssignments.map(a => ({
       id: a.id,
       jobId: a.jobId,
       jobName: getJobById(a.jobId)?.name,
@@ -258,14 +73,7 @@ const MobileDragLayer: React.FC = () => {
     })));
     
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
-    console.log('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
+    logger.debug('🎨 MobileDragLayer Assigned jobs:', assignedJobs.map(j => ({ name: j?.name, shift: j?.shift })));
     
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
@@ -273,56 +81,7 @@ const MobileDragLayer: React.FC = () => {
     
     // Get the job being hovered over
     const hoveredJob = hoveredJobId ? getJobById(hoveredJobId) : null;
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
-      hasDayJob, 
-      hasNightJob, 
-      isCurrentlyWorkingDouble, 
-      isSecondShift: item.isSecondShift,
-      ctrlDetected: item.isSecondShift === true
-    });
-    console.log('🎨 MobileDragLayer Job status:', { 
+    logger.debug('🎨 MobileDragLayer Job status:', { 
       hasDayJob, 
       hasNightJob, 
       isCurrentlyWorkingDouble, 
@@ -380,25 +139,11 @@ const MobileDragLayer: React.FC = () => {
         }
       } else {
         // No hover target, use generic logic
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
-      console.log('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
+      logger.debug('🎨 MobileDragLayer Ctrl+drag detected, determining color...');
       
       if (isCurrentlyWorkingDouble) {
         // Already working double, adding a third job
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
-        console.log('🎨 MobileDragLayer → Red: Adding 3rd job');
+        logger.debug('🎨 MobileDragLayer → Red: Adding 3rd job');
         return { 
           message: 'Adding 3rd job', 
           color: 'text-red-600', 
@@ -406,7 +151,7 @@ const MobileDragLayer: React.FC = () => {
         };
       } else if (hasNightJob && !hasDayJob) {
         // Has only night job, Ctrl+dragging will create double shift (orange)
-        console.log('🎨 MobileDragLayer → Orange: Has night job, creating double shift');
+        logger.debug('🎨 MobileDragLayer → Orange: Has night job, creating double shift');
         return {
           message: 'Creating double shift', 
           color: 'text-orange-600', 
@@ -414,7 +159,7 @@ const MobileDragLayer: React.FC = () => {
         };
       } else if (hasDayJob && !hasNightJob) {
         // Has only day job, Ctrl+dragging will create double shift (orange)
-        console.log('🎨 MobileDragLayer → Orange: Has day job, creating double shift');
+        logger.debug('🎨 MobileDragLayer → Orange: Has day job, creating double shift');
         return {
           message: 'Creating double shift', 
           color: 'text-orange-600', 
@@ -422,7 +167,7 @@ const MobileDragLayer: React.FC = () => {
         };
       } else {
         // No current jobs, Ctrl+dragging for first assignment
-        console.log('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
+        logger.debug('🎨 MobileDragLayer → Teal: No jobs, assuming day ↔ day');
         return {
           message: 'Drag to assign', 
           color: 'text-blue-600', 
@@ -433,42 +178,24 @@ const MobileDragLayer: React.FC = () => {
     }
 
     // Normal drag (not Ctrl+drag)
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
-    console.log('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
+    logger.debug('🎨 MobileDragLayer Normal drag (no Ctrl), isSecondShift:', item.isSecondShift);
     if (resourceAssignments.length === 0) {
       // First assignment
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
-      console.log('🎨 MobileDragLayer → Blue: First assignment');
+      logger.debug('🎨 MobileDragLayer → Blue: First assignment');
       return { message: 'Drag to assign', color: 'text-blue-600', icon: '📋' };
     } else if (isCurrentlyWorkingDouble) {
       // Already working double, moving assignment
-      console.log('🎨 MobileDragLayer → Purple: Moving double shift');
-      console.log('🎨 MobileDragLayer → Purple: Moving double shift');
+      logger.debug('🎨 MobileDragLayer → Purple: Moving double shift');
       return { message: 'Moving double shift', color: 'text-purple-600', icon: '🔄' };
     } else {
       // Has one job, moving assignment
-      console.log('🎨 MobileDragLayer → Blue: Moving assignment');
-      console.log('🎨 MobileDragLayer → Blue: Moving assignment');
+      logger.debug('🎨 MobileDragLayer → Blue: Moving assignment');
       return { message: 'Moving assignment', color: 'text-blue-600', icon: '🔄' };
     }
   };
 
   const renderItem = () => {
-    console.log('🎨 MobileDragLayer renderItem called with itemType:', itemType);
-    console.log('🎨 MobileDragLayer renderItem called with itemType:', itemType);
+    logger.debug('🎨 MobileDragLayer renderItem called with itemType:', itemType);
     if (!item) return null;
 
     const feedbackInfo = getDragFeedbackInfo();
@@ -477,20 +204,7 @@ const MobileDragLayer: React.FC = () => {
      feedbackInfo.color.includes('purple') ? 'border-purple-400' :
      feedbackInfo.color.includes('teal') ? 'border-teal-400' : 'border-blue-400';
       
-    console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
-    console.log('🎨 MobileDragLayer color check:', {
-      color: feedbackInfo.color,
-      includesRed: feedbackInfo.color.includes('red'),
-      includesOrange: feedbackInfo.color.includes('orange'),
-      includesTeal: feedbackInfo.color.includes('teal')
-    });
-    console.log('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
-    console.log('🎨 MobileDragLayer color check:', {
-      color: feedbackInfo.color,
-      includesRed: feedbackInfo.color.includes('red'),
-      includesOrange: feedbackInfo.color.includes('orange'),
-      includesTeal: feedbackInfo.color.includes('teal')
-    });
+    logger.debug('🎨 MobileDragLayer feedbackInfo:', feedbackInfo);
 
     switch (itemType) {
       case ItemTypes.RESOURCE:
