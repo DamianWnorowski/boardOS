@@ -111,9 +111,9 @@ export const RESOURCE_COLORS: Record<ResourceType, ResourceColors> = {
  * Shift status border colors
  */
 export const SHIFT_STATUS_BORDERS = {
-  doubleShift: 'border-2 border-red-500',      // Red for day + night
-  multipleDayJobs: 'border-2 border-teal-500', // Teal for 2+ day jobs
-  nightShiftOnly: 'border-2 border-orange-500' // Orange for night only
+  doubleShift: 'border-2 border-red-500',        // Red for day + night
+  multipleDayJobs: 'border-2 border-teal-500',   // Teal for 2+ day jobs  
+  nightShiftOnly: 'border-2 border-orange-500'   // Orange for night only
 };
 
 /**
@@ -169,6 +169,25 @@ export const getShiftStatusBorder = (
   
   // Return empty string for normal border (single day job or unassigned)
   return '';
+};
+
+/**
+ * Get complete border style with shift status override
+ * This prevents border color conflicts by returning only one border class
+ */
+export const getCompleteBorderStyle = (
+  resourceType: ResourceType,
+  hasDayJob: boolean,
+  hasNightJob: boolean,
+  hasMultipleDayJobs: boolean,
+  hasMultipleNightJobs: boolean
+): string => {
+  // Check for shift status border first
+  const shiftBorder = getShiftStatusBorder(hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
+  if (shiftBorder) return shiftBorder;
+  
+  // Use standard resource border if no shift override
+  return getResourceBorder(resourceType);
 };
 
 /**

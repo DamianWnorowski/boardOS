@@ -8,6 +8,7 @@ import { useMobile } from '../../context/MobileContext';
 import { useDragContext } from '../../context/DragContext';
 import { getMobileDragSourceOptions } from '../../utils/dndBackend';
 import { getResourceStyle, getResourceBorder, getShiftStatusBorder } from '../../utils/colorSystem';
+import { getCompleteBorderStyle } from '../../utils/colorSystem';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -227,16 +228,11 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
-    const isWorkingDouble = hasNightJob && hasDayJob;
     const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
     const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
     
-    // Get shift-specific border override
-    const shiftBorder = getShiftStatusBorder(hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
-    if (shiftBorder) return shiftBorder;
-    
-    // Use standard resource border
-    return getResourceBorder(resource.type);
+    // Use the complete border style that prevents conflicts
+    return getCompleteBorderStyle(resource.type, hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
   };
   
   // Add specific styling based on the card's role in the attachment group
