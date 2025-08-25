@@ -107,3 +107,20 @@ export function getCompleteBorderStyle(
   // Default to resource type border for single day or unassigned
   return `border ${getResourceBorder(resourceType)}`;
 }
+
+/**
+ * Get legacy resource colors combining both background and border styles
+ * Used by components that need the complete color mapping
+ */
+export function getLegacyResourceColors() {
+  const result: Record<string, { color: string; border: string }> = {};
+  
+  Object.keys(resourceColors).forEach(type => {
+    result[type] = {
+      color: resourceColors[type as keyof typeof resourceColors],
+      border: resourceBorders[type as keyof typeof resourceBorders]
+    };
+  });
+  
+  return result;
+}
