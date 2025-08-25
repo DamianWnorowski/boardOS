@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { magnetManager } from '../classes/Magnet';
 import { buildStandardConstructionRules, buildStandardDropRules } from '../utils/ruleCreator';
 import { safeLocalStorage } from '../utils/localStorageUtils';
+import { getLegacyResourceColors } from '../utils/colorSystem';
 
 // Deep equality comparison utility
 const deepEqual = (a: any, b: any): boolean => {
@@ -177,26 +178,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Store previous state for deep comparison
   const previousStateRef = useRef<any>(null);
 
-  // Stable resource colors object to prevent unnecessary re-renders
-  const resourceColors = React.useMemo(() => ({
-    operator: { color: 'bg-white', borderColor: 'border-gray-400' },
-    driver: { color: 'bg-green-500', borderColor: 'border-green-700' },
-    privateDriver: { color: 'bg-red-500', borderColor: 'border-red-700' },
-    laborer: { color: 'bg-white', borderColor: 'border-green-600' },
-    striper: { color: 'bg-white', borderColor: 'border-blue-600' },
-    foreman: { color: 'bg-orange-500', borderColor: 'border-orange-700' },
-    truck: { color: 'bg-black text-white', borderColor: 'border-gray-300' },
-    skidsteer: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    paver: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    excavator: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    sweeper: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    millingMachine: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    grader: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    dozer: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    payloader: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    roller: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-    equipment: { color: 'bg-yellow-400', borderColor: 'border-yellow-600' },
-  }), []);
+  // Use centralized color system to prevent duplicates
+  const resourceColors = React.useMemo(() => getLegacyResourceColors(), []);
   // Load data from localStorage if available
   useEffect(() => {
     const savedData = safeLocalStorage.getItem('scheduler-data');

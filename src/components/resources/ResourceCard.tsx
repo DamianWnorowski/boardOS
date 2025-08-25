@@ -7,6 +7,7 @@ import { useScheduler } from '../../context/SchedulerContext';
 import { useMobile } from '../../context/MobileContext';
 import { useDragContext } from '../../context/DragContext';
 import { getMobileDragSourceOptions } from '../../utils/dndBackend';
+import { getResourceStyle, getResourceBorder, getShiftStatusBorder } from '../../utils/colorSystem';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -214,50 +215,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   };
   
   const getCardStyle = () => {
-    // If disabled, use gray styling
-    if (isDisabled) {
-      return 'bg-gray-300 text-gray-500';
-    }
-    
-    // Debug: log the resource type for foreman
-    if (resource.name.includes('Alan')) {
-      console.log('Alan resource type:', resource.type);
-    }
-    
-    // Trucks get black background with white text - check this first
-    if (resource.type === 'truck') {
-      return 'bg-black text-white';
-    }
-    
-    // Equipment is yellow with black text
-    if (isEquipment) {
-      return 'bg-yellow-400 text-black';
-    }
-    
-    // Apply specific colors for personnel resources
-    switch (resource.type) {
-      case 'operator':
-        return 'bg-white text-black'; // White with black text
-      case 'driver':
-        return 'bg-green-500 text-black'; // Green with black text
-      case 'privateDriver':
-        return 'bg-red-500 text-white'; // Red with white text
-      case 'laborer':
-        return 'bg-white text-green-600'; // White with green text
-      case 'striper':
-        return 'bg-white text-blue-600'; // White with blue text
-      case 'foreman':
-        return 'bg-orange-500 text-black'; // Orange with black text
-      default:
-        return 'bg-gray-200 text-gray-800';
-    }
+    return isDisabled ? 'bg-gray-300 text-gray-500' : getResourceStyle(resource.type);
   };
   
   // Border style based on resource type
   const getBorderStyle = () => {
-    if (isDisabled) {
-      return 'border border-gray-400';
-    }
+    if (isDisabled) return 'border border-gray-400';
     
     // Check if this resource is working a night shift or double shift
     const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
@@ -268,46 +231,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     const hasMultipleDayJobs = assignedJobs.filter(job => job.shift === 'day').length > 1;
     const hasMultipleNightJobs = assignedJobs.filter(job => job.shift === 'night').length > 1;
     
-    // Red border for double shift (working both day and night)
-    if (isWorkingDouble) {
-      return 'border-2 border-red-500';
-    }
+    // Get shift-specific border override
+    const shiftBorder = getShiftStatusBorder(hasDayJob, hasNightJob, hasMultipleDayJobs, hasMultipleNightJobs);
+    if (shiftBorder) return shiftBorder;
     
-    // Teal border for multiple jobs of the same shift type
-    if (hasMultipleDayJobs) {
-      return 'border-2 border-teal-500';
-    }
-    
-    // Orange border for night shift only
-    if (hasNightJob && !hasDayJob) {
-      return 'border-2 border-orange-500';
-    }
-    
-    // Trucks get light gray border on black background
-    if (resource.type === 'truck') {
-      return 'border border-gray-300';
-    }
-    
-    if (isEquipment) {
-      return 'border border-yellow-600'; // Darker yellow border for equipment
-    }
-    
-    switch (resource.type) {
-      case 'operator':
-        return 'border border-gray-400'; // Gray border for white operator cards
-      case 'driver':
-        return 'border border-green-700'; // Darker green border
-      case 'privateDriver':
-        return 'border border-red-700'; // Darker red border
-      case 'laborer':
-        return 'border border-green-600'; // Green border for laborers
-      case 'striper':
-        return 'border border-blue-600'; // Blue border for stripers
-      case 'foreman':
-        return 'border border-orange-700 font-medium'; // Darker orange border with bold text
-      default:
-        return 'border border-gray-400';
-    }
+    // Use standard resource border
+    return getResourceBorder(resource.type);
   };
   
   // Add specific styling based on the card's role in the attachment group
