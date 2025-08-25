@@ -1,49 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Job, Resource, Assignment, RowType, RowOverride, TimeSlot, ResourceType, MagnetInteractionRule, DropRule, JobRowConfig } from '../types';
-import { mockJobs, mockResources, mockAssignments } from '../data/mockData';
 import { convertPersonnelToResources, convertEquipmentToResources } from '../data/resourceData';
 import { isRowNeededForJobType } from '../utils/jobUtils';
 import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { magnetManager } from '../classes/Magnet';
 import { buildStandardConstructionRules, buildStandardDropRules } from '../utils/ruleCreator';
-import { safeLocalStorage } from '../utils/localStorageUtils';
 import { getLegacyResourceColors } from '../utils/colorSystem';
-
-// Deep equality comparison utility
-const deepEqual = (a: any, b: any): boolean => {
-  if (a === b) return true;
-  
-  if (a == null || b == null) return a === b;
-  
-  if (typeof a !== typeof b) return false;
-  
-  if (typeof a !== 'object') return a === b;
-  
-  // Handle arrays
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  
-  if (Array.isArray(a)) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false;
-    }
-    return true;
-  }
-  
-  // Handle objects
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-  
-  if (keysA.length !== keysB.length) return false;
-  
-  for (const key of keysA) {
-    if (!keysB.includes(key)) return false;
-    if (!deepEqual(a[key], b[key])) return false;
-  }
-  
-  return true;
-};
+import { DatabaseService } from '../services/DatabaseService';
+import { ScheduleService } from '../services/ScheduleService';
+import { supabase } from '../lib/supabase';
 
 interface SchedulerContextType {
   jobs: Job[];
@@ -53,44 +19,44 @@ interface SchedulerContextType {
   selectedDate: Date;
   filteredResourceType: string | null;
   searchTerm: string;
-  truckDriverAssignments: Record<string, string>; // truckId -> driverId
+  truckDriverAssignments: Record<string, string>;
   magnetInteractionRules: MagnetInteractionRule[];
   dropRules: DropRule[];
   jobRowConfigs: JobRowConfig[];
+  isLoading: boolean;
+  error: string | null;
   
   // Job actions
-  addJob: (job: Omit<Job, 'id'>) => void;
-  updateJob: (job: Job) => void;
-  removeJob: (jobId: string) => void;
-  finalizeJob: (jobId: string) => void;
-  unfinalizeJob: (jobId: string) => void;
+  addJob: (job: Omit<Job, 'id'>) => Promise<void>;
+  updateJob: (job: Job) => Promise<void>;
+  removeJob: (jobId: string) => Promise<void>;
+  finalizeJob: (jobId: string) => Promise<void>;
+  unfinalizeJob: (jobId: string) => Promise<void>;
   
   // Resource actions
-  addResource: (resource: Omit<Resource, 'id'>) => void;
-  updateResource: (resource: Resource) => void;
-  removeResource: (resourceId: string) => void;
-  toggleResourceOnSite: (resourceId: string) => void;
+  addResource: (resource: Omit<Resource, 'id'>) => Promise<void>;
+  updateResource: (resource: Resource) => Promise<void>;
+  removeResource: (resourceId: string) => Promise<void>;
+  toggleResourceOnSite: (resourceId: string) => Promise<void>;
   
   // Assignment actions
-  assignResource: (resourceId: string, jobId: string, row: RowType, position?: number) => string;
-  assignResourceWithTruckConfig: (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number) => string;
-  updateAssignment: (assignment: Assignment) => void;
-  removeAssignment: (assignmentId: string) => void;
-  attachResources: (targetId: string, sourceId: string) => void;
-  detachResources: (assignmentId: string) => void;
-  updateTimeSlot: (assignmentId: string, timeSlot: TimeSlot) => void;
-  updateAssignmentNote: (assignmentId: string, note: string) => void;
-  cleanupOrphanedData: () => void;
+  assignResource: (resourceId: string, jobId: string, row: RowType, position?: number) => Promise<string>;
+  assignResourceWithTruckConfig: (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number, isSecondShift?: boolean) => Promise<string>;
+  updateAssignment: (assignment: Assignment) => Promise<void>;
+  removeAssignment: (assignmentId: string) => Promise<void>;
+  attachResources: (targetId: string, sourceId: string) => Promise<void>;
+  detachResources: (assignmentId: string) => Promise<void>;
+  updateTimeSlot: (assignmentId: string, timeSlot: TimeSlot) => Promise<void>;
+  updateAssignmentNote: (assignmentId: string, note: string) => Promise<void>;
+  cleanupOrphanedData: () => Promise<void>;
   
   // Row override actions
   toggleRowEnabled: (jobId: string, rowType: RowType) => void;
   isRowEnabled: (jobId: string, rowType: RowType) => boolean;
   
   // Combined actions
-  
-  // Combined actions
-  moveAssignmentGroup,
-  assignResourceWithAttachment,
+  moveAssignmentGroup: (assignments: Assignment[], jobId: string, row: RowType, position?: number) => Promise<string>;
+  assignResourceWithAttachment: (resourceId: string, parentAssignmentId: string) => Promise<string | null>;
   
   // Filter actions
   setSelectedDate: (date: Date) => void;
@@ -98,8 +64,8 @@ interface SchedulerContextType {
   setSearchTerm: (term: string) => void;
   
   // Truck-driver assignment actions
-  assignDriverToTruck: (truckId: string, driverId: string) => void;
-  unassignDriverFromTruck: (truckId: string) => void;
+  assignDriverToTruck: (truckId: string, driverId: string) => Promise<void>;
+  unassignDriverFromTruck: (truckId: string) => Promise<void>;
   getTruckDriver: (truckId: string) => Resource | undefined;
   getDriverTruck: (driverId: string) => Resource | undefined;
   
@@ -119,293 +85,761 @@ interface SchedulerContextType {
   getResourceDoubleShiftJobs: (resourceId: string) => { dayJob?: Job, nightJob?: Job };
   
   // Rule management actions
-  updateMagnetInteractionRule: (rule: MagnetInteractionRule) => void;
+  updateMagnetInteractionRule: (rule: MagnetInteractionRule) => Promise<void>;
   getMagnetInteractionRule: (sourceType: ResourceType, targetType: ResourceType) => MagnetInteractionRule | undefined;
   getRequiredAttachmentsForType: (targetType: ResourceType) => ResourceType[];
   getMaxAttachmentsForType: (sourceType: ResourceType, targetType: ResourceType) => number;
   canMagnetAttachTo: (sourceType: ResourceType, targetType: ResourceType) => boolean;
-  updateDropRule: (rowType: RowType, allowedTypes: ResourceType[]) => void;
+  updateDropRule: (rowType: RowType, allowedTypes: ResourceType[]) => Promise<void>;
   getDropRule: (rowType: RowType) => ResourceType[];
   canDropOnRow: (resourceType: ResourceType, rowType: RowType) => boolean;
   
   // Job row config actions
-  updateJobRowConfig: (config: JobRowConfig) => void;
+  updateJobRowConfig: (config: JobRowConfig) => Promise<void>;
   getJobRowConfig: (jobId: string, rowType: RowType) => JobRowConfig | undefined;
-  splitJobRow: (jobId: string, rowType: RowType, box1Name: string, box2Name: string) => void;
-  unsplitJobRow: (jobId: string, rowType: RowType) => void;
+  splitJobRow: (jobId: string, rowType: RowType, box1Name: string, box2Name: string) => Promise<void>;
+  unsplitJobRow: (jobId: string, rowType: RowType) => Promise<void>;
+  
+  // Data refresh
+  refreshData: () => Promise<void>;
 }
 
 export const SchedulerContext = createContext<SchedulerContextType | undefined>(undefined);
 
-// Default test job
-const testJob: Job = {
-  id: `job-${uuidv4()}`,
-  name: 'Test Job',
-  type: 'paving',
-  shift: 'day',
-  notes: 'This is a test job'
-};
-
-// Second test job for night shift
-const testJob2: Job = {
-  id: `job-${uuidv4()}`,
-  name: 'Test Job 2',
-  type: 'milling',
-  shift: 'night',
-  notes: 'This is a night shift test job'
-};
-
-// Use the modular rule creator to build default rules
-const defaultMagnetInteractionRules: MagnetInteractionRule[] = buildStandardConstructionRules();
-const defaultDropRules: DropRule[] = buildStandardDropRules();
-
 export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [jobs, setJobs] = useState<Job[]>([testJob, testJob2]);
-  const [resources, setResources] = useState<Resource[]>([
-    ...convertPersonnelToResources(),
-    ...convertEquipmentToResources()
-  ]);
-  const [assignments, setAssignments] = useState<Assignment[]>(mockAssignments);
-  const [rowOverrides, setRowOverrides] = useState<RowOverride[]>([]);
+  // Database-driven state
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [magnetInteractionRules, setMagnetInteractionRules] = useState<MagnetInteractionRule[]>([]);
+  const [dropRules, setDropRules] = useState<DropRule[]>([]);
+  const [jobRowConfigs, setJobRowConfigs] = useState<JobRowConfig[]>([]);
   const [truckDriverAssignments, setTruckDriverAssignments] = useState<Record<string, string>>({});
+  
+  // Local UI state (not persisted)
+  const [rowOverrides, setRowOverrides] = useState<RowOverride[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filteredResourceType, setFilteredResourceType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [magnetInteractionRules, setMagnetInteractionRules] = useState<MagnetInteractionRule[]>(defaultMagnetInteractionRules);
-  const [dropRules, setDropRules] = useState<DropRule[]>(defaultDropRules);
-  const [jobRowConfigs, setJobRowConfigs] = useState<JobRowConfig[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Store previous state for deep comparison
-  const previousStateRef = useRef<any>(null);
-
-  // Use centralized color system to prevent duplicates
+  // Use centralized color system
   const resourceColors = React.useMemo(() => getLegacyResourceColors(), []);
-  // Load data from localStorage if available
-  useEffect(() => {
-    const savedData = safeLocalStorage.getItem('scheduler-data');
-    if (savedData) {
-      try {
-        const {
-          jobs: savedJobs,
-          resources: savedResources,
-          assignments: savedAssignments,
-          rowOverrides: savedRowOverrides,
-          truckDriverAssignments: savedTruckDriverAssignments,
-          magnetInteractionRules: savedMagnetInteractionRules,
-          dropRules: savedDropRules,
-          jobRowConfigs: savedJobRowConfigs
-        } = JSON.parse(savedData);
-        if (savedJobs && savedJobs.length > 0) setJobs(savedJobs);
-        if (savedResources) {
-          // Ensure all resources have onSite property set
-          const resourcesWithOnSite = savedResources.map((resource: Resource) => ({
-            ...resource,
-            onSite: resource.onSite ?? false // Default to false if undefined
-          }));
-          setResources(resourcesWithOnSite);
-        }
-        if (savedAssignments) setAssignments(savedAssignments);
-        if (savedRowOverrides) setRowOverrides(savedRowOverrides);
-        if (savedTruckDriverAssignments) setTruckDriverAssignments(savedTruckDriverAssignments);
-        if (savedMagnetInteractionRules) setMagnetInteractionRules(savedMagnetInteractionRules);
-        if (savedDropRules) setDropRules(savedDropRules);
-        if (savedJobRowConfigs) setJobRowConfigs(savedJobRowConfigs);
-      } catch (error) {
-        console.error('Error loading saved data:', error);
-      }
+
+  // Load all data from database on mount
+  const loadScheduleData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Load all schedule data
+      const scheduleData = await ScheduleService.getAllScheduleData();
+      
+      setJobs(scheduleData.jobs);
+      setResources(scheduleData.resources);
+      setAssignments(scheduleData.assignments);
+      setMagnetInteractionRules(scheduleData.magnetRules);
+      setDropRules(scheduleData.dropRules);
+
+      // Load truck driver assignments
+      const truckDriverData = await ScheduleService.getTruckDriverAssignments();
+      setTruckDriverAssignments(truckDriverData);
+
+      // Load job row configs
+      const jobRowConfigData = await ScheduleService.getJobRowConfigs();
+      setJobRowConfigs(jobRowConfigData);
+
+      logger.info('Schedule data loaded from database', {
+        jobs: scheduleData.jobs.length,
+        resources: scheduleData.resources.length,
+        assignments: scheduleData.assignments.length,
+        rules: scheduleData.magnetRules.length
+      });
+
+    } catch (err: any) {
+      logger.error('Error loading schedule data:', err);
+      setError(err.message || 'Failed to load schedule data');
+      
+      // Fallback to default data if database is not available
+      setResources([...convertPersonnelToResources(), ...convertEquipmentToResources()]);
+      setMagnetInteractionRules(buildStandardConstructionRules());
+      setDropRules(buildStandardDropRules());
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  // Save data to localStorage on changes
+  // Initial data load
   useEffect(() => {
-    const currentState = {
-      jobs,
-      resources,
-      assignments,
-      rowOverrides,
-      truckDriverAssignments,
-      magnetInteractionRules,
-      dropRules,
-      jobRowConfigs
-    };
-    
-    // Only save if data has actually changed
-    if (!deepEqual(currentState, previousStateRef.current)) {
-      safeLocalStorage.setItem('scheduler-data', JSON.stringify(currentState));
-      previousStateRef.current = currentState;
-    }
-  }, [jobs, resources, assignments, rowOverrides, truckDriverAssignments, magnetInteractionRules, dropRules, jobRowConfigs]);
+    loadScheduleData();
+  }, [loadScheduleData]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    const cleanup = ScheduleService.subscribeToScheduleChanges({
+      onResourceChange: (payload) => {
+        logger.debug('Real-time resource change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setResources(prev => [...prev, DatabaseService.transformDbResource(payload.new)]);
+        } else if (payload.eventType === 'UPDATE') {
+          setResources(prev => prev.map(r => 
+            r.id === payload.new.id ? DatabaseService.transformDbResource(payload.new) : r
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setResources(prev => prev.filter(r => r.id !== payload.old.id));
+        }
+      },
+      onJobChange: (payload) => {
+        logger.debug('Real-time job change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setJobs(prev => [...prev, DatabaseService.transformDbJob(payload.new)]);
+        } else if (payload.eventType === 'UPDATE') {
+          setJobs(prev => prev.map(j => 
+            j.id === payload.new.id ? DatabaseService.transformDbJob(payload.new) : j
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setJobs(prev => prev.filter(j => j.id !== payload.old.id));
+        }
+      },
+      onAssignmentChange: (payload) => {
+        logger.debug('Real-time assignment change:', payload);
+        if (payload.eventType === 'INSERT') {
+          const newAssignment = DatabaseService.transformDbAssignment(payload.new);
+          setAssignments(prev => {
+            // Get attachments for this assignment
+            const attachments = prev
+              .filter(a => a.attachedTo === newAssignment.id)
+              .map(a => a.id);
+            return [...prev, { ...newAssignment, attachments }];
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          setAssignments(prev => prev.map(a => {
+            if (a.id === payload.new.id) {
+              const updatedAssignment = DatabaseService.transformDbAssignment(payload.new);
+              return {
+                ...updatedAssignment,
+                attachments: prev.find(existing => existing.id === a.id)?.attachments || []
+              };
+            }
+            return a;
+          }));
+        } else if (payload.eventType === 'DELETE') {
+          setAssignments(prev => prev.filter(a => a.id !== payload.old.id));
+        }
+      }
+    });
+
+    return cleanup;
+  }, []);
 
   // Update magnetManager with current rules and colors
   useEffect(() => {
     magnetManager.setRulesAndColors(magnetInteractionRules, resourceColors);
   }, [magnetInteractionRules, resourceColors]);
 
-  // Job actions
-  const addJob = (job: Omit<Job, 'id'>) => {
-    const newJob = { ...job, id: `job-${uuidv4()}` };
-    setJobs([...jobs, newJob as Job]);
-  };
-
-  const updateJob = (job: Job) => {
-    // Get the previous job to check if start time changed
-    const previousJob = jobs.find(j => j.id === job.id);
-    const startTimeChanged = previousJob && previousJob.startTime !== job.startTime;
-    
-    setJobs(jobs.map(j => j.id === job.id ? job : j));
-    
-    // If start time changed, update all assignments for this job to use new default time
-    if (startTimeChanged && job.startTime) {
-      setAssignments(prev => prev.map(assignment => {
-        if (assignment.jobId === job.id) {
-          return {
-            ...assignment,
-            timeSlot: {
-              ...assignment.timeSlot,
-              startTime: job.startTime!,
-              endTime: '15:30', // Keep consistent end time
-              isFullDay: true
-            }
-          };
-        }
-        return assignment;
-      }));
+  // Job actions - all database operations
+  const addJob = async (job: Omit<Job, 'id'>) => {
+    try {
+      const newJob = await DatabaseService.createJob(job);
+      logger.info('Job created:', newJob.name);
+    } catch (err: any) {
+      logger.error('Error creating job:', err);
+      setError(`Failed to create job: ${err.message}`);
+      throw err;
     }
   };
 
-  const removeJob = (jobId: string) => {
-    setJobs(jobs.filter(job => job.id !== jobId));
-    setAssignments(assignments.filter(assign => assign.jobId !== jobId));
-    setRowOverrides(rowOverrides.filter(override => override.jobId !== jobId));
+  const updateJob = async (job: Job) => {
+    try {
+      await DatabaseService.updateJob(job);
+      logger.info('Job updated:', job.name);
+    } catch (err: any) {
+      logger.error('Error updating job:', err);
+      setError(`Failed to update job: ${err.message}`);
+      throw err;
+    }
   };
 
-  // Finalize job - marks it as complete and ready for export
-  const finalizeJob = (jobId: string) => {
-    setJobs(jobs.map(j => j.id === jobId ? { ...j, finalized: true } : j));
+  const removeJob = async (jobId: string) => {
+    try {
+      await DatabaseService.deleteJob(jobId);
+      logger.info('Job removed:', jobId);
+    } catch (err: any) {
+      logger.error('Error removing job:', err);
+      setError(`Failed to remove job: ${err.message}`);
+      throw err;
+    }
   };
 
-  // Unfinalize job - allows editing again
-  const unfinalizeJob = (jobId: string) => {
-    setJobs(jobs.map(j => j.id === jobId ? { ...j, finalized: false } : j));
+  const finalizeJob = async (jobId: string) => {
+    try {
+      const job = getJobById(jobId);
+      if (job) {
+        await DatabaseService.updateJob({ ...job, finalized: true });
+        logger.info('Job finalized:', jobId);
+      }
+    } catch (err: any) {
+      logger.error('Error finalizing job:', err);
+      setError(`Failed to finalize job: ${err.message}`);
+      throw err;
+    }
   };
 
-  // Resource actions
-  const addResource = (resource: Omit<Resource, 'id'>) => {
-    const newResource = { ...resource, id: `${resource.type}-${uuidv4()}` };
-    setResources([...resources, newResource as Resource]);
+  const unfinalizeJob = async (jobId: string) => {
+    try {
+      const job = getJobById(jobId);
+      if (job) {
+        await DatabaseService.updateJob({ ...job, finalized: false });
+        logger.info('Job unfinalized:', jobId);
+      }
+    } catch (err: any) {
+      logger.error('Error unfinalizing job:', err);
+      setError(`Failed to unfinalize job: ${err.message}`);
+      throw err;
+    }
   };
 
-  const updateResource = (resource: Resource) => {
-    setResources(resources.map(r => r.id === resource.id ? resource : r));
+  // Resource actions - all database operations
+  const addResource = async (resource: Omit<Resource, 'id'>) => {
+    try {
+      const newResource = await DatabaseService.createResource(resource);
+      logger.info('Resource created:', newResource.name);
+    } catch (err: any) {
+      logger.error('Error creating resource:', err);
+      setError(`Failed to create resource: ${err.message}`);
+      throw err;
+    }
   };
 
-  const toggleResourceOnSite = (resourceId: string) => {
-    logger.debug('🔄 toggleResourceOnSite called for resourceId:', resourceId);
-    const resource = resources.find(r => r.id === resourceId);
-    logger.debug('   - Current resource:', resource?.name, 'onSite:', resource?.onSite);
-    setResources(resources.map(r => 
-      r.id === resourceId ? { 
-        ...r, 
-        onSite: !r.onSite 
-      } : r
-    ));
-    const updatedResource = resources.find(r => r.id === resourceId);
-    logger.debug('   ✅ Updated onSite to:', !resource?.onSite);
+  const updateResource = async (resource: Resource) => {
+    try {
+      await DatabaseService.updateResource(resource);
+      logger.info('Resource updated:', resource.name);
+    } catch (err: any) {
+      logger.error('Error updating resource:', err);
+      setError(`Failed to update resource: ${err.message}`);
+      throw err;
+    }
   };
 
-  const removeResource = (resourceId: string) => {
-    setResources(resources.filter(resource => resource.id !== resourceId));
-    setAssignments(assignments.filter(assign => assign.resourceId !== resourceId));
+  const removeResource = async (resourceId: string) => {
+    try {
+      await DatabaseService.deleteResource(resourceId);
+      logger.info('Resource removed:', resourceId);
+    } catch (err: any) {
+      logger.error('Error removing resource:', err);
+      setError(`Failed to remove resource: ${err.message}`);
+      throw err;
+    }
   };
-  
-  // Check if two time slots overlap
-  const doTimeSlotsOverlap = (slot1: TimeSlot, slot2: TimeSlot) => {
-    // If either is a full day, they always overlap
-    if (slot1.isFullDay || slot2.isFullDay) return true;
+
+  const toggleResourceOnSite = async (resourceId: string) => {
+    try {
+      const resource = getResourceById(resourceId);
+      if (resource) {
+        const updatedResource = { ...resource, onSite: !resource.onSite };
+        await DatabaseService.updateResource(updatedResource);
+        logger.info('Resource on-site status toggled:', resource.name, 'onSite:', updatedResource.onSite);
+      }
+    } catch (err: any) {
+      logger.error('Error toggling resource on-site status:', err);
+      setError(`Failed to update resource: ${err.message}`);
+      throw err;
+    }
+  };
+
+  // Assignment actions - all database operations
+  const assignResource = async (resourceId: string, jobId: string, row: RowType, position?: number): Promise<string> => {
+    try {
+      const job = getJobById(jobId);
+      const defaultStartTime = job?.startTime || '07:00';
+      
+      const newAssignment = await DatabaseService.createAssignment({
+        resourceId,
+        jobId,
+        row,
+        position: position || 0,
+        timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
+      });
+      
+      logger.info('Resource assigned:', resourceId, 'to job:', jobId);
+      return newAssignment.id;
+    } catch (err: any) {
+      logger.error('Error assigning resource:', err);
+      setError(`Failed to assign resource: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const assignResourceWithTruckConfig = async (
+    resourceId: string, 
+    jobId: string, 
+    row: RowType, 
+    truckConfig?: 'flowboy' | 'dump-trailer', 
+    position?: number,
+    isSecondShift: boolean = false
+  ): Promise<string> => {
+    try {
+      // Check if resource is already assigned to this job to prevent duplicates
+      const existingAssignment = assignments.find(a => 
+        a.resourceId === resourceId && 
+        a.jobId === jobId && 
+        !a.attachedTo
+      );
+
+      if (existingAssignment) {
+        logger.debug('Resource already assigned to this job, returning existing assignment');
+        return existingAssignment.id;
+      }
+
+      const job = getJobById(jobId);
+      const defaultStartTime = job?.startTime || '07:00';
+      
+      const newAssignment = await DatabaseService.createAssignment({
+        resourceId,
+        jobId,
+        row,
+        position: position || 0,
+        truckConfig,
+        timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
+      });
+      
+      logger.info('Resource assigned with truck config:', resourceId, 'config:', truckConfig);
+      return newAssignment.id;
+    } catch (err: any) {
+      logger.error('Error assigning resource with truck config:', err);
+      setError(`Failed to assign resource: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateAssignment = async (assignment: Assignment) => {
+    try {
+      await DatabaseService.updateAssignment(assignment);
+      logger.info('Assignment updated:', assignment.id);
+    } catch (err: any) {
+      logger.error('Error updating assignment:', err);
+      setError(`Failed to update assignment: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const removeAssignment = async (assignmentId: string) => {
+    try {
+      // Get assignment to check for attachments
+      const assignment = getAssignmentById(assignmentId);
+      if (assignment?.attachments?.length) {
+        // Remove all attached assignments first
+        await Promise.all(
+          assignment.attachments.map(id => DatabaseService.deleteAssignment(id))
+        );
+      }
+      
+      await DatabaseService.deleteAssignment(assignmentId);
+      logger.info('Assignment removed:', assignmentId);
+    } catch (err: any) {
+      logger.error('Error removing assignment:', err);
+      setError(`Failed to remove assignment: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateTimeSlot = async (assignmentId: string, timeSlot: TimeSlot) => {
+    try {
+      const assignment = getAssignmentById(assignmentId);
+      if (assignment) {
+        const updatedAssignment = { ...assignment, timeSlot };
+        await DatabaseService.updateAssignment(updatedAssignment);
+        logger.info('Time slot updated:', assignmentId);
+      }
+    } catch (err: any) {
+      logger.error('Error updating time slot:', err);
+      setError(`Failed to update time slot: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateAssignmentNote = async (assignmentId: string, note: string) => {
+    try {
+      const assignment = getAssignmentById(assignmentId);
+      if (assignment) {
+        const updatedAssignment = { ...assignment, note: note.trim() || undefined };
+        await DatabaseService.updateAssignment(updatedAssignment);
+        logger.info('Assignment note updated:', assignmentId);
+      }
+    } catch (err: any) {
+      logger.error('Error updating assignment note:', err);
+      setError(`Failed to update note: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const attachResources = async (targetId: string, sourceId: string) => {
+    try {
+      const targetAssignment = getAssignmentById(targetId);
+      const sourceAssignment = getAssignmentById(sourceId);
+      
+      if (targetAssignment && sourceAssignment) {
+        // Update source assignment to be attached to target
+        const updatedSourceAssignment = {
+          ...sourceAssignment,
+          attachedTo: targetId,
+          position: targetAssignment.position,
+          timeSlot: targetAssignment.timeSlot
+        };
+        
+        await DatabaseService.updateAssignment(updatedSourceAssignment);
+        logger.info('Resources attached:', sourceId, 'to', targetId);
+      }
+    } catch (err: any) {
+      logger.error('Error attaching resources:', err);
+      setError(`Failed to attach resources: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const detachResources = async (assignmentId: string) => {
+    try {
+      const assignment = getAssignmentById(assignmentId);
+      if (!assignment) return;
+
+      if (assignment.attachedTo) {
+        // This is an attached assignment - detach it from its parent
+        const updatedAssignment = { ...assignment, attachedTo: undefined };
+        await DatabaseService.updateAssignment(updatedAssignment);
+      } else if (assignment.attachments?.length) {
+        // This is a parent - detach all its children
+        await Promise.all(
+          assignment.attachments.map(async (attachedId) => {
+            const attachedAssignment = getAssignmentById(attachedId);
+            if (attachedAssignment) {
+              const updatedAttached = { ...attachedAssignment, attachedTo: undefined };
+              await DatabaseService.updateAssignment(updatedAttached);
+            }
+          })
+        );
+      }
+      
+      logger.info('Resources detached:', assignmentId);
+    } catch (err: any) {
+      logger.error('Error detaching resources:', err);
+      setError(`Failed to detach resources: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const moveAssignmentGroup = async (assignmentGroup: Assignment[], jobId: string, row: RowType, position?: number): Promise<string> => {
+    try {
+      const primaryAssignment = assignmentGroup[0];
+      const attachedAssignments = assignmentGroup.slice(1);
+      
+      // Get the job to use its default start time
+      const job = getJobById(jobId);
+      const defaultStartTime = job?.startTime || '07:00';
+      
+      // Create new primary assignment
+      const newPrimaryAssignment = await DatabaseService.createAssignment({
+        resourceId: primaryAssignment.resourceId,
+        jobId,
+        row,
+        position,
+        timeSlot: {
+          startTime: defaultStartTime,
+          endTime: '15:30',
+          isFullDay: true
+        },
+        truckConfig: primaryAssignment.truckConfig
+      });
+      
+      // Create new attached assignments
+      const newAttachedPromises = attachedAssignments.map(oldAssignment =>
+        DatabaseService.createAssignment({
+          resourceId: oldAssignment.resourceId,
+          jobId,
+          row,
+          position,
+          attachedTo: newPrimaryAssignment.id,
+          timeSlot: newPrimaryAssignment.timeSlot
+        })
+      );
+      
+      await Promise.all(newAttachedPromises);
+      
+      // Remove old assignments
+      await Promise.all(assignmentGroup.map(a => DatabaseService.deleteAssignment(a.id)));
+      
+      logger.info('Assignment group moved:', assignmentGroup.length, 'assignments to', jobId);
+      return newPrimaryAssignment.id;
+    } catch (err: any) {
+      logger.error('Error moving assignment group:', err);
+      setError(`Failed to move assignments: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const assignResourceWithAttachment = async (resourceId: string, parentAssignmentId: string): Promise<string | null> => {
+    try {
+      const parentAssignment = getAssignmentById(parentAssignmentId);
+      if (!parentAssignment) return null;
+      
+      // Check if resource is already assigned to the same job/row
+      const existingJobRowAssignment = assignments.find(a => 
+        a.resourceId === resourceId && 
+        a.jobId === parentAssignment.jobId && 
+        a.row === parentAssignment.row &&
+        !a.attachedTo
+      );
+      
+      if (existingJobRowAssignment) {
+        // Convert existing assignment to attached assignment
+        const updatedAssignment = {
+          ...existingJobRowAssignment,
+          attachedTo: parentAssignmentId,
+          position: parentAssignment.position,
+          timeSlot: parentAssignment.timeSlot
+        };
+        
+        await DatabaseService.updateAssignment(updatedAssignment);
+        return existingJobRowAssignment.id;
+      }
+      
+      // Create new assignment already attached to parent
+      const newAssignment = await DatabaseService.createAssignment({
+        resourceId,
+        jobId: parentAssignment.jobId,
+        row: parentAssignment.row,
+        position: parentAssignment.position,
+        attachedTo: parentAssignmentId,
+        timeSlot: parentAssignment.timeSlot
+      });
+      
+      logger.info('Resource attached to assignment:', resourceId, 'to', parentAssignmentId);
+      return newAssignment.id;
+    } catch (err: any) {
+      logger.error('Error creating attached assignment:', err);
+      setError(`Failed to attach resource: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const cleanupOrphanedData = async () => {
+    try {
+      // Database foreign key constraints should handle most cleanup automatically
+      // This is mainly for local storage cleanup now
+      logger.info('Cleanup completed - database constraints handle orphaned data automatically');
+    } catch (err: any) {
+      logger.error('Error during cleanup:', err);
+    }
+  };
+
+  // Truck-driver assignment actions
+  const assignDriverToTruck = async (truckId: string, driverId: string) => {
+    try {
+      await ScheduleService.updateTruckDriverAssignment(truckId, driverId);
+      logger.info('Driver assigned to truck:', driverId, 'to', truckId);
+    } catch (err: any) {
+      logger.error('Error assigning driver to truck:', err);
+      setError(`Failed to assign driver: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const unassignDriverFromTruck = async (truckId: string) => {
+    try {
+      await ScheduleService.removeTruckDriverAssignment(truckId);
+      logger.info('Driver unassigned from truck:', truckId);
+    } catch (err: any) {
+      logger.error('Error unassigning driver from truck:', err);
+      setError(`Failed to unassign driver: ${err.message}`);
+      throw err;
+    }
+  };
+
+  // Rule management actions - all database operations
+  const updateMagnetInteractionRule = async (rule: MagnetInteractionRule) => {
+    try {
+      await ScheduleService.updateMagnetRule(rule);
+      logger.info('Magnet interaction rule updated:', rule.sourceType, '->', rule.targetType);
+    } catch (err: any) {
+      logger.error('Error updating magnet rule:', err);
+      setError(`Failed to update rule: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateDropRule = async (rowType: RowType, allowedTypes: ResourceType[]) => {
+    try {
+      await ScheduleService.updateDropRule(rowType, allowedTypes);
+      logger.info('Drop rule updated:', rowType, 'allows:', allowedTypes);
+    } catch (err: any) {
+      logger.error('Error updating drop rule:', err);
+      setError(`Failed to update drop rule: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateJobRowConfig = async (config: JobRowConfig) => {
+    try {
+      await ScheduleService.updateJobRowConfig(config);
+      logger.info('Job row config updated:', config.jobId, config.rowType);
+    } catch (err: any) {
+      logger.error('Error updating job row config:', err);
+      setError(`Failed to update row config: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const splitJobRow = async (jobId: string, rowType: RowType, box1Name: string, box2Name: string) => {
+    try {
+      const newConfig: JobRowConfig = {
+        jobId,
+        rowType,
+        isSplit: true,
+        boxes: [
+          {
+            id: `${jobId}-${rowType}-box1`,
+            name: box1Name,
+            allowedTypes: ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 'dozer', 'payloader', 'roller', 'equipment', 'truck'],
+            maxCount: 10,
+            attachmentRules: []
+          },
+          {
+            id: `${jobId}-${rowType}-box2`,
+            name: box2Name,
+            allowedTypes: ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'],
+            maxCount: 10,
+            attachmentRules: []
+          }
+        ]
+      };
+      
+      await updateJobRowConfig(newConfig);
+    } catch (err: any) {
+      logger.error('Error splitting job row:', err);
+      setError(`Failed to split row: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const unsplitJobRow = async (jobId: string, rowType: RowType) => {
+    try {
+      // Remove the job row config from database
+      const { error } = await supabase
+        .from('job_row_configs')
+        .delete()
+        .eq('job_id', jobId)
+        .eq('row_type', rowType);
+      
+      if (error) throw error;
+      
+      logger.info('Job row unsplit:', jobId, rowType);
+    } catch (err: any) {
+      logger.error('Error unsplitting job row:', err);
+      setError(`Failed to unsplit row: ${err.message}`);
+      throw err;
+    }
+  };
+
+  // Row override actions (these stay local as they're UI-specific)
+  const toggleRowEnabled = (jobId: string, rowType: RowType) => {
+    const existingOverride = rowOverrides.find(
+      o => o.jobId === jobId && o.rowType === rowType
+    );
     
-    // Convert times to minutes for easier comparison
-    const getMinutes = (timeStr: string) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-    
-    const start1 = getMinutes(slot1.startTime);
-    const end1 = getMinutes(slot1.endTime);
-    const start2 = getMinutes(slot2.startTime);
-    const end2 = getMinutes(slot2.endTime);
-    
-    // Check for overlap
-    return start1 < end2 && start2 < end1;
+    if (existingOverride) {
+      setRowOverrides(rowOverrides.map(o => 
+        (o.jobId === jobId && o.rowType === rowType)
+          ? { ...o, enabled: !o.enabled }
+          : o
+      ));
+    } else {
+      setRowOverrides([
+        ...rowOverrides,
+        { jobId, rowType, enabled: false }
+      ]);
+    }
   };
-  
-  // Check if a resource has a time conflict
+
+  const isRowEnabled = (jobId: string, rowType: RowType): boolean => {
+    const override = rowOverrides.find(
+      o => o.jobId === jobId && o.rowType === rowType
+    );
+    
+    if (override !== undefined) {
+      return override.enabled;
+    }
+    
+    const job = getJobById(jobId);
+    if (job) {
+      return isRowNeededForJobType(rowType, job.type);
+    }
+    
+    return true;
+  };
+
+  // Helper functions (computed from state)
+  const getResourcesByAssignment = (jobId: string, row: RowType) => {
+    if (jobId && row) {
+      return assignments.filter(a => a.jobId === jobId && a.row === row);
+    }
+    return assignments;
+  };
+
+  const getAvailableResources = () => {
+    return resources.filter(r => {
+      if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+          !r.identifier?.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      if (filteredResourceType && r.type !== filteredResourceType) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  const getResourceById = (id: string) => {
+    return resources.find(r => r.id === id);
+  };
+
+  const getJobById = (id: string) => {
+    return jobs.find(j => j.id === id);
+  };
+
+  const getAssignmentById = (id: string) => {
+    return assignments.find(a => a.id === id);
+  };
+
+  const getAssignmentByResource = (resourceId: string) => {
+    return assignments.find(a => a.resourceId === resourceId);
+  };
+
+  const getAttachedAssignments = (assignmentId: string) => {
+    return assignments.filter(a => a.attachedTo === assignmentId);
+  };
+
+  const hasMultipleJobAssignments = (resourceId: string) => {
+    const resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
+    const uniqueJobIds = new Set(resourceAssignments.map(a => a.jobId));
+    return uniqueJobIds.size > 1;
+  };
+
+  const getResourceOtherAssignments = (resourceId: string, excludeAssignmentId: string) => {
+    return assignments.filter(a => 
+      a.resourceId === resourceId && a.id !== excludeAssignmentId
+    );
+  };
+
   const hasTimeConflict = (resourceId: string, timeSlot: TimeSlot, excludeAssignmentId?: string) => {
-    // Since resources are unique, any existing assignment is a conflict
     const resourceAssignments = assignments.filter(a => 
       a.resourceId === resourceId && (!excludeAssignmentId || a.id !== excludeAssignmentId)
     );
-    
     return resourceAssignments.length > 0;
   };
-  
-  // Truck-driver assignment functions
-  const assignDriverToTruck = (truckId: string, driverId: string) => {
-    // Remove any existing assignment for this driver
-    const updatedAssignments = { ...truckDriverAssignments };
-    
-    // Remove driver from any other truck
-    Object.keys(updatedAssignments).forEach(key => {
-      if (updatedAssignments[key] === driverId) {
-        delete updatedAssignments[key];
-      }
-    });
-    
-    // Assign driver to this truck
-    updatedAssignments[truckId] = driverId;
-    setTruckDriverAssignments(updatedAssignments);
-  };
-  
-  const unassignDriverFromTruck = (truckId: string) => {
-    const updatedAssignments = { ...truckDriverAssignments };
-    delete updatedAssignments[truckId];
-    setTruckDriverAssignments(updatedAssignments);
-  };
-  
-  const getTruckDriver = (truckId: string): Resource | undefined => {
-    const driverId = truckDriverAssignments[truckId];
-    if (!driverId) return undefined;
-    return resources.find(r => r.id === driverId);
-  };
-  
-  const getDriverTruck = (driverId: string): Resource | undefined => {
-    const truckId = Object.keys(truckDriverAssignments).find(
-      key => truckDriverAssignments[key] === driverId
-    );
-    if (!truckId) return undefined;
-    return resources.find(r => r.id === truckId);
-  };
-  
-  // Update time slot for an assignment
-  const updateTimeSlot = (assignmentId: string, timeSlot: TimeSlot) => {
-    setAssignments(assignments.map(a => {
-      if (a.id === assignmentId) {
-        return { ...a, timeSlot };
-      }
-      return a;
-    }));
-  };
 
-  // Update assignment note
-  const updateAssignmentNote = (assignmentId: string, note: string) => {
-    setAssignments(assignments.map(a => {
-      if (a.id === assignmentId) {
-        return { ...a, note: note.trim() || undefined };
-      }
-      return a;
-    }));
-  };
-
-  // Get all notes for a job
   const getJobNotes = (jobId: string) => {
     return assignments
       .filter(a => a.jobId === jobId && a.note && a.note.trim())
@@ -420,7 +854,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       .filter(item => item.resource);
   };
 
-  // Check if a resource is working both day and night shifts
   const isWorkingDouble = (resourceId: string) => {
     const resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
     const jobIds = resourceAssignments.map(a => a.jobId);
@@ -432,7 +865,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return hasDayJob && hasNightJob;
   };
 
-  // Get the day and night jobs for a resource working double
   const getResourceDoubleShiftJobs = (resourceId: string) => {
     const resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
     const jobIds = resourceAssignments.map(a => a.jobId);
@@ -444,23 +876,21 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return { dayJob, nightJob };
   };
 
-  // Rule management functions
-  const updateMagnetInteractionRule = (rule: MagnetInteractionRule) => {
-    setMagnetInteractionRules(prevRules => {
-      const existingIndex = prevRules.findIndex(
-        r => r.sourceType === rule.sourceType && r.targetType === rule.targetType
-      );
-
-      if (existingIndex !== -1) {
-        const updatedRules = [...prevRules];
-        updatedRules[existingIndex] = rule;
-        return updatedRules;
-      } else {
-        return [...prevRules, rule];
-      }
-    });
+  const getTruckDriver = (truckId: string): Resource | undefined => {
+    const driverId = truckDriverAssignments[truckId];
+    if (!driverId) return undefined;
+    return getResourceById(driverId);
   };
 
+  const getDriverTruck = (driverId: string): Resource | undefined => {
+    const truckId = Object.keys(truckDriverAssignments).find(
+      key => truckDriverAssignments[key] === driverId
+    );
+    if (!truckId) return undefined;
+    return getResourceById(truckId);
+  };
+
+  // Rule helper functions
   const getMagnetInteractionRule = (sourceType: ResourceType, targetType: ResourceType) => {
     return magnetInteractionRules.find(r => r.sourceType === sourceType && r.targetType === targetType);
   };
@@ -481,21 +911,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return rule?.canAttach || false;
   };
 
-  // Drop rule functions
-  const updateDropRule = (rowType: RowType, allowedTypes: ResourceType[]) => {
-    setDropRules(prevRules => {
-      const existingIndex = prevRules.findIndex(r => r.rowType === rowType);
-      
-      if (existingIndex !== -1) {
-        const updatedRules = [...prevRules];
-        updatedRules[existingIndex] = { rowType, allowedTypes };
-        return updatedRules;
-      } else {
-        return [...prevRules, { rowType, allowedTypes }];
-      }
-    });
-  };
-
   const getDropRule = (rowType: RowType): ResourceType[] => {
     const rule = dropRules.find(r => r.rowType === rowType);
     return rule?.allowedTypes || [];
@@ -506,680 +921,16 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return allowedTypes.includes(resourceType);
   };
 
-  // Job row config functions
-  const updateJobRowConfig = (config: JobRowConfig) => {
-    setJobRowConfigs(prevConfigs => {
-      const existingIndex = prevConfigs.findIndex(
-        c => c.jobId === config.jobId && c.rowType === config.rowType
-      );
-      
-      if (existingIndex !== -1) {
-        const updatedConfigs = [...prevConfigs];
-        updatedConfigs[existingIndex] = config;
-        return updatedConfigs;
-      } else {
-        return [...prevConfigs, config];
-      }
-    });
-  };
-
   const getJobRowConfig = (jobId: string, rowType: RowType) => {
     return jobRowConfigs.find(c => c.jobId === jobId && c.rowType === rowType);
   };
 
-  const splitJobRow = (jobId: string, rowType: RowType, box1Name: string, box2Name: string) => {
-    const newConfig: JobRowConfig = {
-      jobId,
-      rowType,
-      isSplit: true,
-      boxes: [
-        {
-          id: `${jobId}-${rowType}-box1`,
-          name: box1Name,
-          allowedTypes: ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 'grader', 'dozer', 'payloader', 'roller', 'equipment', 'truck'], // Equipment/vehicles only
-          maxCount: 10,
-          attachmentRules: []
-        },
-        {
-          id: `${jobId}-${rowType}-box2`,
-          name: box2Name,
-          allowedTypes: ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'], // Personnel only
-          maxCount: 10,
-          attachmentRules: []
-        }
-      ]
-    };
-    
-    updateJobRowConfig(newConfig);
+  // Refresh data function
+  const refreshData = async () => {
+    await loadScheduleData();
   };
 
-  const unsplitJobRow = (jobId: string, rowType: RowType) => {
-    setJobRowConfigs(prevConfigs => 
-      prevConfigs.filter(c => !(c.jobId === jobId && c.rowType === rowType))
-    );
-  };
-
-  const addJobRowBox = (jobId: string, rowType: RowType, boxName: string, allowedTypes: ResourceType[]) => {
-    const existingConfig = getJobRowConfig(jobId, rowType);
-    
-    if (!existingConfig) {
-      // Create new config with single box
-      const newConfig: JobRowConfig = {
-        jobId,
-        rowType,
-        isSplit: true,
-        boxes: [{
-          id: `${jobId}-${rowType}-box1`,
-          name: boxName,
-          allowedTypes,
-          maxCount: 10,
-          attachmentRules: []
-        }]
-      };
-      updateJobRowConfig(newConfig);
-    } else {
-      // Add box to existing config
-      const newBox: JobRowBox = {
-        id: `${jobId}-${rowType}-box${existingConfig.boxes.length + 1}`,
-        name: boxName,
-        allowedTypes,
-        maxCount: 10,
-        attachmentRules: []
-      };
-      
-      const updatedConfig = {
-        ...existingConfig,
-        boxes: [...existingConfig.boxes, newBox]
-      };
-      
-      updateJobRowConfig(updatedConfig);
-    }
-  };
-
-  const removeJobRowBox = (jobId: string, rowType: RowType, boxId: string) => {
-    const existingConfig = getJobRowConfig(jobId, rowType);
-    if (!existingConfig) return;
-
-    const updatedBoxes = existingConfig.boxes.filter(box => box.id !== boxId);
-    
-    if (updatedBoxes.length === 0) {
-      // If no boxes left, remove the config entirely
-      unsplitJobRow(jobId, rowType);
-    } else {
-      const updatedConfig = {
-        ...existingConfig,
-        boxes: updatedBoxes,
-        isSplit: updatedBoxes.length > 0
-      };
-      
-      updateJobRowConfig(updatedConfig);
-    }
-  };
-
-  const updateJobRowBoxAttachmentRule = (jobId: string, rowType: RowType, boxId: string, rule: BoxAttachmentRule) => {
-    const existingConfig = getJobRowConfig(jobId, rowType);
-    if (!existingConfig) return;
-
-    const updatedConfig = {
-      ...existingConfig,
-      boxes: existingConfig.boxes.map(box => {
-        if (box.id !== boxId) return box;
-
-        const existingRuleIndex = (box.attachmentRules || []).findIndex(
-          r => r.sourceType === rule.sourceType && r.targetType === rule.targetType
-        );
-
-        const updatedRules = [...(box.attachmentRules || [])];
-        if (existingRuleIndex !== -1) {
-          updatedRules[existingRuleIndex] = rule;
-        } else {
-          updatedRules.push(rule);
-        }
-
-        return {
-          ...box,
-          attachmentRules: updatedRules
-        };
-      })
-    };
-
-    updateJobRowConfig(updatedConfig);
-  };
-
-  // Create an assignment that's already attached to a parent assignment
-  const assignResourceWithAttachment = (resourceId: string, parentAssignmentId: string): string | null => {
-    const parentAssignment = assignments.find(a => a.id === parentAssignmentId);
-    if (!parentAssignment) return null;
-    
-    logger.debug('📎 assignResourceWithAttachment called:', {
-      resourceId,
-      parentAssignmentId,
-      parentAssignment: parentAssignment.resourceId
-    });
-    
-    // Check if resource is already assigned to the same job/row
-    const existingJobRowAssignment = assignments.find(a => 
-      a.resourceId === resourceId && 
-      a.jobId === parentAssignment.jobId && 
-      a.row === parentAssignment.row &&
-      !a.attachedTo
-    );
-    
-    if (existingJobRowAssignment) {
-      logger.debug('📎 Found existing assignment, converting to attached:', existingJobRowAssignment.id);
-      // Convert existing assignment to attached assignment
-      setAssignments(prev => prev.map(a => {
-        if (a.id === existingJobRowAssignment.id) {
-          return {
-            ...a,
-            attachedTo: parentAssignmentId,
-            position: parentAssignment.position,
-            timeSlot: parentAssignment.timeSlot
-          };
-        }
-        if (a.id === parentAssignmentId) {
-          return {
-            ...a,
-            attachments: [...(a.attachments || []), existingJobRowAssignment.id]
-          };
-        }
-        return a;
-      }));
-      
-      return existingJobRowAssignment.id;
-    }
-    
-    // Check if resource is already attached to this parent
-    const existingAttachment = assignments.find(a => 
-      a.resourceId === resourceId && a.attachedTo === parentAssignmentId
-    );
-    
-    if (existingAttachment) {
-      logger.debug('📎 Resource already attached to this parent:', existingAttachment.id);
-      return existingAttachment.id;
-    }
-    
-    // Remove any existing standalone assignment for this resource in other jobs/rows
-    setAssignments(prev => prev.filter(a => 
-      !(a.resourceId === resourceId && !a.attachedTo)
-    ));
-    
-    // Create new assignment already attached to parent
-    const newAssignment: Assignment = {
-      id: `assign-${uuidv4()}`,
-      resourceId,
-      jobId: parentAssignment.jobId,
-      row: parentAssignment.row,
-      position: parentAssignment.position,
-      attachedTo: parentAssignmentId,
-      timeSlot: parentAssignment.timeSlot // Inherit parent's time slot
-    };
-    
-    logger.debug('📎 Creating new attached assignment:', newAssignment.id);
-    
-    // Update assignments to add the new one and update parent's attachments
-    setAssignments(prev => {
-      const updated = prev.map(a => {
-        if (a.id === parentAssignmentId) {
-          return {
-            ...a,
-            attachments: [...(a.attachments || []), newAssignment.id]
-          };
-        }
-        return a;
-      });
-      
-      return [...updated, newAssignment];
-    });
-    
-    return newAssignment.id;
-  };
-
-  // Move an assignment group (primary + attachments) to a new job/row
-  const moveAssignmentGroup = (assignments: Assignment[], jobId: string, row: RowType, position?: number) => {
-    const primaryAssignment = assignments[0];
-    const attachedAssignments = assignments.slice(1);
-    
-    // Get the job to use its default start time
-    const job = getJobById(jobId);
-    const defaultStartTime = job?.startTime || '07:00';
-    
-    // Handle truck configuration preservation
-    let truckConfig = null;
-    if (primaryAssignment) {
-      const resource = getResourceById(primaryAssignment.resourceId);
-      if (resource?.type === 'truck') {
-        const truckConfigs = JSON.parse(safeLocalStorage.getItem('truck-configurations') || '{}');
-        truckConfig = truckConfigs[primaryAssignment.id];
-      }
-    }
-    
-    // Create new primary assignment
-    const newPrimaryAssignment: Assignment = {
-      id: `assign-${uuidv4()}`,
-      resourceId: primaryAssignment.resourceId,
-      jobId,
-      row,
-      position,
-      timeSlot: {
-        startTime: defaultStartTime,
-        endTime: '15:30',
-        isFullDay: true
-      },
-      attachments: attachedAssignments.map(a => `assign-${uuidv4()}`) // Generate new IDs for attachments
-    };
-    
-    // Create new attached assignments
-    const newAttachedAssignments: Assignment[] = attachedAssignments.map((oldAssignment, index) => ({
-      id: newPrimaryAssignment.attachments![index],
-      resourceId: oldAssignment.resourceId,
-      jobId,
-      row,
-      position,
-      attachedTo: newPrimaryAssignment.id,
-      timeSlot: newPrimaryAssignment.timeSlot
-    }));
-    
-    const allNewAssignments = [newPrimaryAssignment, ...newAttachedAssignments];
-    const resourceIdsToRemove = assignments.map(a => a.resourceId);
-    
-    // Store truck configuration with new assignment ID
-    if (truckConfig) {
-      const truckConfigs = JSON.parse(safeLocalStorage.getItem('truck-configurations') || '{}');
-      truckConfigs[newPrimaryAssignment.id] = truckConfig;
-      // Remove old configuration
-      delete truckConfigs[primaryAssignment.id];
-      safeLocalStorage.setItem('truck-configurations', JSON.stringify(truckConfigs));
-    }
-    
-    // Remove old assignments and add new ones in single update
-    setAssignments(prev => {
-      // Remove all existing assignments for these resources
-      const withoutOldAssignments = prev.filter(a => 
-        !resourceIdsToRemove.includes(a.resourceId)
-      );
-      // Add all new assignments
-      return [...withoutOldAssignments, ...allNewAssignments];
-    });
-    
-    return newPrimaryAssignment.id;
-  };
-
-  // Assignment actions
-  const assignResource = (resourceId: string, jobId: string, row: RowType, position?: number) => {
-    logger.debug('assignResource called', { resourceId, jobId, row, position });
-   
-    return assignResourceWithTruckConfigAndShift(resourceId, jobId, row, undefined, position, false);
-  };
-
-  const assignResourceWithTruckConfig = (resourceId: string, jobId: string, row: RowType, truckConfig?: 'flowboy' | 'dump-trailer', position?: number, isSecondShift: boolean = false) => {
-    return assignResourceWithTruckConfigAndShift(resourceId, jobId, row, truckConfig, position, isSecondShift);
-  };
-
-  // Overloaded function to handle the isSecondShift flag
-  const assignResourceWithTruckConfigAndShift = (
-    resourceId: string,
-    jobId: string,
-    row: RowType,
-    truckConfig?: 'flowboy' | 'dump-trailer',
-    position?: number,
-    isSecondShift: boolean = false // New parameter
-  ) => {
-    logger.debug('assignResourceWithTruckConfigAndShift called', { resourceId, jobId, row, truckConfig, position, isSecondShift });
-
-    const resource = getResourceById(resourceId);
-    const job = getJobById(jobId);
-    const defaultStartTime = job?.startTime || '07:00';
-
-    // For second shift (Ctrl+drag), we want to prevent duplicates in the SAME job
-    // but allow different jobs even if same shift
-    const existingJobAssignment = assignments.find(a => 
-      a.resourceId === resourceId && 
-      a.jobId === jobId && 
-      !a.attachedTo
-    );
-
-    // Prevent duplicates within the same job (regardless of Ctrl state)
-    if (existingJobAssignment) {
-      logger.debug('🚫 Resource already assigned to this job, preventing duplicate', {
-        resourceId,
-        jobId,
-        existingAssignmentId: existingJobAssignment.id,
-        isSecondShift
-      });
-      return existingJobAssignment.id; // Return existing assignment ID
-    }
-
-    const newAssignment: Assignment = {
-      id: `assign-${uuidv4()}`,
-      resourceId,
-      jobId,
-      row,
-      position,
-      truckConfig,
-      timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
-    };
-    setAssignments(prev => [...prev, newAssignment]);
-    return newAssignment.id;
-  };
-
-  const updateAssignment = (assignment: Assignment) => {
-    setAssignments(assignments.map(a => a.id === assignment.id ? assignment : a));
-  };
-
-  const removeAssignment = (assignmentId: string) => {
-    logger.debug('Removing assignment', { assignmentId });
-    
-    setAssignments(prev => {
-      const assignment = prev.find(a => a.id === assignmentId);
-      if (!assignment) return prev;
-
-      // Collect all assignment IDs that need to be removed
-      const idsToRemove = new Set([assignmentId]);
-      
-      // Add attached assignments to removal list
-      if (assignment.attachments?.length) {
-        assignment.attachments.forEach(id => idsToRemove.add(id));
-      }
-
-      // Remove assignments and clean up references atomically
-      return prev
-        .filter(a => !idsToRemove.has(a.id))
-        .map(a => {
-          // Clean up parent references
-          if (a.attachedTo && idsToRemove.has(a.attachedTo)) {
-            return { ...a, attachedTo: undefined };
-          }
-          // Clean up attachment arrays
-          if (a.attachments?.some(id => idsToRemove.has(id))) {
-            return { 
-              ...a, 
-              attachments: a.attachments.filter(id => !idsToRemove.has(id))
-            };
-          }
-          return a;
-        });
-    });
-  };
-
-  // Clean up orphaned data
-  const cleanupOrphanedData = () => {
-    logger.info('Running orphaned data cleanup');
-    
-    // Clean up truck configurations for non-existent assignments
-    const truckConfigs = JSON.parse(safeLocalStorage.getItem('truck-configurations') || '{}');
-    const validAssignmentIds = new Set(assignments.map(a => a.id));
-    
-    let cleanedConfigs = false;
-    Object.keys(truckConfigs).forEach(assignmentId => {
-      if (!validAssignmentIds.has(assignmentId)) {
-        delete truckConfigs[assignmentId];
-        cleanedConfigs = true;
-      }
-    });
-    
-    if (cleanedConfigs) {
-      safeLocalStorage.setItem('truck-configurations', JSON.stringify(truckConfigs));
-      logger.info('Cleaned up orphaned truck configurations');
-    }
-  };
-
-  // Attach resources horizontally
-  const attachResources = (targetId: string, sourceId: string) => {
-    logger.debug('🔗 attachResources called:', { targetId, sourceId });
-    
-    // Prevent duplicate attachments
-    const existingAttachment = assignments.find(a => 
-      a.id === sourceId && a.attachedTo === targetId
-    );
-    
-    if (existingAttachment) {
-      logger.debug('🔗 Resources already attached, skipping');
-      return;
-    }
-    
-    // This function is now simplified - only for drag/drop of existing assignments
-    setAssignments(prev => {
-      const targetAssignment = prev.find(a => a.id === targetId);
-      const sourceAssignment = prev.find(a => a.id === sourceId);
-      
-      logger.debug('🔗 Found assignments:', {
-        target: targetAssignment?.resourceId,
-        source: sourceAssignment?.resourceId
-      });
-    
-      if (!targetAssignment || !sourceAssignment || targetId === sourceId) {
-        logger.debug('🚫 attachResources failed - missing assignments or same ID');
-        return prev;
-      }
-    
-      // Ensure they're in the same job and row
-      if (targetAssignment.jobId !== sourceAssignment.jobId || 
-          targetAssignment.row !== sourceAssignment.row) {
-        logger.debug('🚫 attachResources failed - different job/row');
-        return prev;
-      }
-      
-      logger.debug('✅ Proceeding with attachment');
-      
-      return prev.map(a => {
-        // Update target assignment to include source in attachments
-        if (a.id === targetId) {
-          const updatedAttachments = [...(a.attachments || [])];
-          if (!updatedAttachments.includes(sourceId)) {
-            updatedAttachments.push(sourceId);
-          }
-          return {
-            ...a,
-            attachments: updatedAttachments
-          };
-        }
-        // Update source assignment to be attached to target
-        if (a.id === sourceId) {
-          return {
-            ...a,
-            attachedTo: targetId,
-            position: targetAssignment.position,
-            timeSlot: targetAssignment.timeSlot // Inherit parent's time slot
-          };
-        }
-        // If source was previously attached to another parent, remove it
-        if (sourceAssignment.attachedTo && a.id === sourceAssignment.attachedTo && sourceAssignment.attachedTo !== targetId) {
-          return {
-            ...a,
-            attachments: a.attachments?.filter(attachId => attachId !== sourceId)
-          };
-        }
-        return a;
-      });
-    });
-  };
-  
-  // Detach a resource from its group
-  const detachResources = (assignmentId: string) => {
-    const assignment = assignments.find(a => a.id === assignmentId);
-    
-    if (!assignment) return;
-    
-    if (assignment.attachedTo) {
-      // This is an attached assignment - detach it from its parent
-      setAssignments(assignments.map(a => {
-        if (a.id === assignment.attachedTo) {
-          return {
-            ...a,
-            attachments: a.attachments?.filter(id => id !== assignmentId)
-          };
-        }
-        if (a.id === assignmentId) {
-          return {
-            ...a,
-            attachedTo: undefined
-          };
-        }
-        return a;
-      }));
-    } else if (assignment.attachments?.length) {
-      // This is a parent - detach all its children
-      setAssignments(assignments.map(a => {
-        if (assignment.attachments?.includes(a.id)) {
-          return {
-            ...a,
-            attachedTo: undefined
-          };
-        }
-        if (a.id === assignmentId) {
-          return {
-            ...a,
-            attachments: undefined
-          };
-        }
-        return a;
-      }));
-    }
-  };
-
-  // Row override actions
-  const toggleRowEnabled = (jobId: string, rowType: RowType) => {
-    const existingOverride = rowOverrides.find(
-      o => o.jobId === jobId && o.rowType === rowType
-    );
-    
-    // Determine if the row will be disabled after this toggle
-    let willBeDisabled = false;
-    
-    if (existingOverride) {
-      // If toggling an existing override, it will be disabled if currently enabled
-      willBeDisabled = existingOverride.enabled;
-      
-      // Toggle the existing override
-      setRowOverrides(rowOverrides.map(o => 
-        (o.jobId === jobId && o.rowType === rowType)
-          ? { ...o, enabled: !o.enabled }
-          : o
-      ));
-    } else {
-      // Creating a new override defaults to disabled, so it will be disabled
-      willBeDisabled = true;
-      
-      // Create a new override (default to disabled since we're toggling off)
-      setRowOverrides([
-        ...rowOverrides,
-        { jobId, rowType, enabled: false }
-      ]);
-    }
-    
-    // If the row is being disabled, remove all assignments from that row
-    if (willBeDisabled) {
-      const assignmentsToRemove = assignments.filter(a => 
-        a.jobId === jobId && a.row === rowType
-      );
-      
-      // Remove each assignment (this will also handle cleaning up attachments)
-      assignmentsToRemove.forEach(assignment => {
-        removeAssignment(assignment.id);
-      });
-    }
-  };
-  
-  const isRowEnabled = (jobId: string, rowType: RowType): boolean => {
-    const override = rowOverrides.find(
-      o => o.jobId === jobId && o.rowType === rowType
-    );
-    
-    // If there's an override, use its value
-    if (override !== undefined) {
-      return override.enabled;
-    }
-    
-    // If no override, check if row is needed for this job type
-    const job = getJobById(jobId);
-    if (job) {
-      const isNeeded = isRowNeededForJobType(rowType, job.type);
-      // Needed rows are enabled by default, not needed rows are disabled by default
-      return isNeeded;
-    }
-    
-    // Fallback to enabled by default
-    return true;
-  };
-
-  // Helper functions
-  const getResourcesByAssignment = (jobId: string, row: RowType) => {
-    if (jobId && row) {
-      return assignments.filter(a => a.jobId === jobId && a.row === row);
-    }
-    // If no jobId/row provided, return all assignments
-    return assignments;
-  };
-
-  const getAvailableResources = () => {
-    // Resources can be assigned to multiple jobs (day/night shifts)
-    // A resource is only unavailable if assigned to the same shift type
-    const assignedResourceIds = new Set(assignments.map(a => a.resourceId));
-    
-    return resources.filter(r => {
-      // Apply search filter
-      if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !r.identifier?.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      // Apply type filter
-      if (filteredResourceType && r.type !== filteredResourceType) {
-        return false;
-      }
-      
-      // Resource is always available for assignment (can work multiple shifts)
-      return true;
-    });
-  };
-
-  const getResourceById = (id: string) => {
-    return resources.find(r => r.id === id);
-  };
-
-  const getJobById = (id: string) => {
-    return jobs.find(j => j.id === id);
-  };
-
-  const getAssignmentById = (id: string) => {
-    return assignments.find(a => a.id === id);
-  };
-
-  const getAssignmentByResource = (resourceId: string) => {
-    return assignments.find(a => a.resourceId === resourceId);
-  };
-  
-  const getAttachedAssignments = (assignmentId: string) => {
-    const assignment = assignments.find(a => a.id === assignmentId);
-    if (assignment?.attachments?.length) {
-      return assignment.attachments
-        .map(id => assignments.find(a => a.id === id))
-        .filter(Boolean) as Assignment[];
-    }
-    return [];
-  };
-  
-  // Check if a resource is assigned to multiple jobs
-  const hasMultipleJobAssignments = (resourceId: string) => {
-    const resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
-    
-    // Get unique job IDs for this resource
-    const uniqueJobIds = new Set(resourceAssignments.map(a => a.jobId));
-    
-    // Resource is multi-assigned if it has more than one unique job
-    return uniqueJobIds.size > 1;
-  };
-  
-  // Get other assignments for a resource
-  const getResourceOtherAssignments = (resourceId: string, excludeAssignmentId: string) => {
-    // Get all assignments for this resource excluding the current one
-    return assignments.filter(a => 
-      a.resourceId === resourceId && a.id !== excludeAssignmentId
-    );
-  };
-
-  const value = {
+  const value: SchedulerContextType = {
     jobs,
     resources,
     assignments,
@@ -1191,6 +942,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     magnetInteractionRules,
     dropRules,
     jobRowConfigs,
+    isLoading,
+    error,
     
     // Job actions
     addJob,
@@ -1201,7 +954,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     // Resource actions
     addResource,
-    updateResource, // Keep original updateResource
+    updateResource,
     removeResource,
     toggleResourceOnSite,
     
@@ -1209,12 +962,14 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     assignResource,
     assignResourceWithTruckConfig,
     assignResourceWithAttachment,
-    assignResourceWithTruckConfigAndShift, // Expose the new function
     updateAssignment,
     removeAssignment,
     updateTimeSlot,
     updateAssignmentNote,
     cleanupOrphanedData,
+    attachResources,
+    detachResources,
+    moveAssignmentGroup,
     
     // Row override actions
     toggleRowEnabled,
@@ -1234,7 +989,6 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Helper functions
     getResourcesByAssignment,
     getAvailableResources,
-    moveAssignmentGroup,
     getResourceById,
     getJobById,
     getAssignmentById,
@@ -1262,9 +1016,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     getJobRowConfig,
     splitJobRow,
     unsplitJobRow,
-    addJobRowBox,
-    removeJobRowBox,
-    updateJobRowBoxAttachmentRule
+    
+    // Data management
+    refreshData
   };
 
   return (
