@@ -138,7 +138,16 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       setJobs(scheduleData.jobs);
       setResources(scheduleData.resources);
-      setAssignments(scheduleData.assignments);
+      
+      // Ensure assignments have proper attachments array populated
+      const assignmentsWithAttachments = scheduleData.assignments.map(assignment => ({
+        ...assignment,
+        attachments: scheduleData.assignments
+          .filter(a => a.attachedTo === assignment.id)
+          .map(a => a.id)
+      }));
+      
+      setAssignments(assignmentsWithAttachments);
       setMagnetInteractionRules(scheduleData.magnetRules);
       setDropRules(scheduleData.dropRules);
 
@@ -295,25 +304,70 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (payload.eventType === 'INSERT') {
           const newAssignment = DatabaseService.transformDbAssignment(payload.new);
           setAssignments(prev => {
-            // Get attachments for this assignment
+            // Get attachments for this assignment from current state
             const attachments = prev
               .filter(a => a.attachedTo === newAssignment.id)
               .map(a => a.id);
-            return [...prev, { ...newAssignment, attachments }];
+            
+            // Also update parent assignments if this is an attached assignment
+            const updatedAssignments = prev.map(existingAssignment => {
+              if (newAssignment.attachedTo === existingAssignment.id) {
+                // This new assignment is attached to an existing one
+                return {
+                  ...existingAssignment,
+                  attachments: [...(existingAssignment.attachments || []), newAssignment.id]
+                };
+              }
+              return existingAssignment;
+            });
+            
+            return [...updatedAssignments, { ...newAssignment, attachments }];
           });
         } else if (payload.eventType === 'UPDATE') {
           setAssignments(prev => prev.map(a => {
             if (a.id === payload.new.id) {
               const updatedAssignment = DatabaseService.transformDbAssignment(payload.new);
+              // Preserve existing attachments array or recalculate
+              const attachments = prev
+                .filter(existing => existing.attachedTo === updatedAssignment.id)
+                .map(existing => existing.id);
               return {
                 ...updatedAssignment,
-                attachments: prev.find(existing => existing.id === a.id)?.attachments || []
+                attachments
+              };
+            }
+            // Update parent attachments if this assignment's attachedTo changed
+            if (a.id === payload.old?.attached_to_assignment_id) {
+              // Remove from old parent
+              return {
+                ...a,
+                attachments: (a.attachments || []).filter(id => id !== payload.new.id)
+              };
+            }
+            if (a.id === payload.new.attached_to_assignment_id) {
+              // Add to new parent
+              return {
+                ...a,
+                attachments: [...(a.attachments || []), payload.new.id]
               };
             }
             return a;
           }));
         } else if (payload.eventType === 'DELETE') {
-          setAssignments(prev => prev.filter(a => a.id !== payload.old.id));
+          setAssignments(prev => {
+            // Remove the deleted assignment and update parent attachments
+            return prev
+              .filter(a => a.id !== payload.old.id)
+              .map(a => {
+                if (a.attachments?.includes(payload.old.id)) {
+                  return {
+                    ...a,
+                    attachments: a.attachments.filter(id => id !== payload.old.id)
+                  };
+                }
+                return a;
+              });
+          });
         }
       }
     });
@@ -469,16 +523,19 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isSecondShift: boolean = false
   ): Promise<string> => {
     try {
-      // Check if resource is already assigned to this job to prevent duplicates
-      const existingAssignment = assignments.find(a => 
-        a.resourceId === resourceId && 
-        a.jobId === jobId && 
-        !a.attachedTo
-      );
+      // For second shift assignments, allow duplicates
+      if (!isSecondShift) {
+        // Check if resource is already assigned to this job to prevent duplicates
+        const existingAssignment = assignments.find(a => 
+          a.resourceId === resourceId && 
+          a.jobId === jobId && 
+          !a.attachedTo
+        );
 
-      if (existingAssignment) {
-        logger.debug('Resource already assigned to this job, returning existing assignment');
-        return existingAssignment.id;
+        if (existingAssignment) {
+          logger.debug('Resource already assigned to this job, returning existing assignment');
+          return existingAssignment.id;
+        }
       }
 
       const job = getJobById(jobId);
