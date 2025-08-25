@@ -130,11 +130,20 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Load all data from database on mount
   const loadScheduleData = useCallback(async () => {
     try {
+      logger.debug('🔄 Loading schedule data from database...');
       setIsLoading(true);
       setError(null);
 
       // Load all schedule data
       const scheduleData = await DatabaseService.getAllScheduleData();
+      
+      logger.debug('🔄 Schedule data loaded:', {
+        jobs: scheduleData.jobs.length,
+        resources: scheduleData.resources.length,
+        assignments: scheduleData.assignments.length,
+        magnetRules: scheduleData.magnetRules.length,
+        dropRules: scheduleData.dropRules.length
+      });
       
       setJobs(scheduleData.jobs);
       setResources(scheduleData.resources);
@@ -159,12 +168,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const jobRowConfigData = await DatabaseService.getJobRowConfigs();
       setJobRowConfigs(jobRowConfigData);
 
-      logger.info('Schedule data loaded from database', {
-        jobs: scheduleData.jobs.length,
-        resources: scheduleData.resources.length,
-        assignments: scheduleData.assignments.length,
-        rules: scheduleData.magnetRules.length
-      });
+      logger.info('✅ Schedule data loaded successfully from database');
 
     } catch (err: any) {
       logger.error('Error loading schedule data:', err);
@@ -274,9 +278,17 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Set up real-time subscriptions
   useEffect(() => {
+    logger.debug('Setting up real-time subscriptions...');
+    
     const cleanup = DatabaseService.subscribeToScheduleChanges({
       onResourceChange: (payload) => {
-        logger.debug('Real-time resource change:', payload);
+        logger.debug('🔄 Real-time resource change:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          schema: payload.schema,
+          new: payload.new,
+          old: payload.old
+        });
         if (payload.eventType === 'INSERT') {
           setResources(prev => [...prev, DatabaseService.transformDbResource(payload.new)]);
         } else if (payload.eventType === 'UPDATE') {
@@ -288,7 +300,12 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       },
       onJobChange: (payload) => {
-        logger.debug('Real-time job change:', payload);
+        logger.debug('🔄 Real-time job change:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          new: payload.new,
+          old: payload.old
+        });
         if (payload.eventType === 'INSERT') {
           setJobs(prev => [...prev, DatabaseService.transformDbJob(payload.new)]);
         } else if (payload.eventType === 'UPDATE') {
@@ -300,80 +317,59 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       },
       onAssignmentChange: (payload) => {
-        logger.debug('Real-time assignment change:', payload);
+        logger.debug('🔄 Real-time assignment change:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          new: payload.new,
+          old: payload.old
+        });
+        
         if (payload.eventType === 'INSERT') {
           const newAssignment = DatabaseService.transformDbAssignment(payload.new);
+          logger.debug('🔄 Adding new assignment to state:', newAssignment);
           setAssignments(prev => {
-            // Get attachments for this assignment from current state
-            const attachments = prev
-              .filter(a => a.attachedTo === newAssignment.id)
-              .map(a => a.id);
-            
-            // Also update parent assignments if this is an attached assignment
-            const updatedAssignments = prev.map(existingAssignment => {
-              if (newAssignment.attachedTo === existingAssignment.id) {
-                // This new assignment is attached to an existing one
-                return {
-                  ...existingAssignment,
-                  attachments: [...(existingAssignment.attachments || []), newAssignment.id]
-                };
-              }
-              return existingAssignment;
-            });
-            
-            return [...updatedAssignments, { ...newAssignment, attachments }];
+            const updated = [...prev, { ...newAssignment, attachments: [] }];
+            logger.debug('🔄 Assignments after INSERT:', { count: updated.length });
+            return updated;
           });
         } else if (payload.eventType === 'UPDATE') {
+          const updatedAssignment = DatabaseService.transformDbAssignment(payload.new);
+          logger.debug('🔄 Updating assignment in state:', updatedAssignment);
           setAssignments(prev => prev.map(a => {
             if (a.id === payload.new.id) {
-              const updatedAssignment = DatabaseService.transformDbAssignment(payload.new);
-              // Preserve existing attachments array or recalculate
-              const attachments = prev
-                .filter(existing => existing.attachedTo === updatedAssignment.id)
-                .map(existing => existing.id);
               return {
                 ...updatedAssignment,
-                attachments
-              };
-            }
-            // Update parent attachments if this assignment's attachedTo changed
-            if (a.id === payload.old?.attached_to_assignment_id) {
-              // Remove from old parent
-              return {
-                ...a,
-                attachments: (a.attachments || []).filter(id => id !== payload.new.id)
-              };
-            }
-            if (a.id === payload.new.attached_to_assignment_id) {
-              // Add to new parent
-              return {
-                ...a,
-                attachments: [...(a.attachments || []), payload.new.id]
+                attachments: a.attachments || []
               };
             }
             return a;
           }));
         } else if (payload.eventType === 'DELETE') {
+          logger.debug('🔄 Removing assignment from state:', payload.old.id);
           setAssignments(prev => {
-            // Remove the deleted assignment and update parent attachments
-            return prev
-              .filter(a => a.id !== payload.old.id)
-              .map(a => {
-                if (a.attachments?.includes(payload.old.id)) {
-                  return {
-                    ...a,
-                    attachments: a.attachments.filter(id => id !== payload.old.id)
-                  };
-                }
-                return a;
-              });
+            const updated = prev.filter(a => a.id !== payload.old.id);
+            logger.debug('🔄 Assignments after DELETE:', { count: updated.length });
+            return updated;
           });
+        }
+      },
+      onRuleChange: (payload) => {
+        logger.debug('🔄 Real-time rule change:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          new: payload.new,
+          old: payload.old
+        });
+        // Reload rules when they change
+        if (payload.table === 'magnet_interaction_rules') {
+          loadScheduleData();
         }
       }
     });
 
+    logger.debug('Real-time subscriptions setup complete');
     return cleanup;
-  }, []);
+  }, [loadScheduleData]);
 
   // Update magnetManager with current rules and colors
   useEffect(() => {
@@ -494,6 +490,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Assignment actions - all database operations
   const assignResource = async (resourceId: string, jobId: string, row: RowType, position?: number): Promise<string> => {
     try {
+      logger.debug('🎯 assignResource called:', { resourceId, jobId, row, position });
       const job = getJobById(jobId);
       const defaultStartTime = job?.startTime || '07:00';
       
@@ -505,7 +502,12 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
       });
       
-      logger.info('Resource assigned:', resourceId, 'to job:', jobId);
+      logger.info('✅ Resource assigned successfully:', {
+        assignmentId: newAssignment.id,
+        resourceId,
+        jobId,
+        row
+      });
       return newAssignment.id;
     } catch (err: any) {
       logger.error('Error assigning resource:', err);
@@ -523,6 +525,15 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isSecondShift: boolean = false
   ): Promise<string> => {
     try {
+      logger.debug('🎯 assignResourceWithTruckConfig called:', { 
+        resourceId, 
+        jobId, 
+        row, 
+        truckConfig, 
+        position, 
+        isSecondShift 
+      });
+      
       // For second shift assignments, allow duplicates
       if (!isSecondShift) {
         // Check if resource is already assigned to this job to prevent duplicates
@@ -533,7 +544,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         );
 
         if (existingAssignment) {
-          logger.debug('Resource already assigned to this job, returning existing assignment');
+          logger.debug('⚠️ Resource already assigned to this job, returning existing assignment:', existingAssignment.id);
           return existingAssignment.id;
         }
       }
@@ -550,7 +561,13 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
       });
       
-      logger.info('Resource assigned with truck config:', resourceId, 'config:', truckConfig);
+      logger.info('✅ Resource assigned with truck config:', {
+        assignmentId: newAssignment.id,
+        resourceId,
+        jobId,
+        row,
+        truckConfig
+      });
       return newAssignment.id;
     } catch (err: any) {
       logger.error('Error assigning resource with truck config:', err);
@@ -572,9 +589,13 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const removeAssignment = async (assignmentId: string) => {
     try {
+      logger.debug('🗑️ removeAssignment called:', assignmentId);
       // Get assignment to check for attachments
       const assignment = getAssignmentById(assignmentId);
+      logger.debug('🗑️ Assignment to remove:', assignment);
+      
       if (assignment?.attachments?.length) {
+        logger.debug('🗑️ Removing attached assignments first:', assignment.attachments);
         // Remove all attached assignments first
         await Promise.all(
           assignment.attachments.map(id => DatabaseService.deleteAssignment(id))
@@ -582,7 +603,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       
       await DatabaseService.deleteAssignment(assignmentId);
-      logger.info('Assignment removed:', assignmentId);
+      logger.info('✅ Assignment removed successfully:', assignmentId);
     } catch (err: any) {
       logger.error('Error removing assignment:', err);
       setError(`Failed to remove assignment: ${err.message}`);
@@ -1072,6 +1093,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Refresh data function
   const refreshData = async () => {
+    logger.debug('🔄 Manual refresh triggered');
     await loadScheduleData();
   };
 

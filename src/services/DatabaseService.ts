@@ -545,6 +545,7 @@ export class DatabaseService {
 
   // Assignment operations
   static async createAssignment(assignment: Omit<Assignment, 'id' | 'attachments'>): Promise<Assignment> {
+    logger.debug('📝 Creating assignment in database:', assignment);
     const { data, error } = await supabase
       .from('assignments')
       .insert([{
@@ -565,6 +566,7 @@ export class DatabaseService {
       throw error;
     }
 
+    logger.debug('📝 Assignment created in database:', data);
     const transformedAssignment = this.transformDbAssignment(data);
     
     // Get attachments
@@ -614,6 +616,7 @@ export class DatabaseService {
   }
 
   static async deleteAssignment(id: string): Promise<void> {
+    logger.debug('🗑️ Deleting assignment from database:', id);
     const { error } = await supabase
       .from('assignments')
       .delete()
@@ -623,6 +626,8 @@ export class DatabaseService {
       logger.error('Error deleting assignment:', error);
       throw error;
     }
+    
+    logger.debug('✅ Assignment deleted from database:', id);
   }
 
   // Rule operations
@@ -668,47 +673,69 @@ export class DatabaseService {
     onAssignmentChange?: (payload: any) => void;
     onRuleChange?: (payload: any) => void;
   }) {
+    logger.debug('🔔 Setting up real-time subscriptions...');
     const channels = [];
 
     if (callbacks.onResourceChange) {
       const resourceChannel = supabase
         .channel('resources-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, callbacks.onResourceChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, (payload) => {
+          logger.debug('🔔 Resource subscription triggered:', payload);
+          callbacks.onResourceChange!(payload);
+        })
         .subscribe();
+      logger.debug('🔔 Resource subscription created');
       channels.push(resourceChannel);
     }
 
     if (callbacks.onJobChange) {
       const jobChannel = supabase
         .channel('jobs-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, callbacks.onJobChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, (payload) => {
+          logger.debug('🔔 Job subscription triggered:', payload);
+          callbacks.onJobChange!(payload);
+        })
         .subscribe();
+      logger.debug('🔔 Job subscription created');
       channels.push(jobChannel);
     }
 
     if (callbacks.onAssignmentChange) {
       const assignmentChannel = supabase
         .channel('assignments-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, callbacks.onAssignmentChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, (payload) => {
+          logger.debug('🔔 Assignment subscription triggered:', payload);
+          callbacks.onAssignmentChange!(payload);
+        })
         .subscribe();
+      logger.debug('🔔 Assignment subscription created');
       channels.push(assignmentChannel);
     }
 
     if (callbacks.onRuleChange) {
       const ruleChannel = supabase
         .channel('rules-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, callbacks.onRuleChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'magnet_interaction_rules' }, (payload) => {
+          logger.debug('🔔 Magnet rule subscription triggered:', payload);
+          callbacks.onRuleChange!(payload);
+        })
         .subscribe();
       channels.push(ruleChannel);
 
       const dropRuleChannel = supabase
         .channel('drop-rules-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, callbacks.onRuleChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drop_rules' }, (payload) => {
+          logger.debug('🔔 Drop rule subscription triggered:', payload);
+          callbacks.onRuleChange!(payload);
+        })
         .subscribe();
       channels.push(dropRuleChannel);
     }
 
+    logger.debug('🔔 All subscriptions setup complete, channel count:', channels.length);
+    
     return () => {
+      logger.debug('🔔 Cleaning up subscriptions...');
       channels.forEach(channel => supabase.removeChannel(channel));
     };
   }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import { useMobile } from '../../context/MobileContext';
 import { useScheduler } from '../../context/SchedulerContext';
 import Navbar from './Navbar';
@@ -55,6 +55,14 @@ const SchedulerLayout: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-slate-50">
       <Navbar />
+      {/* Manual Refresh Button for debugging */}
+      <button
+        onClick={refreshData}
+        className="fixed bottom-4 right-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
+        title="Manual refresh (for debugging)"
+      >
+        <RotateCcw size={20} />
+      </button>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <Board />
