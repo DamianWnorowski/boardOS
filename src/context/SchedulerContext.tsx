@@ -404,11 +404,20 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const job = getJobById(jobId);
       if (job) {
+        // Optimistic update
+        setJobs(prev => prev.map(j => 
+          j.id === jobId ? { ...j, finalized: true } : j
+        ));
+        
         await DatabaseService.updateJob({ ...job, finalized: true });
         logger.info('Job finalized:', jobId);
       }
     } catch (err: any) {
       logger.error('Error finalizing job:', err);
+      // Revert optimistic update on error
+      setJobs(prev => prev.map(j => 
+        j.id === jobId ? { ...j, finalized: false } : j
+      ));
       setError(`Failed to finalize job: ${err.message}`);
       throw err;
     }
@@ -418,11 +427,20 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const job = getJobById(jobId);
       if (job) {
+        // Optimistic update
+        setJobs(prev => prev.map(j => 
+          j.id === jobId ? { ...j, finalized: false } : j
+        ));
+        
         await DatabaseService.updateJob({ ...job, finalized: false });
         logger.info('Job unfinalized:', jobId);
       }
     } catch (err: any) {
       logger.error('Error unfinalizing job:', err);
+      // Revert optimistic update on error
+      setJobs(prev => prev.map(j => 
+        j.id === jobId ? { ...j, finalized: true } : j
+      ));
       setError(`Failed to unfinalize job: ${err.message}`);
       throw err;
     }

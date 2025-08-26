@@ -7,7 +7,9 @@
       "Bash(echo:*)",
       "Bash(git add:*)",
       "Bash(npm run:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(git commit:*)",
+      "Bash(./start.bat)"
     ],
     "deny": [],
     "ask": []

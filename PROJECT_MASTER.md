@@ -65,6 +65,9 @@ BoardOS is a comprehensive construction scheduler application built with React, 
 - Fixed async handling in drag & drop operations
 - Improved attachment, removal, and move operations
 - No more manual refresh needed after drag & drop
+- **NEW**: Added optimistic updates to `finalizeJob()` and `unfinalizeJob()` functions
+  - UI updates instantly when finalizing/unfinalizing jobs
+  - Reverts on error for consistent state
 
 **File:** `src/components/resources/AssignmentCard.tsx`
 - Fixed duplicate `canDrop` key error
@@ -169,6 +172,7 @@ Required in `.env`:
 2. **Duplicate key errors in AssignmentCard**: Fixed by removing duplicate definitions
 3. **Debug UI showing on desktop**: Conditionally rendered based on device
 4. **Missing resourceType parameter**: Fixed in getShiftStatusBorder function
+5. **Job finalization not updating UI**: Added optimistic updates to finalizeJob/unfinalizeJob
 
 ### Pending Enhancements
 1. Integrate EquipmentCheckboxList into PersonModal
@@ -214,4 +218,5 @@ Required in `.env`:
 For questions or issues, please refer to the GitHub repository or contact the development team.
 
 ---
-*Last Updated: January 26, 2025*
+*Last Updated: January 26, 2025 - 4:07 PM*
+*Latest Fix: Job finalization UI updates*
