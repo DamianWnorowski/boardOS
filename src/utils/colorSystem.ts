@@ -4,44 +4,44 @@ import { Resource } from '../types';
 
 // Resource type color mappings
 const resourceColors = {
-  operator: 'bg-blue-100 text-blue-800',
-  driver: 'bg-green-100 text-green-800', 
-  striper: 'bg-yellow-100 text-yellow-800',
-  foreman: 'bg-purple-100 text-purple-800',
-  laborer: 'bg-gray-100 text-gray-800',
-  privateDriver: 'bg-indigo-100 text-indigo-800',
-  skidsteer: 'bg-orange-100 text-orange-800',
-  paver: 'bg-red-100 text-red-800',
-  excavator: 'bg-yellow-100 text-yellow-800',
-  sweeper: 'bg-blue-100 text-blue-800',
-  millingMachine: 'bg-purple-100 text-purple-800',
-  grader: 'bg-green-100 text-green-800',
-  dozer: 'bg-gray-100 text-gray-800',
-  payloader: 'bg-indigo-100 text-indigo-800',
-  roller: 'bg-pink-100 text-pink-800',
-  equipment: 'bg-teal-100 text-teal-800',
-  truck: 'bg-blue-600 text-white'
+  operator: 'bg-white text-black',
+  driver: 'bg-green-500 text-black', 
+  striper: 'bg-blue-500 text-white',
+  foreman: 'bg-orange-500 text-black',
+  laborer: 'bg-white text-green-600',
+  privateDriver: 'bg-indigo-500 text-white',
+  skidsteer: 'bg-yellow-500 text-white',
+  paver: 'bg-yellow-500 text-white',
+  excavator: 'bg-yellow-500 text-white',
+  sweeper: 'bg-yellow-500 text-white',
+  millingMachine: 'bg-yellow-500 text-white',
+  grader: 'bg-yellow-500 text-white',
+  dozer: 'bg-yellow-500 text-white',
+  payloader: 'bg-yellow-500 text-white',
+  roller: 'bg-yellow-500 text-white',
+  equipment: 'bg-yellow-500 text-white',
+  truck: 'bg-black text-white'
 };
 
 // Resource type border mappings
 const resourceBorders = {
-  operator: 'border-blue-300',
-  driver: 'border-green-300',
-  striper: 'border-yellow-300', 
-  foreman: 'border-purple-300',
-  laborer: 'border-gray-300',
-  privateDriver: 'border-indigo-300',
-  skidsteer: 'border-orange-300',
-  paver: 'border-red-300',
-  excavator: 'border-yellow-300',
-  sweeper: 'border-blue-300',
-  millingMachine: 'border-purple-300',
-  grader: 'border-green-300',
-  dozer: 'border-gray-300',
-  payloader: 'border-indigo-300',
-  roller: 'border-pink-300',
-  equipment: 'border-teal-300',
-  truck: 'border-blue-700'
+  operator: 'border-gray-300',
+  driver: 'border-green-700',
+  striper: 'border-blue-700', 
+  foreman: 'border-orange-700',
+  laborer: 'border-green-500',
+  privateDriver: 'border-indigo-700',
+  skidsteer: 'border-yellow-700',
+  paver: 'border-yellow-700',
+  excavator: 'border-yellow-700',
+  sweeper: 'border-yellow-700',
+  millingMachine: 'border-yellow-700',
+  grader: 'border-yellow-700',
+  dozer: 'border-yellow-700',
+  payloader: 'border-yellow-700',
+  roller: 'border-yellow-700',
+  equipment: 'border-yellow-700',
+  truck: 'border-gray-700'
 };
 
 /**
@@ -64,7 +64,8 @@ export function getResourceBorder(resourceType: string): string {
 export function getShiftStatusBorder(
   hasMultipleDayJobs: boolean,
   hasNightJob: boolean,
-  hasDayJob: boolean
+  hasDayJob: boolean,
+  resourceType?: string
 ): string {
   // Priority order: Red (double shift) > Teal (multiple day jobs) > Orange (night only)
   if (hasNightJob && hasDayJob) {
@@ -113,12 +114,12 @@ export function getCompleteBorderStyle(
  * Used by components that need the complete color mapping
  */
 export function getLegacyResourceColors() {
-  const result: Record<string, { color: string; border: string }> = {};
+  const result: Record<string, { color: string; borderColor: string }> = {};
   
   Object.keys(resourceColors).forEach(type => {
     result[type] = {
       color: resourceColors[type as keyof typeof resourceColors],
-      border: resourceBorders[type as keyof typeof resourceBorders]
+      borderColor: resourceBorders[type as keyof typeof resourceBorders]
     };
   });
   

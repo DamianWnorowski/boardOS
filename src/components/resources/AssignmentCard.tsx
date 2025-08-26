@@ -697,9 +697,10 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
             targetId: assignment.id
           });
           (item as any)._handled = true;
-          attachResources(assignment.id, item.assignmentId!);
-          // Reset dropping state after a delay
-          setTimeout(() => setIsDroppingItem(false), 300);
+          attachResources(assignment.id, item.assignmentId!).then(() => {
+            // Reset dropping state after a delay
+            setTimeout(() => setIsDroppingItem(false), 300);
+          });
           return { 
             jobId: assignment.jobId, 
             rowType: assignment.row, 
@@ -727,8 +728,9 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         if (existingAssignment) {
           logger.debug('🔗 Resource already has assignment in this job/row, attaching existing assignment');
           (item as any)._handled = true;
-          attachResources(assignment.id, existingAssignment.id);
-          setTimeout(() => setIsDroppingItem(false), 300);
+          attachResources(assignment.id, existingAssignment.id).then(() => {
+            setTimeout(() => setIsDroppingItem(false), 300);
+          });
           return { 
             jobId: assignment.jobId, 
             rowType: assignment.row, 
@@ -739,26 +741,36 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         
         if (rule?.canAttach) {
           // Create assignment already attached to this assignment  
+          console.log('🔗 Drop handler: Creating attached assignment for resource:', item.resource.name);
           logger.debug('🔗 Creating attached assignment for resource:', item.resource.name);
           (item as any)._handled = true;
-          const attachedAssignmentId = assignResourceWithAttachment(item.resource.id, assignment.id);
-          if (attachedAssignmentId) {
-            // Successfully attached
-            logger.debug('✅ Successfully attached resource to assignment:', {
-              resourceId: item.resource.id,
-              parentAssignmentId: assignment.id,
-              newAssignmentId: attachedAssignmentId
-            });
+          assignResourceWithAttachment(item.resource.id, assignment.id).then(attachedAssignmentId => {
+            if (attachedAssignmentId) {
+              // Successfully attached
+              console.log('✅ Drop handler: Successfully attached resource to assignment:', {
+                resourceId: item.resource.id,
+                parentAssignmentId: assignment.id,
+                newAssignmentId: attachedAssignmentId
+              });
+              logger.debug('✅ Successfully attached resource to assignment:', {
+                resourceId: item.resource.id,
+                parentAssignmentId: assignment.id,
+                newAssignmentId: attachedAssignmentId
+              });
+            }
             // Reset dropping state after a delay
             setTimeout(() => setIsDroppingItem(false), 300);
-            // Return early to prevent JobRow from handling
-            return { 
-              jobId: assignment.jobId, 
-              rowType: assignment.row, 
-              attached: true,
-              handled: true
-            };
-          }
+          }).catch(err => {
+            console.error('❌ Drop handler: Error attaching resource:', err);
+            logger.error('Error attaching resource:', err);
+          });
+          // Return early to prevent JobRow from handling
+          return { 
+            jobId: assignment.jobId, 
+            rowType: assignment.row, 
+            attached: true,
+            handled: true
+          };
         }
         // If not compatible, don't do anything - let JobRow handle the drop
       }
@@ -767,26 +779,6 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       setTimeout(() => setIsDroppingItem(false), 300);
       
       return undefined; // Don't handle if not attached
-    },
-    canDrop: (item: DragItem) => {
-      // For assignments, only allow drops from same job/row
-      if (item.type === ItemTypes.ASSIGNMENT) {
-        const sameLocation = item.jobId === assignment.jobId && item.row === assignment.row;
-        if (!sameLocation) return false;
-        
-        // Check compatibility for attachment
-        const itemAssignment = getAssignmentById(item.assignmentId!);
-        if (itemAssignment) {
-          const itemResource = getResourceById(itemAssignment.resourceId);
-          if (itemResource) {
-            return isCompatibleAttachment(itemResource);
-          }
-        }
-        return false;
-      }
-      
-      // For resources, only allow compatible attachments
-      return item.type === ItemTypes.RESOURCE && isCompatibleAttachment(item.resource);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),

@@ -1,0 +1,394 @@
+# BoardOS - Master Project Documentation
+*Complete Construction Scheduler System Documentation*
+
+---
+
+## 🎯 PROJECT IDENTITY & PURPOSE
+
+**Project Name**: BoardOS (Construction Scheduler / Rosemar_SiteOps)  
+**Core Purpose**: Real-time drag-and-drop construction workforce scheduling with magnet-based resource assignment  
+**Technology Stack**: React 18 + TypeScript + Vite + Supabase + Tailwind CSS + react-dnd  
+**Architecture**: Context-based state management with real-time database synchronization  
+**Business Domain**: Road construction, milling, paving, and maintenance operations with advanced resource optimization and safety compliance
+
+---
+
+## 🚀 QUICK START
+
+### Environment Setup
+```bash
+# Install dependencies
+npm install
+
+# Create .env file with:
+VITE_SUPABASE_URL=https://eqbgcfdoyndocuomntdx.supabase.co
+VITE_SUPABASE_ANON_KEY=[your_key]
+
+# Start development server
+npm run dev  # Runs on http://localhost:5173
+
+# Other commands
+npm run build    # Production build
+npm test         # Run tests
+npm run lint     # Code quality checks
+```
+
+### Database Setup
+```sql
+-- Enable real-time for all tables
+ALTER PUBLICATION supabase_realtime ADD TABLE resources;
+ALTER PUBLICATION supabase_realtime ADD TABLE jobs;
+ALTER PUBLICATION supabase_realtime ADD TABLE assignments;
+ALTER PUBLICATION supabase_realtime ADD TABLE magnet_interaction_rules;
+ALTER PUBLICATION supabase_realtime ADD TABLE drop_rules;
+ALTER PUBLICATION supabase_realtime ADD TABLE job_row_configs;
+ALTER PUBLICATION supabase_realtime ADD TABLE truck_driver_assignments;
+
+-- For development, disable RLS
+ALTER TABLE IF EXISTS resources DISABLE ROW LEVEL SECURITY;
+-- (repeat for all tables)
+```
+
+---
+
+## 🏗️ COMPLETE SYSTEM ARCHITECTURE
+
+### Frontend Structure
+```
+src/
+├── components/          # UI components (200 lines max per file)
+│   ├── board/          # Main scheduling interface
+│   ├── resources/      # Resource cards and pools
+│   ├── modals/         # Configuration dialogs
+│   ├── mobile/         # Touch-optimized components
+│   ├── layout/         # Application layout
+│   └── common/         # Shared utilities (ErrorBoundary, Portal)
+├── context/            # React Context providers
+│   └── SchedulerContext.tsx  # Main state management
+├── hooks/              # Custom React hooks
+├── types/              # TypeScript definitions
+├── utils/              # Business logic utilities
+│   └── colorSystem.ts  # Resource colors and styles
+├── data/               # Resource definitions and mock data
+├── classes/            # Core business classes (Magnet system)
+├── services/           # Database service layer
+│   └── DatabaseService.ts  # Supabase integration
+└── lib/                # External integrations
+    └── supabase.ts     # Supabase client
+```
+
+### Database Schema
+```sql
+-- Core Tables (PostgreSQL with RLS)
+users                    -- Personnel profiles with auth integration
+resources                -- Equipment, vehicles, personnel catalog
+jobs                     -- Construction projects and jobs
+assignments              -- Resource-to-job mappings with attachments
+magnet_interaction_rules -- Business logic rules
+drop_rules              -- UI interaction permissions
+job_row_configs         -- Dynamic job layout configurations
+truck_driver_assignments -- Vehicle-operator relationships
+audit_logs              -- Complete change tracking
+```
+
+### Supabase Edge Functions
+- `/assign-resource` - Complex assignment validation
+- `/move-assignment-group` - Atomic group movements
+
+---
+
+## 📋 BUSINESS LOGIC & RULES
+
+### Resource Types
+
+#### Personnel
+- `operator` - Equipment operators
+- `driver` - Vehicle drivers
+- `striper` - Road striping crew
+- `foreman` - Crew supervisors
+- `laborer` - General laborers
+- `privateDriver` - Private vehicle operators
+
+#### Equipment (Yellow bg-yellow-500 / black text)
+- `skidsteer`, `paver`, `excavator`, `sweeper`
+- `millingMachine`, `grader`, `dozer`
+- `payloader`, `roller`, `equipment`
+
+#### Vehicles
+- `truck` - Subtypes: 10W (tag trailers), Trac (flowboy/dump-trailer)
+
+### Job Organization
+
+#### Job Types
+- `milling`, `paving`, `both`, `drainage`
+- `stripping`, `hired`, `other`
+
+#### Shifts
+- `day` - Day shift
+- `night` - Night shift
+- Double shift = both day and night
+
+#### Row Types
+- `Forman` - Only foremen allowed
+- `Equipment` - Equipment + operators
+- `Crew` - All personnel types
+- `Trucks` - Trucks + drivers
+- `Sweeper` - Sweepers + operators
+- `Tack`, `MPT` - Specialized rows
+
+### Safety Rules (Critical)
+1. **Equipment MUST have operators** (warning indicators if missing)
+2. **Trucks MUST have drivers**
+3. **Paver** → can have up to 2 screwmen
+4. **MillingMachine** → can have 1 groundman
+5. Resources can work multiple shifts (conflict detection)
+
+---
+
+## 🎨 UI/UX DESIGN SYSTEM
+
+### Color System
+
+#### Equipment Colors (Updated 2025-08-26)
+```typescript
+// All equipment uses yellow background with black text
+skidsteer: 'bg-yellow-500 text-black'
+paver: 'bg-yellow-500 text-black'
+excavator: 'bg-yellow-500 text-black'
+// ... all equipment types
+border: 'border-yellow-700'
+```
+
+#### Personnel Colors
+```typescript
+operator: 'bg-blue-100 text-blue-800'
+driver: 'bg-green-100 text-green-800'
+foreman: 'bg-purple-100 text-purple-800'
+laborer: 'bg-gray-100 text-gray-800'
+```
+
+### Visual Indicators
+
+#### Border Colors (Priority Order)
+1. **Red Border** - Double shift (day + night)
+2. **Teal Border** - Multiple day jobs only
+3. **Orange Border** - Night shift only
+4. Default - Single job or unassigned
+
+#### Time Badges
+- **Green Badge** - On-site time
+- **Blue Badge** - Yard departure time
+
+### Drag & Drop Behavior
+
+#### Desktop Controls
+- **Normal Drag** - Move assignment (removes from original)
+- **Ctrl+Drag** - Create second shift (keeps original)
+- **Drag off job** - Remove assignment
+- **Drop on equipment** - Auto-attach if compatible
+
+#### Mobile Controls
+- **Long-press** - Start drag
+- **Tab navigation** - Switch views
+- Touch-optimized with `react-dnd-touch-backend`
+
+---
+
+## 💻 RECENT UPDATES (2025-08-26)
+
+### Optimistic UI Updates
+Added immediate visual feedback for all operations:
+
+```typescript
+// Pattern in SchedulerContext.tsx
+const attachResources = async (targetId, sourceId) => {
+  // 1. Optimistic update - immediate UI change
+  setAssignments(prev => /* update state */);
+  
+  // 2. Database operation - background
+  await DatabaseService.updateAssignment(updatedAssignment);
+  
+  // 3. Real-time subscription confirms
+};
+```
+
+Functions with optimistic updates:
+- `attachResources()` - Attaching resources
+- `assignResourceWithAttachment()` - Creating attached assignments
+- `removeAssignment()` - Removing with immediate feedback
+- `moveAssignmentGroup()` - Moving between jobs
+
+### Bug Fixes
+1. **Fixed duplicate canDrop key** in AssignmentCard.tsx
+2. **Added await to async operations** in drop handlers
+3. **Hidden debug UI** - MobileDragLayer only on mobile
+4. **Equipment colors reverted** to yellow/black
+
+---
+
+## 🧪 TESTING STRATEGY
+
+### Test Categories
+- **Unit Tests** - Business logic, utilities
+- **Component Tests** - UI behavior, interactions
+- **Integration Tests** - Context providers, hooks
+- **E2E Tests** - Critical user workflows
+- **Database Tests** - Edge functions, RLS policies
+
+### Critical Test Scenarios
+1. Drag and drop functionality across all device types
+2. Magnet attachment rules enforcement
+3. Time conflict detection and prevention
+4. Multi-shift assignment logic
+5. Real-time synchronization
+6. Mobile touch interactions
+7. Database constraint validation
+8. Business rule compliance
+9. Error handling and recovery
+10. Performance under load
+
+### Testing Checklist
+- [ ] Drag/drop across devices
+- [ ] Magnet attachment rules
+- [ ] Time conflict detection
+- [ ] Multi-shift assignments
+- [ ] Real-time sync
+- [ ] Mobile touch interactions
+- [ ] Optimistic UI updates
+- [ ] Browser console for debug logs (🚀 = optimistic updates)
+
+---
+
+## 🔧 DEVELOPMENT PATTERNS
+
+### Component Patterns
+
+#### Optimistic Update Pattern
+```typescript
+// Update UI immediately
+setAssignments(prev => {
+  return prev.map(/* immediate update */);
+});
+
+// Database operation in background
+await DatabaseService.operation();
+
+// Real-time subscription confirms
+```
+
+#### Error Recovery Pattern
+```typescript
+try {
+  // Optimistic update
+  setAssignments(/* ... */);
+  await operation();
+} catch (err) {
+  // Revert on error
+  await loadScheduleData(false);
+}
+```
+
+#### Drop Handler Pattern
+```typescript
+drop: (item) => {
+  // Use .then() for async operations
+  assignResourceWithAttachment(id).then(result => {
+    // Handle success
+  }).catch(err => {
+    // Handle error
+  });
+  
+  // Return immediately for UI
+  return { handled: true };
+}
+```
+
+### Architecture Guidelines
+- **Max 200 lines** per component file
+- **Use optimistic updates** for all database operations
+- **Maintain real-time subscriptions** for live updates
+- **Follow existing color system** patterns
+- **Always await async operations** in drop handlers
+- **Use .then() for promise chains** in drag/drop
+- **Add debug logging** with console.log for critical operations
+
+---
+
+## 📂 KEY FILES REFERENCE
+
+### Core Files
+- `src/context/SchedulerContext.tsx` - Main state management & business logic
+- `src/services/DatabaseService.ts` - Supabase integration & real-time
+- `src/components/resources/AssignmentCard.tsx` - Drag/drop & attachment logic
+- `src/utils/colorSystem.ts` - Resource colors and styles
+- `src/classes/Magnet.ts` - Magnet attachment system
+
+### Configuration
+- `.env` - Environment variables (Supabase credentials)
+- `vite.config.ts` - Vite configuration
+- `tailwind.config.js` - Tailwind CSS configuration
+- `tsconfig.json` - TypeScript configuration
+
+### Database
+- `supabase/migrations/` - Database migrations
+- `supabase/functions/` - Edge functions
+- `disable_rls_fixed.sql` - Development RLS disable
+- `enable_realtime.sql` - Real-time setup
+
+---
+
+## 🐛 TROUBLESHOOTING
+
+### UI Not Updating
+1. Check browser console for real-time subscription logs
+2. Verify Supabase Realtime is enabled
+3. Use Refresh button to manually sync
+4. Check network connection to Supabase
+5. Look for 🚀 in console (optimistic updates)
+
+### Database Errors
+- **401 Unauthorized** - RLS enabled, run disable_rls_fixed.sql
+- **Syntax Errors** - Ensure correct SQL file version
+- **Connection Failed** - Verify environment variables
+
+### Drag and Drop Issues
+- Ensure resources have drivers assigned (for trucks)
+- Check drop rules for target row
+- Verify job is not finalized
+- Check console for detailed drop rejection reasons
+- Look for async/await issues in handlers
+
+---
+
+## 🚨 IMPORTANT NOTES
+
+### Safety Requirements
+- Equipment WITHOUT operators = safety violation
+- Trucks WITHOUT drivers = cannot operate
+- Always validate attachments before allowing drops
+
+### Performance Considerations
+- Use optimistic updates to prevent UI lag
+- Batch database operations when possible
+- Minimize re-renders with proper memoization
+- Keep component files under 200 lines
+
+### Future Enhancements
+- Equipment maintenance tracking
+- Project financial tracking
+- SMS/email notifications
+- Advanced reporting
+- Offline mode support
+
+---
+
+## 📞 SUPPORT
+
+- **GitHub Issues**: Report bugs at project repository
+- **Documentation**: This file + ULTRABOLT_AGENT_COMPREHENSIVE_BACKUP.md
+- **License**: Private - Rosemar Construction
+
+---
+
+*Last Updated: 2025-08-26*
+*Version: 1.0.0*

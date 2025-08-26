@@ -570,6 +570,28 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       // Get assignment to check for attachments
       const assignment = getAssignmentById(assignmentId);
+      
+      // Optimistic update - remove from local state immediately
+      logger.info('🚀 Optimistic update: removing assignment', assignmentId);
+      const attachmentIds = assignment?.attachments || [];
+      
+      setAssignments(prev => {
+        // Remove the assignment and all its attachments
+        const idsToRemove = [assignmentId, ...attachmentIds];
+        const filtered = prev.filter(a => !idsToRemove.includes(a.id));
+        
+        // Also remove this assignment from any parent's attachments array
+        return filtered.map(a => {
+          if (a.attachments?.includes(assignmentId)) {
+            return {
+              ...a,
+              attachments: a.attachments.filter(id => id !== assignmentId)
+            };
+          }
+          return a;
+        });
+      });
+      
       if (assignment?.attachments?.length) {
         // Remove all attached assignments first
         await Promise.all(
@@ -582,6 +604,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error removing assignment:', err);
       setError(`Failed to remove assignment: ${err.message}`);
+      // Revert optimistic update on error
+      await loadScheduleData(false);
       throw err;
     }
   };
@@ -630,12 +654,35 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           timeSlot: targetAssignment.timeSlot
         };
         
+        // Optimistic update - update local state immediately
+        logger.info('🚀 Optimistic update: attaching', sourceId, 'to', targetId);
+        setAssignments(prev => {
+          const updated = prev.map(a => {
+            if (a.id === sourceId) {
+              logger.info('🚀 Updating source assignment:', sourceId);
+              return updatedSourceAssignment;
+            }
+            if (a.id === targetId) {
+              logger.info('🚀 Adding attachment to target:', targetId);
+              return {
+                ...a,
+                attachments: [...(a.attachments || []), sourceId]
+              };
+            }
+            return a;
+          });
+          logger.info('🚀 Assignments after optimistic update:', updated.length, 'total');
+          return updated;
+        });
+        
         await DatabaseService.updateAssignment(updatedSourceAssignment);
         logger.info('Resources attached:', sourceId, 'to', targetId);
       }
     } catch (err: any) {
       logger.error('Error attaching resources:', err);
       setError(`Failed to attach resources: ${err.message}`);
+      // Revert optimistic update on error by refreshing data
+      await loadScheduleData(false);
       throw err;
     }
   };
@@ -679,6 +726,50 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const job = getJobById(jobId);
       const defaultStartTime = job?.startTime || '07:00';
       
+      // Create temporary IDs for optimistic update
+      const tempPrimaryId = `temp-move-${Date.now()}-${primaryAssignment.resourceId}`;
+      const tempAttachedIds = attachedAssignments.map((a, i) => 
+        `temp-move-${Date.now()}-${a.resourceId}-${i}`
+      );
+      
+      // Optimistic update - remove old assignments and add new ones
+      logger.info('🚀 Optimistic update: moving assignment group', assignmentGroup.map(a => a.id), 'to', jobId);
+      
+      setAssignments(prev => {
+        // Remove old assignments
+        const oldIds = assignmentGroup.map(a => a.id);
+        const filtered = prev.filter(a => !oldIds.includes(a.id));
+        
+        // Add new temporary assignments
+        const newPrimary: Assignment = {
+          id: tempPrimaryId,
+          resourceId: primaryAssignment.resourceId,
+          jobId,
+          row,
+          position,
+          timeSlot: {
+            startTime: defaultStartTime,
+            endTime: '15:30',
+            isFullDay: true
+          },
+          truckConfig: primaryAssignment.truckConfig,
+          attachments: tempAttachedIds
+        };
+        
+        const newAttached = attachedAssignments.map((oldAssignment, i) => ({
+          id: tempAttachedIds[i],
+          resourceId: oldAssignment.resourceId,
+          jobId,
+          row,
+          position,
+          attachedTo: tempPrimaryId,
+          timeSlot: newPrimary.timeSlot,
+          attachments: []
+        }));
+        
+        return [...filtered, newPrimary, ...newAttached];
+      });
+      
       // Create new primary assignment
       const newPrimaryAssignment = await DatabaseService.createAssignment({
         resourceId: primaryAssignment.resourceId,
@@ -705,9 +796,24 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         })
       );
       
-      await Promise.all(newAttachedPromises);
+      const newAttachedAssignments = await Promise.all(newAttachedPromises);
       
-      // Remove old assignments
+      // Replace temporary IDs with real ones
+      setAssignments(prev => prev.map(a => {
+        if (a.id === tempPrimaryId) {
+          return {
+            ...newPrimaryAssignment,
+            attachments: newAttachedAssignments.map(att => att.id)
+          };
+        }
+        const tempIndex = tempAttachedIds.indexOf(a.id);
+        if (tempIndex !== -1) {
+          return newAttachedAssignments[tempIndex];
+        }
+        return a;
+      }));
+      
+      // Remove old assignments from database
       await Promise.all(assignmentGroup.map(a => DatabaseService.deleteAssignment(a.id)));
       
       logger.info('Assignment group moved:', assignmentGroup.length, 'assignments to', jobId);
@@ -715,6 +821,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error moving assignment group:', err);
       setError(`Failed to move assignments: ${err.message}`);
+      // Revert optimistic update on error
+      await loadScheduleData(false);
       throw err;
     }
   };
@@ -741,9 +849,55 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           timeSlot: parentAssignment.timeSlot
         };
         
+        // Optimistic update for existing assignment
+        logger.info('🚀 Optimistic update: converting existing assignment to attached', existingJobRowAssignment.id);
+        setAssignments(prev => prev.map(a => {
+          if (a.id === existingJobRowAssignment.id) {
+            logger.info('🚀 Converting to attached assignment:', existingJobRowAssignment.id);
+            return updatedAssignment;
+          }
+          if (a.id === parentAssignmentId) {
+            logger.info('🚀 Adding attachment to parent:', parentAssignmentId);
+            return {
+              ...a,
+              attachments: [...(a.attachments || []), existingJobRowAssignment.id]
+            };
+          }
+          return a;
+        }));
+        
         await DatabaseService.updateAssignment(updatedAssignment);
         return existingJobRowAssignment.id;
       }
+      
+      // Create temporary ID for optimistic update
+      const tempId = `temp-${Date.now()}-${resourceId}`;
+      const optimisticAssignment: Assignment = {
+        id: tempId,
+        resourceId,
+        jobId: parentAssignment.jobId,
+        row: parentAssignment.row,
+        position: parentAssignment.position,
+        attachedTo: parentAssignmentId,
+        timeSlot: parentAssignment.timeSlot,
+        attachments: []
+      };
+      
+      // Optimistic update for new assignment
+      logger.info('🚀 Optimistic update: creating new attached assignment with temp ID:', tempId);
+      setAssignments(prev => [
+        ...prev.map(a => {
+          if (a.id === parentAssignmentId) {
+            logger.info('🚀 Adding temp attachment to parent:', parentAssignmentId);
+            return {
+              ...a,
+              attachments: [...(a.attachments || []), tempId]
+            };
+          }
+          return a;
+        }),
+        optimisticAssignment
+      ]);
       
       // Create new assignment already attached to parent
       const newAssignment = await DatabaseService.createAssignment({
@@ -755,11 +909,27 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         timeSlot: parentAssignment.timeSlot
       });
       
+      // Replace temporary assignment with real one
+      setAssignments(prev => prev.map(a => {
+        if (a.id === tempId) {
+          return { ...newAssignment, attachments: [] };
+        }
+        if (a.id === parentAssignmentId) {
+          return {
+            ...a,
+            attachments: a.attachments?.map(id => id === tempId ? newAssignment.id : id) || []
+          };
+        }
+        return a;
+      }));
+      
       logger.info('Resource attached to assignment:', resourceId, 'to', parentAssignmentId);
       return newAssignment.id;
     } catch (err: any) {
       logger.error('Error creating attached assignment:', err);
       setError(`Failed to attach resource: ${err.message}`);
+      // Revert optimistic update on error
+      await loadScheduleData(false);
       throw err;
     }
   };

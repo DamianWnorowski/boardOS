@@ -56,7 +56,7 @@ function App() {
         </div>
         
         {isMobile ? <MobileSchedulerLayout /> : <SchedulerLayout />}
-        <MobileDragLayer />
+        {isMobile && <MobileDragLayer />}
       </DndProvider>
     </div>
   );

@@ -38,6 +38,7 @@ export interface Employee {
   certifications: string[];
   skills: string[];
   permissions: string[];
+  allowedEquipment?: string[]; // Equipment types this operator can operate
   performanceReviews?: any[];
   trainingRecords?: any[];
   isActive: boolean;

@@ -720,13 +720,21 @@ export const buildStandardConstructionRules = (): MagnetInteractionRule[] => {
  * Helper to build standard drop rules using the modular approach
  */
 export const buildStandardDropRules = (): DropRule[] => {
+  // All equipment types that can go in Equipment row
+  const allEquipmentTypes: ResourceType[] = [
+    'skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
+    'grader', 'dozer', 'payloader', 'roller', 'equipment'
+  ];
+  
   return createDropRules()
     .addDropRule('Forman', ['foreman'])
-    .addMixedEquipmentRow('Equipment')
-    .addDropRule('Sweeper', ['sweeper', 'operator'])
-    .addDropRule('Tack', ['operator', 'laborer', 'truck'])
-    .addDropRule('MPT', ['operator', 'laborer', 'truck'])
-    .addPersonnelRow('crew')
-    .addDropRule('trucks', ['truck', 'driver', 'privateDriver'])
+    // Equipment row: ALL equipment can go here per business requirement, plus operators and foreman
+    .addDropRule('Equipment', [...allEquipmentTypes, 'operator', 'foreman'])
+    .addDropRule('Sweeper', ['sweeper', 'operator', 'foreman'])
+    .addDropRule('Tack', ['operator', 'laborer', 'truck', 'foreman'])
+    .addDropRule('MPT', ['operator', 'laborer', 'truck', 'foreman'])
+    // Crew row: all personnel types including foreman
+    .addDropRule('crew', ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'])
+    .addDropRule('trucks', ['truck', 'driver', 'privateDriver', 'foreman'])
     .getRules();
 };
