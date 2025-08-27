@@ -12,7 +12,7 @@ export function useMagnet(magnetId: string) {
   
   // Force re-render when magnet changes
   const refreshMagnet = useCallback(() => {
-    setMagnet({...magnetManager.getMagnet(magnetId)!});
+    setMagnet(magnetManager.getMagnet(magnetId));
   }, [magnetId]);
   
   // Assign magnet to a job
@@ -88,7 +88,9 @@ export function useMagnet(magnetId: string) {
     isAssigned: magnet?.status !== MagnetStatus.Available,
     isMultiAssigned: magnet?.status === MagnetStatus.MultiAssigned,
     isDragging: magnet?.isDragging || false,
-    hasRequiredAttachments: magnet?.hasRequiredAttachments(magnetManager.magnets) || false
+    hasRequiredAttachments: magnet && typeof magnet.hasRequiredAttachments === 'function' 
+      ? magnet.hasRequiredAttachments(magnetManager.magnets) 
+      : false
   };
 }
 

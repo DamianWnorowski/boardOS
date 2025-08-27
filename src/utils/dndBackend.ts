@@ -3,6 +3,83 @@ import { TouchBackend } from 'react-dnd-touch-backend';
 import { MultiBackend, TouchTransition, MouseTransition } from 'react-dnd-multi-backend';
 import logger from './logger';
 
+// Custom HTML5Backend that allows shift+drag for second job assignments
+class ShiftDragHTML5Backend {
+  private html5Backend: HTML5Backend;
+  private manager: any;
+  private context: any;
+  private options: any;
+
+  constructor(manager: any, context: any, options: any) {
+    // Create the original HTML5Backend instance
+    this.html5Backend = new HTML5Backend(manager, context, options);
+    
+    // Store references for delegation
+    this.manager = manager;
+    this.context = context;
+    this.options = options;
+    
+    // Override the handleTopDragStartCapture method to allow shift key
+    this.setupShiftDragOverride();
+  }
+
+  // Delegate all methods to the original backend
+  setup() {
+    return this.html5Backend.setup();
+  }
+
+  teardown() {
+    return this.html5Backend.teardown();
+  }
+
+  connectDragSource(sourceId: any, node: any, options: any) {
+    return this.html5Backend.connectDragSource(sourceId, node, options);
+  }
+
+  connectDragPreview(previewId: any, node: any, options: any) {
+    return this.html5Backend.connectDragPreview(previewId, node, options);
+  }
+
+  connectDropTarget(targetId: any, node: any, options: any) {
+    return this.html5Backend.connectDropTarget(targetId, node, options);
+  }
+
+  // Custom method to override shift key handling
+  setupShiftDragOverride() {
+    // Try to override React DnD's modifier key check more safely
+    try {
+      const backend = this.html5Backend as any;
+      
+      // Check if the method exists before trying to override it
+      if (backend.handleTopDragStartCapture) {
+        const originalHandler = backend.handleTopDragStartCapture.bind(backend);
+        
+        backend.handleTopDragStartCapture = (e: DragEvent) => {
+          if (e.shiftKey) {
+            logger.debug('🔧 Intercepting shift+drag to allow it');
+            
+            // Create a modified event that looks like it doesn't have shift pressed
+            const modifiedEvent = new Proxy(e, {
+              get(target, prop) {
+                if (prop === 'shiftKey') {
+                  return false; // Tell React DnD that shift isn't pressed
+                }
+                return (target as any)[prop];
+              }
+            });
+            
+            return originalHandler(modifiedEvent);
+          }
+          
+          return originalHandler(e);
+        };
+      }
+    } catch (error) {
+      logger.warn('Failed to override shift+drag behavior:', error);
+    }
+  }
+}
+
 // Custom transition for touch devices
 const touchTransition = {
   ...TouchTransition,
@@ -23,6 +100,10 @@ export const dndBackendOptions = {
       // Add mouse-specific options
       options: {
         enableMouseEvents: true,
+        // Override React DnD's default behavior to allow shift+drag
+        ignoreContextMenu: false,
+        // Custom option to bypass modifier key restrictions
+        getDropTargetElementsAtPoint: undefined,
       }
     },
     {

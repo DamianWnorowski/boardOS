@@ -4,6 +4,7 @@ import { Assignment } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import Portal from '../common/Portal';
 import { logger } from '../../utils/logger';
+import EquipmentCheckboxList from '../ui/EquipmentCheckboxList';
 
 interface PersonModalProps {
   assignment: Assignment;
@@ -40,7 +41,8 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
       setEditedResource({ 
         ...resource,
         certifications: resource.certifications || [],
-        skills: resource.skills || []
+        skills: resource.skills || [],
+        allowedEquipment: resource.allowedEquipment || []
       });
     }
   }, [resource, editedResource]);
@@ -76,14 +78,23 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
     setEditedResource((prev: any) => ({ ...prev, [field]: value }));
     setHasUnsavedChanges(true);
   };
+
+  const handleEquipmentPermissionToggle = (equipment: string) => {
+    const currentEquipment = editedResource?.allowedEquipment || [];
+    const updatedEquipment = currentEquipment.includes(equipment)
+      ? currentEquipment.filter((eq: string) => eq !== equipment)
+      : [...currentEquipment, equipment];
+    handleEditChange('allowedEquipment', updatedEquipment);
+  };
   
   const handleSaveEdit = () => {
     if (editedResource && hasUnsavedChanges) {
-      // Ensure certifications and skills are arrays
+      // Ensure certifications, skills, and allowedEquipment are arrays
       const resourceToSave = {
         ...editedResource,
         certifications: Array.isArray(editedResource.certifications) ? editedResource.certifications : [],
-        skills: Array.isArray(editedResource.skills) ? editedResource.skills : []
+        skills: Array.isArray(editedResource.skills) ? editedResource.skills : [],
+        allowedEquipment: Array.isArray(editedResource.allowedEquipment) ? editedResource.allowedEquipment : []
       };
       updateResource(resourceToSave);
       setHasUnsavedChanges(false);
@@ -299,6 +310,28 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Personnel Equipment Permissions Section */}
+                {!isEquipmentOrVehicle && resource.allowedEquipment && resource.allowedEquipment.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Equipment Permissions</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {resource.allowedEquipment.map((equipment: string) => (
+                        <span 
+                          key={equipment}
+                          className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full border border-yellow-200"
+                        >
+                          {equipment === 'millingMachine' ? 'Milling Machine' : 
+                           equipment === 'skidsteer' ? 'Skid Steer' :
+                           equipment.charAt(0).toUpperCase() + equipment.slice(1)}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Operator is authorized to operate these equipment types
+                    </p>
                   </div>
                 )}
                 
@@ -626,6 +659,20 @@ const PersonModal: React.FC<PersonModalProps> = ({ assignment, onClose }) => {
                             );
                           })}
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* Equipment Permissions Section - Only for Personnel */}
+                    {!isEquipmentOrVehicle && (
+                      <div>
+                        <EquipmentCheckboxList
+                          selectedEquipment={editedResource?.allowedEquipment || []}
+                          onEquipmentToggle={handleEquipmentPermissionToggle}
+                          disabled={false}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Select which equipment types this operator is authorized to operate. This helps enforce safety rules and prevents unauthorized equipment operation.
+                        </p>
                       </div>
                     )}
                     

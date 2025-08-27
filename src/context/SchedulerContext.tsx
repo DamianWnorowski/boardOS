@@ -152,11 +152,27 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const jobRowConfigData = await DatabaseService.getJobRowConfigs();
       setJobRowConfigs(jobRowConfigData);
 
+      // Set rules and colors in magnetManager BEFORE creating magnets
+      magnetManager.setRulesAndColors(scheduleData.magnetRules, resourceColors);
+
+      // Initialize magnets from loaded resources
+      magnetManager.clear(); // Clear existing magnets
+      scheduleData.resources.forEach(resource => {
+        magnetManager.createMagnet(
+          resource.id,
+          resource.type,
+          resource.name,
+          resource.identifier,
+          resource.model
+        );
+      });
+
       logger.info('Schedule data loaded from database', {
         jobs: scheduleData.jobs.length,
         resources: scheduleData.resources.length,
         assignments: scheduleData.assignments.length,
-        rules: scheduleData.magnetRules.length
+        rules: scheduleData.magnetRules.length,
+        magnets: magnetManager.magnets.size
       });
 
     } catch (err: any) {
@@ -164,9 +180,26 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setError(err.message || 'Failed to load schedule data');
       
       // Fallback to default data if database is not available
-      setResources([...convertPersonnelToResources(), ...convertEquipmentToResources()]);
-      setMagnetInteractionRules(buildStandardConstructionRules());
+      const fallbackResources = [...convertPersonnelToResources(), ...convertEquipmentToResources()];
+      const fallbackRules = buildStandardConstructionRules();
+      setResources(fallbackResources);
+      setMagnetInteractionRules(fallbackRules);
       setDropRules(buildStandardDropRules());
+      
+      // Set rules and colors in magnetManager BEFORE creating magnets
+      magnetManager.setRulesAndColors(fallbackRules, resourceColors);
+      
+      // Initialize magnets from fallback resources
+      magnetManager.clear();
+      fallbackResources.forEach(resource => {
+        magnetManager.createMagnet(
+          resource.id,
+          resource.type,
+          resource.name,
+          resource.identifier,
+          resource.model
+        );
+      });
     } finally {
       if (showLoading) {
         setIsLoading(false);
@@ -528,15 +561,20 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   ): Promise<string> => {
     try {
       // Check if resource is already assigned to this job to prevent duplicates
-      const existingAssignment = assignments.find(a => 
-        a.resourceId === resourceId && 
-        a.jobId === jobId && 
-        !a.attachedTo
-      );
+      // BUT allow second shift assignments (shift+drag)
+      if (!isSecondShift) {
+        const existingAssignment = assignments.find(a => 
+          a.resourceId === resourceId && 
+          a.jobId === jobId && 
+          !a.attachedTo
+        );
 
-      if (existingAssignment) {
-        logger.debug('Resource already assigned to this job, returning existing assignment');
-        return existingAssignment.id;
+        if (existingAssignment) {
+          logger.debug('Resource already assigned to this job, returning existing assignment');
+          return existingAssignment.id;
+        }
+      } else {
+        logger.debug('Second shift assignment - allowing duplicate resource on same job');
       }
 
       const job = getJobById(jobId);
@@ -664,6 +702,18 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const sourceAssignment = getAssignmentById(sourceId);
       
       if (targetAssignment && sourceAssignment) {
+        // Check equipment permissions before allowing attachment
+        const sourceResource = getResourceById(sourceAssignment.resourceId);
+        const targetResource = getResourceById(targetAssignment.resourceId);
+        
+        if (sourceResource && targetResource && sourceResource.type === 'operator') {
+          if (!canOperatorUseEquipment(sourceResource.id, targetResource.type)) {
+            const errorMsg = `Operator ${sourceResource.name} is not authorized to operate ${targetResource.type} equipment`;
+            logger.warn('Equipment permission denied:', errorMsg);
+            setError(errorMsg);
+            return;
+          }
+        }
         // Update source assignment to be attached to target
         const updatedSourceAssignment = {
           ...sourceAssignment,
@@ -849,6 +899,19 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const parentAssignment = getAssignmentById(parentAssignmentId);
       if (!parentAssignment) return null;
+
+      // Check equipment permissions before allowing attachment
+      const sourceResource = getResourceById(resourceId);
+      const parentResource = getResourceById(parentAssignment.resourceId);
+      
+      if (sourceResource && parentResource && sourceResource.type === 'operator') {
+        if (!canOperatorUseEquipment(sourceResource.id, parentResource.type)) {
+          const errorMsg = `Operator ${sourceResource.name} is not authorized to operate ${parentResource.type} equipment`;
+          logger.warn('Equipment permission denied:', errorMsg);
+          setError(errorMsg);
+          return null;
+        }
+      }
       
       // Check if resource is already assigned to the same job/row
       const existingJobRowAssignment = assignments.find(a => 
@@ -1222,6 +1285,22 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Rule helper functions
   const getMagnetInteractionRule = (sourceType: ResourceType, targetType: ResourceType) => {
     return magnetInteractionRules.find(r => r.sourceType === sourceType && r.targetType === targetType);
+  };
+
+  // Equipment permission validation
+  const canOperatorUseEquipment = (operatorId: string, equipmentType: ResourceType): boolean => {
+    const operator = getResourceById(operatorId);
+    if (!operator || operator.type !== 'operator') return true; // Non-operators or missing resources default to allowed
+    
+    // Check if operator has allowedEquipment permissions
+    const allowedEquipment = operator.allowedEquipment;
+    if (!allowedEquipment || allowedEquipment.length === 0) {
+      // If no permissions set, allow all equipment (backward compatibility)
+      return true;
+    }
+    
+    // Check if the equipment type is in the allowed list
+    return allowedEquipment.includes(equipmentType);
   };
 
   const getRequiredAttachmentsForType = (targetType: ResourceType): ResourceType[] => {

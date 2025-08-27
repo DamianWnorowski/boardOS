@@ -8,12 +8,17 @@ import { useScheduler } from './context/SchedulerContext';
 import SchedulerLayout from './components/layout/SchedulerLayout';
 import MobileSchedulerLayout from './components/mobile/MobileSchedulerLayout';
 import MobileDragLayer from './components/mobile/MobileDragLayer';
+import MagnetDragLayer from './components/ui/MagnetDragLayer';
 import DatabaseTestPage from './components/layout/DatabaseTestPage';
+import CompactQuickSelect from './components/ui/CompactQuickSelect';
+import KeyboardShortcutsHelp from './components/ui/KeyboardShortcutsHelp';
+import { useKeyboardShortcuts } from './context/KeyboardShortcutsContext';
 import { RefreshCw } from 'lucide-react';
 
 function App() {
   const { isMobile } = useMobile();
   const { refreshData } = useScheduler();
+  const { isHelpOpen, closeHelp } = useKeyboardShortcuts();
   const [showDatabaseTest, setShowDatabaseTest] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -57,6 +62,9 @@ function App() {
         
         {isMobile ? <MobileSchedulerLayout /> : <SchedulerLayout />}
         {isMobile && <MobileDragLayer />}
+        <MagnetDragLayer />
+        <CompactQuickSelect />
+        <KeyboardShortcutsHelp isOpen={isHelpOpen} onClose={closeHelp} />
       </DndProvider>
     </div>
   );

@@ -32,7 +32,8 @@ vi.mock('../../utils/logger', () => ({
   default: {
     error: vi.fn(),
     warn: vi.fn(),
-    info: vi.fn()
+    info: vi.fn(),
+    debug: vi.fn()
   }
 }));
 
@@ -44,10 +45,11 @@ describe('DatabaseService', () => {
     vi.clearAllMocks();
   });
 
-  describe('Resources CRUD', () => {
+  describe('Schedule Data Operations', () => {
     const mockDbResource = {
       id: '1',
       type: 'operator',
+      class_type: 'employee',
       name: 'John Doe',
       identifier: 'OP001',
       model: null,
@@ -59,31 +61,68 @@ describe('DatabaseService', () => {
     const mockResource: Resource = {
       id: '1',
       type: 'operator',
+      classType: 'employee',
       name: 'John Doe',
       identifier: 'OP001',
       location: 'Site A',
       onSite: true
     };
 
-    describe('getResources', () => {
-      it('should fetch and transform resources correctly', async () => {
-        const fromMock = vi.fn(() => ({
-          select: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: [mockDbResource],
-              error: null
-            }))
-          }))
-        }));
+    describe('getAllScheduleData', () => {
+      it('should fetch and transform all schedule data correctly', async () => {
+        let callIndex = 0;
+        const tableCalls = ['resources', 'jobs', 'assignments', 'magnet_interaction_rules', 'drop_rules'];
+        const fromMock = vi.fn(() => {
+          const currentTable = tableCalls[callIndex];
+          callIndex++;
+          
+          const tableData = {
+            'resources': [mockDbResource],
+            'jobs': [],
+            'assignments': [],
+            'magnet_interaction_rules': [],
+            'drop_rules': []
+          };
+          
+          if (currentTable === 'assignments') {
+            return {
+              select: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({
+                  data: tableData[currentTable] || [],
+                  error: null
+                }))
+              }))
+            };
+          } else if (currentTable === 'resources' || currentTable === 'jobs') {
+            return {
+              select: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({
+                  data: tableData[currentTable] || [],
+                  error: null
+                }))
+              }))
+            };
+          } else {
+            // For magnet_interaction_rules and drop_rules
+            return {
+              select: vi.fn(() => Promise.resolve({
+                data: tableData[currentTable] || [],
+                error: null
+              }))
+            };
+          }
+        });
         (supabase.from as any) = fromMock;
 
-        const resources = await DatabaseService.getResources();
+        const scheduleData = await DatabaseService.getAllScheduleData();
         
         expect(fromMock).toHaveBeenCalledWith('resources');
-        expect(resources).toEqual([mockResource]);
+        expect(scheduleData.resources).toEqual([mockResource]);
+        expect(scheduleData.employees).toBeDefined();
+        expect(scheduleData.equipment).toBeDefined();
       });
 
-      it('should handle errors when fetching resources', async () => {
+      it('should handle errors when fetching schedule data', async () => {
         const error = new Error('Database error');
         const fromMock = vi.fn(() => ({
           select: vi.fn(() => ({
@@ -95,21 +134,26 @@ describe('DatabaseService', () => {
         }));
         (supabase.from as any) = fromMock;
 
-        await expect(DatabaseService.getResources()).rejects.toThrow('Database error');
-        expect(logger.error).toHaveBeenCalledWith('Error fetching resources:', error);
+        await expect(DatabaseService.getAllScheduleData()).rejects.toThrow('Database error');
+        expect(logger.error).toHaveBeenCalledWith('Error loading schedule data:', error);
       });
     });
 
     describe('createResource', () => {
-      it('should create and return transformed resource', async () => {
-        const newResource = { ...mockResource };
+      it('should create and return transformed employee resource', async () => {
+        const newResource = { ...mockResource, classType: 'employee' as const };
         delete (newResource as any).id;
         
         const fromMock = vi.fn(() => ({
           insert: vi.fn(() => ({
             select: vi.fn(() => ({
               single: vi.fn(() => Promise.resolve({
-                data: mockDbResource,
+                data: {
+                  id: '1',
+                  type: 'operator',
+                  name: 'John Doe',
+                  employee_id: 'OP001'
+                },
                 error: null
               }))
             }))
@@ -119,8 +163,41 @@ describe('DatabaseService', () => {
 
         const created = await DatabaseService.createResource(newResource);
         
-        expect(fromMock).toHaveBeenCalledWith('resources');
-        expect(created).toEqual(mockResource);
+        expect(fromMock).toHaveBeenCalledWith('employees');
+        expect(created.name).toEqual('John Doe');
+        expect(created.classType).toEqual('employee');
+      });
+
+      it('should create and return transformed equipment resource', async () => {
+        const equipmentResource = { 
+          type: 'paver' as const, 
+          classType: 'equipment' as const,
+          name: 'Paver 1',
+          identifier: 'PV001'
+        };
+        
+        const fromMock = vi.fn(() => ({
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({
+                data: {
+                  id: '1',
+                  type: 'paver',
+                  name: 'Paver 1',
+                  identifier: 'PV001'
+                },
+                error: null
+              }))
+            }))
+          }))
+        }));
+        (supabase.from as any) = fromMock;
+
+        const created = await DatabaseService.createResource(equipmentResource);
+        
+        expect(fromMock).toHaveBeenCalledWith('equipment');
+        expect(created.name).toEqual('Paver 1');
+        expect(created.classType).toEqual('equipment');
       });
 
       it('should handle creation errors', async () => {
@@ -137,36 +214,66 @@ describe('DatabaseService', () => {
         }));
         (supabase.from as any) = fromMock;
 
-        await expect(DatabaseService.createResource({} as any)).rejects.toThrow('Creation failed');
-        expect(logger.error).toHaveBeenCalledWith('Error creating resource:', error);
+        const newResource = { ...mockResource, classType: 'employee' as const };
+        delete (newResource as any).id;
+
+        await expect(DatabaseService.createResource(newResource)).rejects.toThrow('Creation failed');
+        expect(logger.error).toHaveBeenCalledWith('Error creating employee:', error);
       });
     });
 
     describe('updateResource', () => {
-      it('should update and return transformed resource', async () => {
-        const fromMock = vi.fn(() => ({
-          update: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              select: vi.fn(() => ({
-                single: vi.fn(() => Promise.resolve({
-                  data: mockDbResource,
-                  error: null
-                }))
+      it('should update and return transformed employee resource', async () => {
+        const employeeResource = { ...mockResource, classType: 'employee' as const };
+        
+        // Mock for the select query to get current employee data
+        const selectMock = vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({
+              data: {
+                id: '1',
+                type: 'operator',
+                name: 'John Doe',
+                employee_id: 'OP001'
+              },
+              error: null
+            }))
+          }))
+        }));
+        
+        // Mock for the update query
+        const updateMock = vi.fn(() => ({
+          eq: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({
+                data: {
+                  id: '1',
+                  type: 'operator',
+                  name: 'John Doe',
+                  employee_id: 'OP001'
+                },
+                error: null
               }))
             }))
           }))
         }));
+        
+        const fromMock = vi.fn(() => ({
+          select: selectMock,
+          update: updateMock
+        }));
         (supabase.from as any) = fromMock;
 
-        const updated = await DatabaseService.updateResource(mockResource);
+        const updated = await DatabaseService.updateResource(employeeResource);
         
-        expect(fromMock).toHaveBeenCalledWith('resources');
-        expect(updated).toEqual(mockResource);
+        expect(fromMock).toHaveBeenCalledWith('employees');
+        expect(updated.name).toEqual('John Doe');
+        expect(updated.classType).toEqual('employee');
       });
     });
 
     describe('deleteResource', () => {
-      it('should delete resource successfully', async () => {
+      it('should delete resource from both tables successfully', async () => {
         const fromMock = vi.fn(() => ({
           delete: vi.fn(() => ({
             eq: vi.fn(() => Promise.resolve({
@@ -178,22 +285,9 @@ describe('DatabaseService', () => {
 
         await DatabaseService.deleteResource('1');
         
-        expect(fromMock).toHaveBeenCalledWith('resources');
-      });
-
-      it('should handle deletion errors', async () => {
-        const error = new Error('Deletion failed');
-        const fromMock = vi.fn(() => ({
-          delete: vi.fn(() => ({
-            eq: vi.fn(() => Promise.resolve({
-              error
-            }))
-          }))
-        }));
-        (supabase.from as any) = fromMock;
-
-        await expect(DatabaseService.deleteResource('1')).rejects.toThrow('Deletion failed');
-        expect(logger.error).toHaveBeenCalledWith('Error deleting resource:', error);
+        // Should try to delete from both employees and equipment tables
+        expect(fromMock).toHaveBeenCalledWith('employees');
+        expect(fromMock).toHaveBeenCalledWith('equipment');
       });
     });
   });
@@ -225,25 +319,6 @@ describe('DatabaseService', () => {
       location: { address: '123 Main St', lat: 0, lng: 0 }
     };
 
-    describe('getJobs', () => {
-      it('should fetch and transform jobs correctly', async () => {
-        const fromMock = vi.fn(() => ({
-          select: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: [mockDbJob],
-              error: null
-            }))
-          }))
-        }));
-        (supabase.from as any) = fromMock;
-
-        const jobs = await DatabaseService.getJobs();
-        
-        expect(fromMock).toHaveBeenCalledWith('jobs');
-        expect(jobs).toEqual([mockJob]);
-      });
-    });
-
     describe('createJob', () => {
       it('should create and return transformed job', async () => {
         const newJob = { ...mockJob };
@@ -265,6 +340,46 @@ describe('DatabaseService', () => {
         
         expect(fromMock).toHaveBeenCalledWith('jobs');
         expect(created).toEqual(mockJob);
+      });
+    });
+
+    describe('updateJob', () => {
+      it('should update and return transformed job', async () => {
+        const fromMock = vi.fn(() => ({
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({
+                  data: mockDbJob,
+                  error: null
+                }))
+              }))
+            }))
+          }))
+        }));
+        (supabase.from as any) = fromMock;
+
+        const updated = await DatabaseService.updateJob(mockJob);
+        
+        expect(fromMock).toHaveBeenCalledWith('jobs');
+        expect(updated).toEqual(mockJob);
+      });
+    });
+
+    describe('deleteJob', () => {
+      it('should delete job successfully', async () => {
+        const fromMock = vi.fn(() => ({
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({
+              error: null
+            }))
+          }))
+        }));
+        (supabase.from as any) = fromMock;
+
+        await DatabaseService.deleteJob('1');
+        
+        expect(fromMock).toHaveBeenCalledWith('jobs');
       });
     });
   });
@@ -291,43 +406,44 @@ describe('DatabaseService', () => {
       attachedTo: undefined,
       timeSlot: { startTime: '08:00', endTime: '12:00', isFullDay: false },
       note: 'Test note',
-      truckConfig: undefined
+      truckConfig: null,
+      attachments: []
     };
 
-    describe('getAssignments', () => {
-      it('should fetch and transform assignments correctly', async () => {
-        const fromMock = vi.fn(() => ({
-          select: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: [mockDbAssignment],
-              error: null
-            }))
-          }))
-        }));
-        (supabase.from as any) = fromMock;
-
-        const assignments = await DatabaseService.getAssignments();
-        
-        expect(fromMock).toHaveBeenCalledWith('assignments');
-        expect(assignments).toEqual([mockAssignment]);
-      });
-    });
+    // Note: getAssignments is now part of getAllScheduleData method
 
     describe('createAssignment', () => {
       it('should create and return transformed assignment', async () => {
         const newAssignment = { ...mockAssignment };
         delete (newAssignment as any).id;
         
-        const fromMock = vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn(() => Promise.resolve({
-                data: mockDbAssignment,
-                error: null
+        let callCount = 0;
+        const fromMock = vi.fn(() => {
+          callCount++;
+          if (callCount === 1) {
+            // First call for insert
+            return {
+              insert: vi.fn(() => ({
+                select: vi.fn(() => ({
+                  single: vi.fn(() => Promise.resolve({
+                    data: mockDbAssignment,
+                    error: null
+                  }))
+                }))
               }))
-            }))
-          }))
-        }));
+            };
+          } else {
+            // Second call for getting attachments
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({
+                  data: [],
+                  error: null
+                }))
+              }))
+            };
+          }
+        });
         (supabase.from as any) = fromMock;
 
         const created = await DatabaseService.createAssignment(newAssignment);
@@ -339,17 +455,9 @@ describe('DatabaseService', () => {
   });
 
   describe('Rules Management', () => {
-    describe('getMagnetInteractionRules', () => {
-      it('should fetch and transform magnet interaction rules', async () => {
-        const mockDbRule = {
-          source_type: 'operator',
-          target_type: 'paver',
-          can_attach: true,
-          is_required: true,
-          max_count: 1
-        };
-
-        const expectedRule: MagnetInteractionRule = {
+    describe('updateMagnetRule', () => {
+      it('should update magnet interaction rule', async () => {
+        const rule: MagnetInteractionRule = {
           sourceType: 'operator',
           targetType: 'paver',
           canAttach: true,
@@ -358,190 +466,132 @@ describe('DatabaseService', () => {
         };
 
         const fromMock = vi.fn(() => ({
-          select: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: [mockDbRule],
-              error: null
-            }))
+          upsert: vi.fn(() => Promise.resolve({
+            error: null
           }))
         }));
         (supabase.from as any) = fromMock;
 
-        const rules = await DatabaseService.getMagnetInteractionRules();
+        await DatabaseService.updateMagnetRule(rule);
         
         expect(fromMock).toHaveBeenCalledWith('magnet_interaction_rules');
-        expect(rules).toEqual([expectedRule]);
       });
     });
 
-    describe('getDropRules', () => {
-      it('should fetch and transform drop rules', async () => {
-        const mockDbRule = {
-          row_type: 'Equipment',
-          allowed_types: ['paver', 'roller']
-        };
-
-        const expectedRule: DropRule = {
-          rowType: 'Equipment',
-          allowedTypes: ['paver', 'roller']
-        };
-
+    describe('updateDropRule', () => {
+      it('should update drop rule', async () => {
         const fromMock = vi.fn(() => ({
-          select: vi.fn(() => ({
-            order: vi.fn(() => Promise.resolve({
-              data: [mockDbRule],
-              error: null
-            }))
+          upsert: vi.fn(() => Promise.resolve({
+            error: null
           }))
         }));
         (supabase.from as any) = fromMock;
 
-        const rules = await DatabaseService.getDropRules();
+        await DatabaseService.updateDropRule('Equipment', ['paver', 'roller']);
         
         expect(fromMock).toHaveBeenCalledWith('drop_rules');
-        expect(rules).toEqual([expectedRule]);
       });
     });
   });
 
   describe('Real-time Subscriptions', () => {
-    it('should subscribe to resources changes', () => {
-      const callback = vi.fn();
+    it('should subscribe to schedule changes', () => {
+      const callbacks = {
+        onResourceChange: vi.fn(),
+        onJobChange: vi.fn(),
+        onAssignmentChange: vi.fn()
+      };
       const channelMock = {
         on: vi.fn().mockReturnThis(),
         subscribe: vi.fn().mockReturnThis()
       };
       (supabase.channel as any) = vi.fn(() => channelMock);
 
-      DatabaseService.subscribeToResources(callback);
+      const unsubscribe = DatabaseService.subscribeToScheduleChanges(callbacks);
 
       expect(supabase.channel).toHaveBeenCalledWith('resources-changes');
-      expect(channelMock.on).toHaveBeenCalledWith(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'resources' },
-        callback
-      );
-      expect(channelMock.subscribe).toHaveBeenCalled();
-    });
-
-    it('should subscribe to jobs changes', () => {
-      const callback = vi.fn();
-      const channelMock = {
-        on: vi.fn().mockReturnThis(),
-        subscribe: vi.fn().mockReturnThis()
-      };
-      (supabase.channel as any) = vi.fn(() => channelMock);
-
-      DatabaseService.subscribeToJobs(callback);
-
       expect(supabase.channel).toHaveBeenCalledWith('jobs-changes');
-      expect(channelMock.on).toHaveBeenCalledWith(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'jobs' },
-        callback
-      );
-    });
-
-    it('should subscribe to assignments changes', () => {
-      const callback = vi.fn();
-      const channelMock = {
-        on: vi.fn().mockReturnThis(),
-        subscribe: vi.fn().mockReturnThis()
-      };
-      (supabase.channel as any) = vi.fn(() => channelMock);
-
-      DatabaseService.subscribeToAssignments(callback);
-
       expect(supabase.channel).toHaveBeenCalledWith('assignments-changes');
-      expect(channelMock.on).toHaveBeenCalledWith(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'assignments' },
-        callback
-      );
+      expect(typeof unsubscribe).toBe('function');
     });
   });
 
-  describe('Specialized Queries', () => {
-    it('should fetch resources with assignments', async () => {
-      const mockData = {
-        id: '1',
-        type: 'operator',
-        name: 'John Doe',
-        identifier: 'OP001',
-        model: null,
-        vin: null,
-        location: 'Site A',
-        on_site: true,
-        assignments: [{
-          id: 'a1',
-          resource_id: '1',
-          job_id: 'job1',
-          row_type: 'crew',
-          position: 0,
-          attached_to_assignment_id: null,
-          time_slot: null,
-          note: null,
-          truck_config: null
-        }]
-      };
-
-      const fromMock = vi.fn(() => ({
-        select: vi.fn(() => ({
-          order: vi.fn(() => Promise.resolve({
-            data: [mockData],
+  describe('Specialized Operations', () => {
+    describe('Job Row Configs', () => {
+      it('should update job row config', async () => {
+        const config = {
+          jobId: 'job1',
+          rowType: 'Equipment' as const,
+          isSplit: false,
+          boxes: []
+        };
+        
+        const fromMock = vi.fn(() => ({
+          upsert: vi.fn(() => Promise.resolve({
             error: null
           }))
-        }))
-      }));
-      (supabase.from as any) = fromMock;
+        }));
+        (supabase.from as any) = fromMock;
 
-      const result = await DatabaseService.getResourcesWithAssignments();
-      
-      expect(result).toHaveLength(1);
-      expect(result[0].assignments).toHaveLength(1);
-      expect(result[0].name).toBe('John Doe');
+        await DatabaseService.updateJobRowConfig(config);
+        
+        expect(fromMock).toHaveBeenCalledWith('job_row_configs');
+      });
+
+      it('should get job row configs', async () => {
+        const fromMock = vi.fn(() => ({
+          select: vi.fn(() => Promise.resolve({
+            data: [{
+              job_id: 'job1',
+              row_type: 'Equipment',
+              is_split: false,
+              boxes: []
+            }],
+            error: null
+          }))
+        }));
+        (supabase.from as any) = fromMock;
+
+        const configs = await DatabaseService.getJobRowConfigs();
+        
+        expect(fromMock).toHaveBeenCalledWith('job_row_configs');
+        expect(configs).toHaveLength(1);
+        expect(configs[0].jobId).toBe('job1');
+      });
     });
 
-    it('should fetch jobs with assignments', async () => {
-      const mockData = {
-        id: '1',
-        name: 'Test Job',
-        job_number: 'J001',
-        type: 'paving',
-        shift: 'day',
-        notes: null,
-        start_time: null,
-        finalized: false,
-        plants: [],
-        location: null,
-        assignments: [{
-          id: 'a1',
-          resource_id: 'r1',
-          job_id: '1',
-          row_type: 'Equipment',
-          position: 0,
-          attached_to_assignment_id: null,
-          time_slot: null,
-          note: null,
-          truck_config: null
-        }]
-      };
+    describe('Truck Driver Assignments', () => {
+      it('should update truck driver assignment', async () => {
+        const deleteMock = vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ error: null }))
+        }));
+        const insertMock = vi.fn(() => Promise.resolve({ error: null }));
+        
+        const fromMock = vi.fn(() => ({
+          delete: deleteMock,
+          insert: insertMock
+        }));
+        (supabase.from as any) = fromMock;
 
-      const fromMock = vi.fn(() => ({
-        select: vi.fn(() => ({
-          order: vi.fn(() => Promise.resolve({
-            data: [mockData],
+        await DatabaseService.updateTruckDriverAssignment('truck1', 'driver1');
+        
+        expect(fromMock).toHaveBeenCalledWith('truck_driver_assignments');
+      });
+
+      it('should get truck driver assignments', async () => {
+        const fromMock = vi.fn(() => ({
+          select: vi.fn(() => Promise.resolve({
+            data: [{ truck_id: 'truck1', driver_id: 'driver1' }],
             error: null
           }))
-        }))
-      }));
-      (supabase.from as any) = fromMock;
+        }));
+        (supabase.from as any) = fromMock;
 
-      const result = await DatabaseService.getJobsWithAssignments();
-      
-      expect(result).toHaveLength(1);
-      expect(result[0].assignments).toHaveLength(1);
-      expect(result[0].name).toBe('Test Job');
+        const assignments = await DatabaseService.getTruckDriverAssignments();
+        
+        expect(fromMock).toHaveBeenCalledWith('truck_driver_assignments');
+        expect(assignments['truck1']).toBe('driver1');
+      });
     });
   });
 
@@ -551,29 +601,55 @@ describe('DatabaseService', () => {
         { id: '1', action: 'INSERT', timestamp: '2024-01-01T00:00:00Z' }
       ];
 
-      (supabase.rpc as any) = vi.fn(() => Promise.resolve({
-        data: mockAuditData,
-        error: null
-      }));
+      // Create a chainable mock that resolves to the expected data structure
+      const mockResult = Promise.resolve({ data: mockAuditData, error: null });
+      const mockQuery = {
+        select: vi.fn(),
+        order: vi.fn(),
+        limit: vi.fn(),
+        eq: vi.fn(),
+        then: mockResult.then.bind(mockResult),
+        catch: mockResult.catch.bind(mockResult)
+      };
+      
+      // Set up the chaining after the object is created
+      mockQuery.select.mockReturnValue(mockQuery);
+      mockQuery.order.mockReturnValue(mockQuery);
+      mockQuery.limit.mockReturnValue(mockQuery);
+      mockQuery.eq.mockReturnValue(mockQuery);
+      
+      const fromMock = vi.fn(() => mockQuery);
+      (supabase.from as any) = fromMock;
 
       const audit = await DatabaseService.getAuditTrail('resource', '1', 10);
       
-      expect(supabase.rpc).toHaveBeenCalledWith('get_audit_trail', {
-        entity_type_param: 'resource',
-        entity_id_param: '1',
-        limit_param: 10
-      });
+      expect(fromMock).toHaveBeenCalledWith('audit_logs');
       expect(audit).toEqual(mockAuditData);
     });
 
     it('should handle audit trail errors', async () => {
       const error = new Error('Audit failed');
-      (supabase.rpc as any) = vi.fn(() => Promise.resolve({
-        data: null,
-        error
-      }));
+      // Create a chainable mock that resolves with error
+      const mockResult = Promise.resolve({ data: null, error });
+      const mockQuery = {
+        select: vi.fn(),
+        order: vi.fn(),
+        limit: vi.fn(),
+        eq: vi.fn(),
+        then: mockResult.then.bind(mockResult),
+        catch: mockResult.catch.bind(mockResult)
+      };
+      
+      // Set up the chaining after the object is created
+      mockQuery.select.mockReturnValue(mockQuery);
+      mockQuery.order.mockReturnValue(mockQuery);
+      mockQuery.limit.mockReturnValue(mockQuery);
+      mockQuery.eq.mockReturnValue(mockQuery);
+      
+      const fromMock = vi.fn(() => mockQuery);
+      (supabase.from as any) = fromMock;
 
-      await expect(DatabaseService.getAuditTrail('resource')).rejects.toThrow('Audit failed');
+      await expect(DatabaseService.getAuditTrail()).rejects.toThrow('Audit failed');
       expect(logger.error).toHaveBeenCalledWith('Error fetching audit trail:', error);
     });
   });

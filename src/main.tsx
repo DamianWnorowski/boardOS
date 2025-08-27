@@ -5,6 +5,7 @@ import { SchedulerProvider } from './context/SchedulerContext';
 import { MobileProvider } from './context/MobileContext';
 import { DragProvider } from './context/DragContext';
 import { ModalProvider } from './context/ModalContext';
+import { KeyboardShortcutsProvider } from './context/KeyboardShortcutsContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import './index.css';
 
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')!).render(
         <DragProvider>
           <ModalProvider>
             <SchedulerProvider>
-              <App />
+              <KeyboardShortcutsProvider>
+                <App />
+              </KeyboardShortcutsProvider>
             </SchedulerProvider>
           </ModalProvider>
         </DragProvider>

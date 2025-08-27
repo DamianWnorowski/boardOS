@@ -29,6 +29,9 @@ const Navbar: React.FC = () => {
   };
 
   const formatDate = (date: Date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -38,6 +41,9 @@ const Navbar: React.FC = () => {
   };
 
   const getDateInputValue = (date: Date) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return new Date().toISOString().split('T')[0];
+    }
     return date.toISOString().split('T')[0];
   };
 

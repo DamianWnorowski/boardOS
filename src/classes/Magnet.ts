@@ -384,6 +384,13 @@ export class MagnetManager {
     this.rules = rules;
     this.resourceColors = colors;
   }
+
+  /**
+   * Clear all magnets from the manager
+   */
+  clear(): void {
+    this.magnets.clear();
+  }
   
   /**
    * Create a new magnet from a resource

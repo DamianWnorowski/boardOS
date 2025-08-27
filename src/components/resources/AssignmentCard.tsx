@@ -641,6 +641,16 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         const rule = getMagnetInteractionRule(item.resource.type, resource.type);
         if (!rule?.canAttach) return false;
 
+        // Check equipment permissions for operators
+        if (item.resource.type === 'operator') {
+          const allowedEquipment = item.resource.allowedEquipment;
+          if (allowedEquipment && allowedEquipment.length > 0) {
+            if (!allowedEquipment.includes(resource.type)) {
+              return false; // Operator not authorized for this equipment
+            }
+          }
+        }
+
         // Check maxCount
         const currentCountOfSourceType = attachedAssignments
           .map(a => getResourceById(a.resourceId)?.type)
@@ -664,6 +674,16 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
           if (itemResource) {
             const rule = getMagnetInteractionRule(itemResource.type, resource.type);
             if (!rule?.canAttach) return false;
+
+            // Check equipment permissions for operators
+            if (itemResource.type === 'operator') {
+              const allowedEquipment = itemResource.allowedEquipment;
+              if (allowedEquipment && allowedEquipment.length > 0) {
+                if (!allowedEquipment.includes(resource.type)) {
+                  return false; // Operator not authorized for this equipment
+                }
+              }
+            }
 
             const currentCountOfSourceType = attachedAssignments
               .map(a => getResourceById(a.resourceId)?.type)
@@ -855,9 +875,41 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       return assignmentResource?.type === 'operator';
     });
   };
+
+  // Check if there are any equipment permission violations
+  const hasPermissionViolation = () => {
+    if (resource.type === 'operator') {
+      // Check if this operator has permissions for any equipment they're attached to
+      const parentEquipment = getResourceById(assignment.attachedTo || '');
+      if (parentEquipment) {
+        const allowedEquipment = resource.allowedEquipment;
+        if (allowedEquipment && allowedEquipment.length > 0) {
+          return !allowedEquipment.includes(parentEquipment.type);
+        }
+      }
+    } else {
+      // Check if this equipment has operators without proper permissions
+      const operatorAssignments = attachedAssignments.filter(a => {
+        const operatorResource = getResourceById(a.resourceId);
+        return operatorResource?.type === 'operator';
+      });
+      
+      return operatorAssignments.some(operatorAssignment => {
+        const operatorResource = getResourceById(operatorAssignment.resourceId);
+        if (operatorResource) {
+          const allowedEquipment = operatorResource.allowedEquipment;
+          if (allowedEquipment && allowedEquipment.length > 0) {
+            return !allowedEquipment.includes(resource.type);
+          }
+        }
+        return false;
+      });
+    }
+    return false;
+  };
   
   // Highlight style for when dragging over
-  const hoverStyle = isOver ? (canDrop ? 'ring-2 ring-blue-400' : '') : '';
+  const hoverStyle = isOver ? (canDrop ? 'ring-2 ring-blue-400' : 'ring-2 ring-red-400') : '';
   const dropAnimation = isDroppingItem ? 'scale-110' : '';
 
   // Check if resource has multiple job assignments for styling
@@ -1061,6 +1113,19 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
                 {customTime}
               </span>
             )}
+          </div>
+        )}
+        
+        {/* Permission warning indicator */}
+        {hasPermissionViolation() && (
+          <div 
+            className="absolute -top-2 -left-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center shadow-sm z-30"
+            title={resource.type === 'operator' ? 
+              `${resource.name} is not authorized to operate this equipment type` : 
+              `This ${resource.type} has operators without proper permissions`
+            }
+          >
+            ⚠️
           </div>
         )}
       </motion.div>

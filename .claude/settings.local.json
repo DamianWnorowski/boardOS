@@ -9,7 +9,16 @@
       "Bash(npm run:*)",
       "Bash(npm install)",
       "Bash(git commit:*)",
-      "Bash(./start.bat)"
+      "Bash(./start.bat)",
+      "Bash(git stash:*)",
+      "Bash(git log:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(grep:*)",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

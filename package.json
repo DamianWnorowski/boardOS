@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.2.1",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.4.3",

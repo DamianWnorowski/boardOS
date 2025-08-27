@@ -13,6 +13,7 @@ interface MagnetCardProps {
   onClick?: () => void;
   onDoubleClick?: () => void;
   showAttachControls?: boolean;
+  disableDrag?: boolean; // Disable the drag functionality on this card
 }
 
 const MagnetCard: React.FC<MagnetCardProps> = ({
@@ -22,7 +23,8 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
   isCompact = false,
   onClick,
   onDoubleClick,
-  showAttachControls = false
+  showAttachControls = false,
+  disableDrag = false
 }) => {
   const {
     magnet,
@@ -33,6 +35,7 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
   const [{ opacity }, drag] = useDrag(() => ({
     type: ItemTypes.RESOURCE,
     item: () => {
+      console.log('🔍 MagnetCard drag item function called for:', magnet?.name, 'disableDrag:', disableDrag);
       startDrag();
       return magnet ? {
         type: ItemTypes.RESOURCE,
@@ -45,13 +48,18 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
       } : { type: ItemTypes.RESOURCE };
     },
     end: () => {
+      console.log('🔍 MagnetCard drag end for:', magnet?.name);
       endDrag();
     },
     collect: (monitor) => ({
       opacity: monitor.isDragging() ? 0.4 : 1,
     }),
-    canDrag: !!magnet && !isAttached, // Attached magnets can't be dragged directly
-  }), [magnet, startDrag, endDrag, isAttached]);
+    canDrag: () => {
+      const canDrag = !!magnet && !isAttached && !disableDrag;
+      console.log('🔍 MagnetCard canDrag check for:', magnet?.name, 'Result:', canDrag, 'disableDrag:', disableDrag, 'isAttached:', isAttached);
+      return canDrag;
+    }
+  }), [magnet, startDrag, endDrag, isAttached, disableDrag]);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +129,9 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
       <div 
         ref={(node) => {
           if (node) {
-            drag(node);
+            if (!disableDrag) {
+              drag(node);
+            }
             cardRef.current = node;
           }
         }}
@@ -167,7 +177,9 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
     <div 
         ref={isMain || isAttached ? null : (node) => {
           if (node) {
-            drag(node);
+            if (!disableDrag) {
+              drag(node);
+            }
             cardRef.current = node;
           }
         }}
