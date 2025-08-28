@@ -4,9 +4,72 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SchedulerProvider, useScheduler } from '../SchedulerContext';
 import type { RowType, Resource } from '../../types';
 
+// Mock the DatabaseService to prevent real database calls
+const mockStorage = {
+  jobs: [] as any[],
+  resources: [] as any[],
+  assignments: [] as any[]
+};
+
+vi.mock('../../services/DatabaseService', () => ({
+  DatabaseService: {
+    loadJobs: vi.fn(() => Promise.resolve(mockStorage.jobs)),
+    loadResources: vi.fn(() => Promise.resolve(mockStorage.resources)),
+    loadAssignments: vi.fn(() => Promise.resolve(mockStorage.assignments)),
+    loadJobRowConfigs: vi.fn(() => Promise.resolve([])),
+    getJobsByDate: vi.fn(() => Promise.resolve(mockStorage.jobs)),
+    getAllScheduleData: vi.fn(() => {
+      console.log('getAllScheduleData called, returning:', mockStorage.jobs.length, 'jobs');
+      return Promise.resolve({
+        jobs: mockStorage.jobs,
+        resources: mockStorage.resources,
+        assignments: mockStorage.assignments,
+        magnetRules: [],
+        dropRules: []
+      });
+    }),
+    getTruckDriverAssignments: vi.fn(() => Promise.resolve({})),
+    getJobRowConfigs: vi.fn(() => Promise.resolve([])),
+    createJob: vi.fn((job) => {
+      const newJob = { ...job, id: `job-${Date.now()}` };
+      mockStorage.jobs.push(newJob);
+      return Promise.resolve(newJob);
+    }),
+    createResource: vi.fn((resource) => {
+      const newResource = { ...resource, id: resource.id || `res-${Date.now()}` };
+      mockStorage.resources.push(newResource);
+      return Promise.resolve(newResource);
+    }),
+    createAssignment: vi.fn((assignment) => {
+      const newAssignment = { ...assignment, id: `assign-${Date.now()}` };
+      mockStorage.assignments.push(newAssignment);
+      return Promise.resolve(newAssignment);
+    }),
+    updateResource: vi.fn((resource) => {
+      const index = mockStorage.resources.findIndex(r => r.id === resource.id);
+      if (index !== -1) mockStorage.resources[index] = resource;
+      return Promise.resolve();
+    }),
+    updateAssignment: vi.fn((assignment) => {
+      const index = mockStorage.assignments.findIndex(a => a.id === assignment.id);
+      if (index !== -1) mockStorage.assignments[index] = assignment;
+      return Promise.resolve();
+    }),
+    deleteAssignment: vi.fn(() => Promise.resolve()),
+    updateJob: vi.fn((job) => {
+      const index = mockStorage.jobs.findIndex(j => j.id === job.id);
+      if (index !== -1) mockStorage.jobs[index] = job;
+      return Promise.resolve();
+    }),
+    attachAssignments: vi.fn(() => Promise.resolve()),
+    detachAssignments: vi.fn(() => Promise.resolve()),
+    subscribeToScheduleChanges: vi.fn(() => () => {}), // Return a cleanup function
+  }
+}));
+
 // Helper component to expose context for testing
 const Consumer: React.FC = () => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+   
   const ctx = useScheduler();
   (Consumer as any).context = ctx; // store context on component for access in tests
   return null;
@@ -14,8 +77,31 @@ const Consumer: React.FC = () => {
 
 describe('SchedulerContext', () => {
   beforeEach(() => {
+    // Reset mock data arrays
+    mockStorage.jobs.length = 0;
+    mockStorage.resources.length = 0; 
+    mockStorage.assignments.length = 0;
+    
+    // Add initial test data
+    mockStorage.jobs.push({
+      id: 'test-job-1',
+      name: 'Test Job',
+      type: 'paving',
+      notes: 'Test job for assignments'
+    });
+    
+    mockStorage.resources.push({
+      id: 'test-resource-1',
+      name: 'Test Resource',
+      type: 'operator',
+      classType: 'employee',
+      identifier: 'TR001',
+      onSite: true,
+      location: 'Site A'
+    });
+    
     const store: Record<string, string> = {};
-    const mockStorage = {
+    const mockLocalStorage = {
       getItem: vi.fn((key: string) => store[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
         store[key] = value;
@@ -27,7 +113,7 @@ describe('SchedulerContext', () => {
         Object.keys(store).forEach(key => delete store[key]);
       })
     };
-    vi.stubGlobal('localStorage', mockStorage);
+    vi.stubGlobal('localStorage', mockLocalStorage);
   });
 
   afterEach(() => {
@@ -43,11 +129,20 @@ describe('SchedulerContext', () => {
     );
 
     const ctx = (Consumer as any).context;
+    
+    // Wait for initial load
+    await act(async () => {
+      // Give the context time to initialize
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    
+    console.log('Initial jobs:', ctx.jobs.map((j: any) => ({ id: j.id, name: j.name })));
 
     // addJob
     await act(async () => {
-      ctx.addJob({ name: 'New Job', type: 'paving', notes: 'Test' });
+      await ctx.addJob({ name: 'New Job', type: 'paving', notes: 'Test' });
     });
+    console.log('Jobs after addJob:', ctx.jobs.map((j: any) => ({ id: j.id, name: j.name })));
     expect(ctx.jobs.some((j: any) => j.name === 'New Job')).toBe(true);
     let persisted = JSON.parse(localStorage.getItem('scheduler-data')!);
     expect(persisted.jobs.some((j: any) => j.name === 'New Job')).toBe(true);

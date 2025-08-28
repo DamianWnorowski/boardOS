@@ -184,7 +184,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
 
   // Initialize with default configurations
   useEffect(() => {
-    console.log('🔧 Initializing job type configurations');
     const configs: Record<JobType, Record<RowType, JobRowConfig>> = {};
     
     jobTypes.forEach(jobType => {
@@ -195,8 +194,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
     });
     
     setJobTypeConfigs(configs);
-    console.log('🔧 Initialized configs:', configs);
-    
     // Initialize quick add magnets
     const quickAdd: Record<JobType, Record<RowType, Record<ResourceType, number>>> = {};
     jobTypes.forEach(jobType => {
@@ -213,8 +210,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const updateCurrentRowConfig = (updates: Partial<JobRowConfig>) => {
-    console.log('🔧 updateCurrentRowConfig called:', { selectedJobType, selectedRow, updates });
-    
     setJobTypeConfigs(prev => {
       const newConfigs = structuredClone(prev);
       
@@ -231,13 +226,11 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
         ...updates
       };
       
-      console.log('🔧 Updated jobTypeConfigs:', newConfigs);
       return newConfigs;
     });
   };
 
   const handleAddBox = () => {
-    console.log('🔧 handleAddBox called');
     const currentConfig = getCurrentRowConfig();
     if (!currentConfig) return;
 
@@ -255,7 +248,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const handleSplitRow = () => {
-    console.log('🔧 handleSplitRow called');
     const currentConfig = getCurrentRowConfig();
     if (!currentConfig) return;
 
@@ -284,7 +276,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const handleSplitBox = () => {
-    console.log('🔧 handleSplitBox called');
     const currentConfig = getCurrentRowConfig();
     if (!currentConfig) return;
 
@@ -408,12 +399,10 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const handleUnsplitRow = () => {
-    console.log('🔧 handleUnsplitRow called');
     updateCurrentRowConfig(getDefaultJobTypeConfig(selectedJobType, selectedRow));
   };
 
   const handleUpdateBox = (boxIndex: number, updates: Partial<JobRowBox>) => {
-    console.log('🔧 handleUpdateBox called:', { boxIndex, updates });
     const currentConfig = getCurrentRowConfig();
     if (!currentConfig) return;
 
@@ -426,7 +415,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const handleRemoveBox = (boxIndex: number) => {
-    console.log('🔧 handleRemoveBox called:', boxIndex);
     const currentConfig = getCurrentRowConfig();
     if (!currentConfig) return;
 
@@ -535,7 +523,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const handleSave = () => {
-    console.log('🔧 handleSave called - Job type configurations saved locally');
     // For now, just save to localStorage since this is a template system
     localStorage.setItem('job-type-configs', JSON.stringify(jobTypeConfigs));
     onClose();
@@ -548,15 +535,6 @@ const JobTypeConfigModal: React.FC<JobTypeConfigModalProps> = ({ onClose }) => {
   };
 
   const currentRowConfig = getCurrentRowConfig();
-  console.log('🔧 Current render state:', {
-    selectedJobType,
-    selectedRow,
-    currentRowConfig: currentRowConfig ? {
-      isSplit: currentRowConfig.isSplit,
-      boxCount: currentRowConfig.boxes.length,
-      subRowCount: (currentRowConfig as any).subRows?.length || 0
-    } : null
-  });
 
   return (
     <Portal>

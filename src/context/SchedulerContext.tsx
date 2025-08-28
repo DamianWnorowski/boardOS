@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Job, Resource, Assignment, RowType, RowOverride, TimeSlot, ResourceType, MagnetInteractionRule, DropRule, JobRowConfig } from '../types';
+import { Job, Resource, Assignment, RowType, RowOverride, TimeSlot, ResourceType, MagnetInteractionRule, DropRule, JobRowConfig, ViewType } from '../types';
 import { convertPersonnelToResources, convertEquipmentToResources } from '../data/resourceData';
 import { isRowNeededForJobType } from '../utils/jobUtils';
 import { logger } from '../utils/logger';
@@ -16,6 +16,7 @@ interface SchedulerContextType {
   assignments: Assignment[];
   rowOverrides: RowOverride[];
   selectedDate: Date;
+  currentView: ViewType;
   filteredResourceType: string | null;
   searchTerm: string;
   truckDriverAssignments: Record<string, string>;
@@ -59,6 +60,7 @@ interface SchedulerContextType {
   
   // Filter actions
   setSelectedDate: (date: Date) => void;
+  setCurrentView: (view: ViewType) => void;
   setFilteredResourceType: (type: string | null) => void;
   setSearchTerm: (term: string) => void;
   
@@ -118,6 +120,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Local UI state (not persisted)
   const [rowOverrides, setRowOverrides] = useState<RowOverride[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentView, setCurrentViewState] = useState<ViewType>(() => {
+    // Load from localStorage or default to 'day'
+    const saved = localStorage.getItem('boardOS-view');
+    return (saved as ViewType) || 'day';
+  });
   const [filteredResourceType, setFilteredResourceType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -128,21 +135,37 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const resourceColors = React.useMemo(() => getLegacyResourceColors(), []);
 
   // Load all data from database - with loading state for initial load
-  const loadScheduleData = useCallback(async (showLoading = true) => {
+  const loadScheduleData = useCallback(async (showLoading = true, forDate?: Date) => {
     try {
       if (showLoading) {
         setIsLoading(true);
       }
       setError(null);
 
-      // Load all schedule data
-      const scheduleData = await DatabaseService.getAllScheduleData();
+      // Load jobs for specific date or all jobs
+      let jobsData: Job[];
+      let scheduleData: any; // Declare at function scope
       
-      setJobs(scheduleData.jobs);
-      setResources(scheduleData.resources);
-      setAssignments(scheduleData.assignments);
-      setMagnetInteractionRules(scheduleData.magnetRules);
-      setDropRules(scheduleData.dropRules);
+      if (forDate && currentView === 'day') {
+        // Load jobs only for the selected date in day view
+        jobsData = await DatabaseService.getJobsByDate(forDate);
+        // Load resources, assignments, etc. for day view
+        scheduleData = await DatabaseService.getAllScheduleData();
+        setResources(scheduleData.resources);
+        setAssignments(scheduleData.assignments);
+        setMagnetInteractionRules(scheduleData.magnetRules);
+        setDropRules(scheduleData.dropRules);
+      } else {
+        // Load all jobs for week/month view or when no specific date
+        scheduleData = await DatabaseService.getAllScheduleData();
+        jobsData = scheduleData.jobs;
+        setResources(scheduleData.resources);
+        setAssignments(scheduleData.assignments);
+        setMagnetInteractionRules(scheduleData.magnetRules);
+        setDropRules(scheduleData.dropRules);
+      }
+      
+      setJobs(jobsData);
 
       // Load truck driver assignments
       const truckDriverData = await DatabaseService.getTruckDriverAssignments();
@@ -211,6 +234,13 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     loadScheduleData();
   }, [loadScheduleData]);
+
+  // Reload data when selected date changes in day view
+  useEffect(() => {
+    if (currentView === 'day') {
+      loadScheduleData(false, selectedDate); // Don't show loading spinner for date changes
+    }
+  }, [selectedDate, currentView, loadScheduleData]);
 
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
@@ -404,6 +434,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const newJob = await DatabaseService.createJob(job);
       logger.info('Job created:', newJob.name);
+      // Reload data to include the new job
+      await loadScheduleData(false);
     } catch (err: any) {
       logger.error('Error creating job:', err);
       setError(`Failed to create job: ${err.message}`);
@@ -484,6 +516,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const newResource = await DatabaseService.createResource(resource);
       logger.info('Resource created:', newResource.name);
+      // Reload data to include the new resource
+      await loadScheduleData(false);
+      return newResource;
     } catch (err: any) {
       logger.error('Error creating resource:', err);
       setError(`Failed to create resource: ${err.message}`);
@@ -1333,6 +1368,12 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return jobRowConfigs.find(c => c.jobId === jobId && c.rowType === rowType);
   };
 
+  // View management with localStorage persistence
+  const setCurrentView = useCallback((view: ViewType) => {
+    setCurrentViewState(view);
+    localStorage.setItem('boardOS-view', view);
+  }, []);
+
   // Refresh data function - background refresh without loading state
   const refreshData = async () => {
     await loadScheduleData(false);
@@ -1345,6 +1386,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     rowOverrides,
     truckDriverAssignments,
     selectedDate,
+    currentView,
     filteredResourceType,
     searchTerm,
     magnetInteractionRules,
@@ -1385,6 +1427,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     // Filter actions
     setSelectedDate,
+    setCurrentView,
     setFilteredResourceType,
     setSearchTerm,
     

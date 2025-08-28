@@ -7,11 +7,11 @@ describe('Drag and Drop Integration Tests', () => {
   beforeAll(async () => {
     testDb = new TestDatabaseService('drag-drop');
     await testDb.setup();
-  });
+  }, 30000); // 30 second timeout for database operations
 
   afterAll(async () => {
     await testDb.cleanup();
-  });
+  }, 30000); // 30 second timeout for cleanup
 
   describe('Equipment Placement Rules', () => {
     it('should allow ALL equipment types in Equipment row', async () => {

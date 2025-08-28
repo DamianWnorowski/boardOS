@@ -65,9 +65,7 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
   };
 
   const closeQuickSelect = () => {
-    console.log('🔍 closeQuickSelect function called - current state:', isQuickSelectOpen);
     setIsQuickSelectOpen(false);
-    console.log('🔍 setIsQuickSelectOpen(false) called');
     setQuickSelectState({
       mode: 'category',
       selectedCategory: null,
@@ -76,8 +74,7 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
       navigationHistory: []
     });
     setQuickSelectMagnets([]);
-    console.log('🔍 quickSelectState reset to default');
-  };
+    };
 
   const getCurrentOptions = (): (ResourceCategory | EquipmentSubcategory | Magnet)[] => {
     switch (quickSelectState.mode) {
@@ -164,7 +161,6 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
 
       case 'magnets':
         const magnet = selected as Magnet;
-        console.log('Selected magnet:', magnet.name);
         // TODO: Implement magnet selection action
         closeQuickSelect();
         break;
@@ -345,16 +341,13 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
   };
 
   const executeMagnet = (magnet: Magnet) => {
-    console.log('Selected magnet:', magnet.name);
     // TODO: Implement magnet selection action
     closeQuickSelect();
   };
 
   const handleDragStart = () => {
-    console.log('🎯 handleDragStart called - delaying overlay close for drag layer');
     // Delay closing the overlay to allow drag layer to initialize
     setTimeout(() => {
-      console.log('🎯 Delayed close: closing overlay now');
       closeQuickSelect();
     }, 50); // Small delay to let drag layer take over
   };

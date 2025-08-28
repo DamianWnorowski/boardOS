@@ -9,10 +9,17 @@ import { MobileContext } from '../../../context/MobileContext';
 import { DragContext } from '../../../context/DragContext';
 import { ModalContext } from '../../../context/ModalContext';
 import { RowType, Job, Assignment, Resource, ResourceType } from '../../../types';
+import { isRowNeededForJobType, isRowTogglable } from '../../../utils/jobUtils';
 
 // Mock modules
 vi.mock('../../../utils/logger', () => ({
   default: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+  logger: {
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
@@ -30,7 +37,7 @@ vi.mock('../../../utils/dndBackend', () => ({
 }));
 
 // Mock child components
-vi.mock('../resources/AssignmentCard', () => ({
+vi.mock('../../resources/AssignmentCard', () => ({
   default: ({ assignment }: { assignment: Assignment }) => (
     <div data-testid={`assignment-card-${assignment.id}`}>
       Assignment: {assignment.resourceId}
@@ -38,7 +45,7 @@ vi.mock('../resources/AssignmentCard', () => ({
   ),
 }));
 
-vi.mock('../resources/TemplateCard', () => ({
+vi.mock('../../resources/TemplateCard', () => ({
   default: ({ equipmentType, label, onClick }: any) => (
     <button data-testid={`template-${equipmentType}`} onClick={onClick}>
       {label}
@@ -46,7 +53,7 @@ vi.mock('../resources/TemplateCard', () => ({
   ),
 }));
 
-vi.mock('../modals/EquipmentSelectorModal', () => ({
+vi.mock('../../modals/EquipmentSelectorModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="equipment-selector-modal">
       <button onClick={onClose}>Close</button>
@@ -54,7 +61,7 @@ vi.mock('../modals/EquipmentSelectorModal', () => ({
   ),
 }));
 
-vi.mock('../modals/TruckConfigModal', () => ({
+vi.mock('../../modals/TruckConfigModal', () => ({
   default: ({ onSelect, onClose }: any) => (
     <div data-testid="truck-config-modal">
       <button onClick={() => onSelect('flowboy')}>Flowboy</button>
@@ -64,7 +71,7 @@ vi.mock('../modals/TruckConfigModal', () => ({
   ),
 }));
 
-vi.mock('../modals/PersonModal', () => ({
+vi.mock('../../modals/PersonModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="person-modal">
       <button onClick={onClose}>Close</button>
@@ -99,6 +106,9 @@ describe('JobRow', () => {
 
   // Mock context values
   const mockSchedulerContext = {
+    assignments: [mockAssignment],
+    resources: [mockResource],
+    jobs: [mockJob],
     getResourcesByAssignment: vi.fn(() => [mockAssignment]),
     assignResource: vi.fn(),
     assignResourceWithTruckConfig: vi.fn(),
@@ -112,6 +122,16 @@ describe('JobRow', () => {
     canDropOnRow: vi.fn(() => true),
     getDropRule: vi.fn(() => ['paver', 'roller']),
     getJobRowConfig: vi.fn(() => ({ isSplit: false })),
+    getAttachedAssignments: vi.fn(() => []),
+    removeAssignment: vi.fn(),
+    assignResourceWithAttachment: vi.fn(),
+    attachResources: vi.fn(),
+    detachResources: vi.fn(),
+    hasMultipleJobAssignments: vi.fn(() => false),
+    isWorkingDouble: vi.fn(() => false),
+    getMagnetInteractionRule: vi.fn(() => ({ canAttach: true, maxCount: 1 })),
+    getRequiredAttachmentsForType: vi.fn(() => []),
+    getMaxAttachmentsForType: vi.fn(() => 1),
   };
 
   const mockMobileContext = {
@@ -174,9 +194,11 @@ describe('JobRow', () => {
     Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
     // Reset job utils mocks
-    const { isRowNeededForJobType, isRowTogglable } = require('../../../utils/jobUtils');
     isRowNeededForJobType.mockReturnValue(true);
     isRowTogglable.mockReturnValue(false);
+    
+    // Reset scheduler context mocks to default values
+    mockSchedulerContext.getJobById.mockReturnValue(mockJob);
   });
 
   afterEach(() => {
@@ -201,13 +223,14 @@ describe('JobRow', () => {
     });
 
     it('should show drop rules indicator', () => {
-      renderJobRow();
+      const { container } = renderJobRow();
       
-      const infoIcon = screen.getByTitle(/Allowed/);
+      // Find the Info icon by its class
+      const infoIcon = container.querySelector('.lucide-info');
       expect(infoIcon).toBeInTheDocument();
       
       // Hover should show tooltip
-      fireEvent.mouseEnter(infoIcon);
+      fireEvent.mouseEnter(infoIcon!);
       expect(screen.getByText(/Allowed: Paver, Roller/)).toBeInTheDocument();
     });
 
@@ -222,7 +245,6 @@ describe('JobRow', () => {
 
   describe('Row State Management', () => {
     it('should show toggle button for toggleable rows', () => {
-      const { isRowTogglable } = require('../../../utils/jobUtils');
       isRowTogglable.mockReturnValue(true);
       
       renderJobRow();
@@ -230,7 +252,6 @@ describe('JobRow', () => {
     });
 
     it('should handle row toggle', () => {
-      const { isRowTogglable } = require('../../../utils/jobUtils');
       isRowTogglable.mockReturnValue(true);
       
       renderJobRow();
@@ -242,7 +263,6 @@ describe('JobRow', () => {
     });
 
     it('should not allow toggle on finalized jobs', () => {
-      const { isRowTogglable } = require('../../../utils/jobUtils');
       isRowTogglable.mockReturnValue(true);
       
       const finalizedJob = { ...mockJob, finalized: true };
@@ -253,8 +273,7 @@ describe('JobRow', () => {
     });
 
     it('should show disabled status when row is needed but disabled', () => {
-      const { isRowNeededForJobType, isRowTogglable } = require('../../../utils/jobUtils');
-      isRowNeededForJobType.mockReturnValue(true);
+        isRowNeededForJobType.mockReturnValue(true);
       isRowTogglable.mockReturnValue(true);
       mockSchedulerContext.isRowEnabled.mockReturnValue(false);
       
@@ -263,8 +282,7 @@ describe('JobRow', () => {
     });
 
     it('should show manually enabled status when row is not needed but enabled', () => {
-      const { isRowNeededForJobType, isRowTogglable } = require('../../../utils/jobUtils');
-      isRowNeededForJobType.mockReturnValue(false);
+        isRowNeededForJobType.mockReturnValue(false);
       isRowTogglable.mockReturnValue(true);
       mockSchedulerContext.isRowEnabled.mockReturnValue(true);
       
@@ -434,7 +452,6 @@ describe('JobRow', () => {
     });
 
     it('should reject drops on inactive rows', () => {
-      const { isRowNeededForJobType } = require('../../../utils/jobUtils');
       isRowNeededForJobType.mockReturnValue(false);
       mockSchedulerContext.isRowEnabled.mockReturnValue(false);
       
@@ -506,7 +523,6 @@ describe('JobRow', () => {
 
   describe('Accessibility', () => {
     it('should have accessible button labels', () => {
-      const { isRowTogglable } = require('../../../utils/jobUtils');
       isRowTogglable.mockReturnValue(true);
       
       renderJobRow();
