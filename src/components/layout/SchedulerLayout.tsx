@@ -5,10 +5,13 @@ import { useScheduler } from '../../context/SchedulerContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Board from '../board/Board';
+import WeekViewCompact from '../board/WeekViewCompact';
+import MonthView from '../board/MonthView';
+import JobsApprovedSidebar from '../jobs/JobsApprovedSidebar';
 
 const SchedulerLayout: React.FC = () => {
   const { isDesktop } = useMobile();
-  const { isLoading, error, refreshData, jobs, resources } = useScheduler();
+  const { isLoading, error, refreshData, jobs, resources, currentView, selectedDate, setSelectedDate } = useScheduler();
   const [hasInitialLoad, setHasInitialLoad] = React.useState(false);
   
   // Track when we've done the initial load
@@ -17,6 +20,19 @@ const SchedulerLayout: React.FC = () => {
       setHasInitialLoad(true);
     }
   }, [isLoading, jobs.length, resources.length]);
+  
+  // Render appropriate view based on currentView state
+  const renderMainView = () => {
+    switch (currentView) {
+      case 'week':
+        return <WeekViewCompact startDate={selectedDate} onDateChange={setSelectedDate} />;
+      case 'month':
+        return <MonthView selectedMonth={selectedDate} onMonthChange={setSelectedDate} />;
+      case 'day':
+      default:
+        return <Board />;
+    }
+  };
   
   // Only render desktop layout on desktop
   if (!isDesktop) {
@@ -72,8 +88,10 @@ const SchedulerLayout: React.FC = () => {
         <RotateCcw size={20} />
       </button>
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <Board />
+        {currentView === 'week' ? <JobsApprovedSidebar /> : (
+          currentView === 'month' ? null : <Sidebar />
+        )}
+        {renderMainView()}
       </div>
     </div>
   );

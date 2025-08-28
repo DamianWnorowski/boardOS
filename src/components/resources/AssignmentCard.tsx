@@ -124,7 +124,6 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
           {/* Attached drivers/laborers horizontally */}
           {attachedAssignments.map((attachedAssignment, index) => {
             const attachedResource = getResourceById(attachedAssignment.resourceId);
-            console.log(`🚛 Rendering attached resource ${index}:`, attachedResource?.name);
             return attachedResource ? (
               <div key={attachedAssignment.id} className="-ml-2">
                 <ResourceCard
@@ -213,7 +212,6 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
     const attachedResource = getResourceById(a.resourceId);
     return attachedResource?.type === 'truck';
   })) {
-    console.log('👷 Rendering laborer with truck attachments');
     return (
       <div 
         className="cursor-move group relative"
@@ -318,24 +316,18 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
   // For other equipment, use the original vertical layout
   // Split resources into equipment and personnel
   const equipment = allAssignments.filter(item => 
-    equipmentTypes.includes(item.resource.type)
+    item.resource && equipmentTypes.includes(item.resource.type)
   );
   
   // Get personnel and sort by type (operators first, then laborers)
   const personnel = allAssignments
-    .filter(item => !equipmentTypes.includes(item.resource.type))
+    .filter(item => item.resource && !equipmentTypes.includes(item.resource.type))
     .sort((a, b) => {
       // Operators should be on top
       if (a.resource.type === 'operator' && b.resource.type !== 'operator') return -1;
       if (a.resource.type !== 'operator' && b.resource.type === 'operator') return 1;
       return 0;
     });
-
-  console.log('🎨 Rendering equipment group:', {
-    equipmentCount: equipment.length,
-    personnelCount: personnel.length,
-    mainType: mainResource.type
-  });
 
   return (
     <div 
@@ -620,11 +612,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         attachedAssignments.forEach(a => removeAssignment(a.id));
       } else if (dropResult && (dropResult.isSecondShift || dropResult.keepOriginal)) {
         // For successful second shift drops, don't remove the original assignment
-        console.log('🌙 Second shift drop successful - keeping original assignment', {
-          isSecondShift: dropResult.isSecondShift,
-          keepOriginal: dropResult.keepOriginal
-        });
-      }
+        }
     },
     canDrag: () => {
       // Don't allow dragging while a modal is open
@@ -731,12 +719,6 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       } else if (item.type === ItemTypes.RESOURCE) {
         // For drag/drop of resources from pool, attach if compatible
         const rule = getMagnetInteractionRule(item.resource.type, resource.type);
-        console.log('🔗 Checking resource attachment rule:', {
-          sourceType: item.resource.type,
-          targetType: resource.type,
-          rule: rule
-        });
-        
         // Check if resource is already assigned to this job/row
         const existingAssignment = assignments.find(a => 
           a.resourceId === item.resource.id && 
@@ -761,17 +743,11 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
         
         if (rule?.canAttach) {
           // Create assignment already attached to this assignment  
-          console.log('🔗 Drop handler: Creating attached assignment for resource:', item.resource.name);
           logger.debug('🔗 Creating attached assignment for resource:', item.resource.name);
           (item as any)._handled = true;
           assignResourceWithAttachment(item.resource.id, assignment.id).then(attachedAssignmentId => {
             if (attachedAssignmentId) {
               // Successfully attached
-              console.log('✅ Drop handler: Successfully attached resource to assignment:', {
-                resourceId: item.resource.id,
-                parentAssignmentId: assignment.id,
-                newAssignmentId: attachedAssignmentId
-              });
               logger.debug('✅ Successfully attached resource to assignment:', {
                 resourceId: item.resource.id,
                 parentAssignmentId: assignment.id,
@@ -1157,4 +1133,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   );
 };
 
-export default AssignmentCard;
+export default React.memo(AssignmentCard, (prevProps, nextProps) => {
+  // Re-render if assignment data changes
+  return (
+    prevProps.assignment.id === nextProps.assignment.id &&
+    prevProps.assignment.resourceId === nextProps.assignment.resourceId &&
+    prevProps.assignment.note === nextProps.assignment.note &&
+    prevProps.assignment.timeSlot?.startTime === nextProps.assignment.timeSlot?.startTime
+  );
+});

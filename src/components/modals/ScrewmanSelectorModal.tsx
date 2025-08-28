@@ -27,17 +27,17 @@ const ScrewmanSelectorModal: React.FC<ScrewmanSelectorModalProps> = ({
   
   // Get the paver assignment
   const paverAssignment = getAssignmentById(assignmentId);
-  
-  if (!paverAssignment) {
-    onClose();
-    return null;
-  }
-  
-  const targetResource = getResourceById(paverAssignment.resourceId);
+  const targetResource = paverAssignment ? getResourceById(paverAssignment.resourceId) : null;
   const targetResourceType = targetResource?.type;
   
-  if (!targetResourceType) {
-    onClose();
+  // Handle missing data in useEffect to avoid state updates during render
+  React.useEffect(() => {
+    if (!paverAssignment || !targetResourceType) {
+      onClose();
+    }
+  }, [paverAssignment, targetResourceType, onClose]);
+  
+  if (!paverAssignment || !targetResourceType) {
     return null;
   }
   

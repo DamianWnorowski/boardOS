@@ -1,20 +1,29 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, FileText, Printer } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
+import ViewSwitcher from '../ui/ViewSwitcher';
 
 const Navbar: React.FC = () => {
-  const { selectedDate, setSelectedDate } = useScheduler();
+  const { selectedDate, setSelectedDate, currentView } = useScheduler();
 
-  const handlePreviousDay = () => {
-    const prevDay = new Date(selectedDate);
-    prevDay.setDate(prevDay.getDate() - 1);
-    setSelectedDate(prevDay);
+  const handlePrevious = () => {
+    const prev = new Date(selectedDate);
+    if (currentView === 'week') {
+      prev.setDate(prev.getDate() - 7);
+    } else {
+      prev.setDate(prev.getDate() - 1);
+    }
+    setSelectedDate(prev);
   };
 
-  const handleNextDay = () => {
-    const nextDay = new Date(selectedDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-    setSelectedDate(nextDay);
+  const handleNext = () => {
+    const next = new Date(selectedDate);
+    if (currentView === 'week') {
+      next.setDate(next.getDate() + 7);
+    } else {
+      next.setDate(next.getDate() + 1);
+    }
+    setSelectedDate(next);
   };
 
   const handleTodayClick = () => {
@@ -32,6 +41,16 @@ const Navbar: React.FC = () => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return 'Invalid Date';
     }
+    
+    if (currentView === 'week') {
+      const weekStart = new Date(date);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    }
+    
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -51,16 +70,17 @@ const Navbar: React.FC = () => {
     <header className="bg-slate-800 text-white shadow-lg">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-6">
             <h1 className="text-xl font-bold">Road Construction Scheduler</h1>
+            <ViewSwitcher size="sm" />
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center bg-slate-700 rounded-md">
               <button 
-                onClick={handlePreviousDay}
+                onClick={handlePrevious}
                 className="p-2 hover:bg-slate-600 rounded-l-md transition-colors"
-                aria-label="Previous day"
+                aria-label={currentView === 'week' ? 'Previous week' : 'Previous day'}
               >
                 <ChevronLeft size={20} />
               </button>
@@ -70,13 +90,13 @@ const Navbar: React.FC = () => {
                 className="px-3 py-2 hover:bg-slate-600 transition-colors flex items-center"
               >
                 <Calendar size={16} className="mr-1" />
-                <span>Today</span>
+                <span>{currentView === 'week' ? 'This Week' : 'Today'}</span>
               </button>
               
               <button 
-                onClick={handleNextDay}
+                onClick={handleNext}
                 className="p-2 hover:bg-slate-600 rounded-r-md transition-colors"
-                aria-label="Next day"
+                aria-label={currentView === 'week' ? 'Next week' : 'Next day'}
               >
                 <ChevronRight size={20} />
               </button>

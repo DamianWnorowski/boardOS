@@ -17,35 +17,16 @@ const MagnetDragLayer: React.FC = () => {
     currentOffset: monitor.getSourceClientOffset(),
   }));
 
-  console.log('🎭 MagnetDragLayer render check:', {
-    isDragging,
-    itemType,
-    hasItem: !!item,
-    hasResource: !!item?.resource,
-    hasOffset: !!currentOffset,
-    itemDetails: item
-  });
-
   // Only render when dragging a resource
   if (!isDragging || itemType !== ItemTypes.RESOURCE || !currentOffset || !item?.resource) {
-    console.log('🎭 MagnetDragLayer NOT rendering because:', {
-      isDragging,
-      itemType,
-      correctType: itemType === ItemTypes.RESOURCE,
-      hasOffset: !!currentOffset,
-      hasResource: !!item?.resource
-    });
     return null;
   }
 
   // Find the actual magnet by ID to get the real magnet data
   const magnet = magnetManager.getMagnet(item.id);
   if (!magnet) {
-    console.log('🎭 MagnetDragLayer: Could not find magnet with ID:', item.id);
     return null;
   }
-
-  console.log('🎭 MagnetDragLayer: Rendering drag preview for:', magnet.name, 'at position:', currentOffset, 'isSecondShift:', item.isSecondShift);
 
   const { x, y } = currentOffset;
   const transform = `translate(${x}px, ${y}px)`;

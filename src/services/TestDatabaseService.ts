@@ -38,8 +38,13 @@ export class TestDatabaseService {
    * Create test resource with automatic tracking
    */
   async createTestResource(data: Partial<Resource> & { type: Resource['type'], name: string }): Promise<Resource> {
+    // Determine classType based on resource type
+    const personnelTypes = ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'];
+    const classType = personnelTypes.includes(data.type) ? 'employee' : 'equipment';
+    
     const testResource = await DatabaseService.createResource({
       ...data,
+      classType,
       name: `${this.testPrefix}_${data.name}`
     });
     this.createdTestData.resources.push(testResource.id);

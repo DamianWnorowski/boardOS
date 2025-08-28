@@ -531,12 +531,6 @@ export class MagnetManager {
     const rule = this.rules.find(r => r.sourceType === logicalSource.type && r.targetType === logicalTarget.type);
     if (!rule || !rule.canAttach) {
       // Log the failed attachment attempt for debugging
-      console.log(`❌ Attachment rejected: ${logicalSource.type} -> ${logicalTarget.type}`, {
-        sourceId: logicalSource.id,
-        targetId: logicalTarget.id,
-        ruleFound: !!rule,
-        canAttach: rule?.canAttach
-      });
       return false;
     }
     
@@ -547,10 +541,6 @@ export class MagnetManager {
       .length;
 
     if (rule.maxCount !== undefined && currentCountOfSourceType >= rule.maxCount) {
-      console.log(`❌ Attachment rejected: Max count reached for ${logicalSource.type} -> ${logicalTarget.type}`, {
-        currentCount: currentCountOfSourceType,
-        maxCount: rule.maxCount
-      });
       return false;
     }
     
@@ -560,12 +550,7 @@ export class MagnetManager {
       logicalSource.attachedToId = logicalTarget.id;
       logicalSource.isAttached = true;
       
-      console.log(`✅ Attachment successful: ${logicalSource.type} -> ${logicalTarget.type}`, {
-        sourceId: logicalSource.id,
-        targetId: logicalTarget.id,
-        logicalDirection: true
-      });
-    }
+      }
     
     return attachmentSuccess;
   }

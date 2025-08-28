@@ -190,7 +190,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             return { jobId, rowType, assignmentId: existingJobAssignment.id, duplicate: true };
           }
           
-          let position = assignments.length;
+          const position = assignments.length;
           logger.debug('About to call assignResource with:', {
             resourceId: item.resource.id,
             jobId,
@@ -1034,4 +1034,12 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   );
 };
 
-export default JobRow;
+export default React.memo(JobRow, (prevProps, nextProps) => {
+  // Re-render if job, assignments, or isActive state changes
+  return (
+    prevProps.job?.id === nextProps.job?.id &&
+    prevProps.rowType === nextProps.rowType &&
+    prevProps.assignments?.length === nextProps.assignments?.length &&
+    JSON.stringify(prevProps.assignments || []) === JSON.stringify(nextProps.assignments || [])
+  );
+});

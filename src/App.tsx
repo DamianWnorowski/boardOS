@@ -24,9 +24,7 @@ function App() {
   
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    console.log('🔄 Manual refresh triggered...');
     await refreshData();
-    console.log('✅ Refresh complete');
     setTimeout(() => setIsRefreshing(false), 500);
   };
 

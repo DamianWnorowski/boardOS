@@ -35,7 +35,6 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
   const [{ opacity }, drag] = useDrag(() => ({
     type: ItemTypes.RESOURCE,
     item: () => {
-      console.log('🔍 MagnetCard drag item function called for:', magnet?.name, 'disableDrag:', disableDrag);
       startDrag();
       return magnet ? {
         type: ItemTypes.RESOURCE,
@@ -48,7 +47,6 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
       } : { type: ItemTypes.RESOURCE };
     },
     end: () => {
-      console.log('🔍 MagnetCard drag end for:', magnet?.name);
       endDrag();
     },
     collect: (monitor) => ({
@@ -56,7 +54,6 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
     }),
     canDrag: () => {
       const canDrag = !!magnet && !isAttached && !disableDrag;
-      console.log('🔍 MagnetCard canDrag check for:', magnet?.name, 'Result:', canDrag, 'disableDrag:', disableDrag, 'isAttached:', isAttached);
       return canDrag;
     }
   }), [magnet, startDrag, endDrag, isAttached, disableDrag]);

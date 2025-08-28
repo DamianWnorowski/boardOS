@@ -111,6 +111,73 @@ export class DatabaseService {
     };
   }
 
+  // Get jobs for a specific date
+  static async getJobsByDate(date: Date): Promise<Job[]> {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('schedule_date', dateStr);
+    
+    if (error) throw error;
+    return data.map(this.transformDbJob);
+  }
+
+  // Get jobs for a date range
+  static async getJobsByDateRange(startDate: Date, endDate: Date): Promise<Job[]> {
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .gte('schedule_date', startDateStr)
+      .lte('schedule_date', endDateStr)
+      .order('schedule_date');
+    
+    if (error) throw error;
+    return data.map(this.transformDbJob);
+  }
+
+  // Update job date and log the change
+  static async updateJobDate(jobId: string, newDate: Date, userId?: string): Promise<void> {
+    const newDateStr = newDate.toISOString().split('T')[0];
+    
+    // Get current job data for logging
+    const { data: currentJob, error: fetchError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Update the job date
+    const { error: updateError } = await supabase
+      .from('jobs')
+      .update({ schedule_date: newDateStr })
+      .eq('id', jobId);
+    
+    if (updateError) throw updateError;
+    
+    // Log the change (if audit table exists)
+    try {
+      await supabase
+        .from('job_audit_logs')
+        .insert({
+          job_id: jobId,
+          user_id: userId,
+          action: 'date_changed',
+          old_data: { schedule_date: currentJob.schedule_date },
+          new_data: { schedule_date: newDateStr }
+        });
+    } catch (auditError) {
+      // Don't fail the operation if audit logging fails
+      console.warn('Failed to log job date change:', auditError);
+    }
+  }
+
   static transformDbMagnetRule(dbRule: DbMagnetRule): MagnetInteractionRule {
     return {
       id: dbRule.id,
@@ -394,6 +461,26 @@ export class DatabaseService {
         isActive: true
       };
       const created = await this.createEmployee(employee);
+      
+      // Also create entry in resources table
+      const { data: resourceData, error: resourceError } = await supabase
+        .from('resources')
+        .insert({
+          id: created.id,
+          type: created.type,
+          name: created.name,
+          identifier: created.employeeId,
+          class_type: 'employee',
+          on_site: false
+        })
+        .select()
+        .single();
+        
+      if (resourceError) {
+        logger.error('Error creating resource entry for employee:', resourceError);
+        throw resourceError;
+      }
+      
       return {
         id: created.id,
         type: created.type,
@@ -416,6 +503,29 @@ export class DatabaseService {
         engineHours: 0
       };
       const created = await this.createEquipment(equipment);
+      
+      // Also create entry in resources table
+      const { data: resourceData, error: resourceError } = await supabase
+        .from('resources')
+        .insert({
+          id: created.id,
+          type: created.type,
+          name: created.name,
+          identifier: created.identifier,
+          model: created.model,
+          vin: created.vin,
+          location: created.location,
+          class_type: 'equipment',
+          on_site: created.onSite
+        })
+        .select()
+        .single();
+        
+      if (resourceError) {
+        logger.error('Error creating resource entry for equipment:', resourceError);
+        throw resourceError;
+      }
+      
       return {
         id: created.id,
         type: created.type,
@@ -889,5 +999,101 @@ export class DatabaseService {
     }
 
     return data;
+  }
+
+  // Missing methods for test compatibility
+  static async getDropRules(): Promise<DropRule[]> {
+    const { data, error } = await supabase
+      .from('drop_rules')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error('Error fetching drop rules:', error);
+      throw error;
+    }
+
+    return data.map(rule => ({
+      id: rule.id,
+      rowType: rule.row_type as RowType,
+      allowedTypes: rule.allowed_types as ResourceType[],
+      jobType: rule.job_type as Job['type'] | null,
+      isActive: rule.is_active
+    }));
+  }
+
+  static async getMagnetInteractionRules(): Promise<MagnetInteractionRule[]> {
+    const { data, error } = await supabase
+      .from('magnet_interaction_rules')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error('Error fetching magnet interaction rules:', error);
+      throw error;
+    }
+
+    return data.map(rule => ({
+      id: rule.id,
+      sourceType: rule.source_type as ResourceType,
+      targetType: rule.target_type as ResourceType,
+      canAttach: rule.can_attach,
+      isRequired: rule.is_required,
+      maxCount: rule.max_count,
+      jobType: rule.job_type as Job['type'] | null,
+      isActive: rule.is_active
+    }));
+  }
+
+  static async assignResource(resourceId: string, jobId: string, row: RowType): Promise<Assignment> {
+    return this.createAssignment({ resourceId, jobId, row });
+  }
+
+  static async getAssignmentById(id: string): Promise<Assignment | null> {
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      logger.error('Error fetching assignment by ID:', error);
+      throw error;
+    }
+
+    return this.transformDbAssignment(data);
+  }
+
+  static async getAssignmentsByResourceId(resourceId: string): Promise<Assignment[]> {
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('resource_id', resourceId);
+
+    if (error) {
+      logger.error('Error fetching assignments by resource ID:', error);
+      throw error;
+    }
+
+    return data.map(this.transformDbAssignment);
+  }
+
+  static async attachResources(sourceAssignmentId: string, targetAssignmentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('assignments')
+      .update({ attached_to: targetAssignmentId })
+      .eq('id', sourceAssignmentId);
+
+    if (error) {
+      logger.error('Error attaching resources:', error);
+      throw error;
+    }
+  }
+
+  static async removeAssignment(id: string): Promise<void> {
+    return this.deleteAssignment(id);
   }
 }

@@ -159,8 +159,6 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     if (assignmentId) {
       const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
       const config = truckConfigs[assignmentId];
-      console.log(`ResourceCard - Getting truck config for assignment ${assignmentId}:`, config);
-      console.log('All truck configs in localStorage:', truckConfigs);
       return config || null;
     }
     
@@ -224,7 +222,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     if (isDisabled) return 'border border-gray-400';
     
     // Check if this resource is working shifts
-    const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+    const resourceAssignments = assignments?.filter(a => a.resourceId === resource.id) || [];
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');

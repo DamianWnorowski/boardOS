@@ -315,11 +315,26 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
             <div className="flex justify-between">
               {job.location ? (
                 <button 
-                  onClick={() => window.open(`https://maps.google.com/?q=${job.location!.lat},${job.location!.lng}`, '_blank')}
+                  onClick={() => {
+                    if ('lat' in job.location! && 'lng' in job.location!) {
+                      window.open(`https://maps.google.com/?q=${job.location!.lat},${job.location!.lng}`, '_blank');
+                    } else if ('street' in job.location!) {
+                      const query = `${job.location!.street}, ${job.location!.city}, ${job.location!.province}`;
+                      window.open(`https://maps.google.com/?q=${encodeURIComponent(query)}`, '_blank');
+                    }
+                  }}
                   className="text-blue-600 hover:text-blue-800 underline text-sm truncate max-w-32 flex items-center"
-                  title={job.location.address}
+                  title={
+                    'address' in job.location! 
+                      ? job.location!.address 
+                      : `${job.location!.street}, ${job.location!.city}, ${job.location!.province}`
+                  }
                 >
-                  📍 {job.location.address.split(',')[0]}
+                  📍 {
+                    'address' in job.location! 
+                      ? job.location!.address.split(',')[0]
+                      : job.location!.street.split(' ').slice(0, 2).join(' ')
+                  }
                 </button>
               ) : (
                 <span className="text-gray-500">No location set</span>
@@ -397,4 +412,11 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
   );
 };
 
-export default JobColumn;
+export default React.memo(JobColumn, (prevProps, nextProps) => {
+  // Re-render if job data changes
+  return (
+    prevProps.job.id === nextProps.job.id &&
+    prevProps.job.finalized === nextProps.job.finalized &&
+    prevProps.job.name === nextProps.job.name
+  );
+});

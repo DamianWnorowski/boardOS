@@ -8,7 +8,13 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "claude:start": "node scripts/claude-smart-start.js",
+    "claude:handoff": "node scripts/claude-handoff.js",
+    "claude:status": "node scripts/claude-status.js",
+    "claude:reset": "node scripts/claude-reset.js",
+    "claude:history": "node scripts/claude-history.js",
+    "setup:claude": "node scripts/setup-claude.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",

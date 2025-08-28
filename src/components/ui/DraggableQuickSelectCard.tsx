@@ -26,13 +26,6 @@ const DraggableQuickSelectCard: React.FC<DraggableQuickSelectCardProps> = ({
   const magnetAssignments = assignments.filter(a => a.resourceId === magnet.resourceId);
   const actualAssignmentCount = magnetAssignments.length;
   
-  console.log('🔍 DraggableQuickSelectCard DEBUG for:', magnet.name, {
-    magnetStatus: magnet.status,
-    magnetAssignments: magnet.assignments?.length || 0,
-    schedulerAssignments: actualAssignmentCount,
-    actualAssignments: magnetAssignments
-  });
-  
   // Use scheduler assignments instead of magnet.assignments
   const isAssigned = actualAssignmentCount > 0;
   const hasMultipleAssignments = actualAssignmentCount > 1;
@@ -41,7 +34,6 @@ const DraggableQuickSelectCard: React.FC<DraggableQuickSelectCardProps> = ({
     type: ItemTypes.RESOURCE,
     item: (monitor) => {
       // Use the state-based shift detection which is more reliable for testing
-      console.log('🎯 DRAG ITEM FUNCTION CALLED for:', magnet.name, 'Shift held:', isShiftPressed, 'Already assigned:', isAssigned);
       onDragStart();
       return {
         type: ItemTypes.RESOURCE,
@@ -57,15 +49,13 @@ const DraggableQuickSelectCard: React.FC<DraggableQuickSelectCardProps> = ({
     collect: (monitor) => {
       const dragging = monitor.isDragging();
       if (dragging) {
-        console.log('🎯 DRAGGING STATE CHANGED TO TRUE for:', magnet.name);
-      }
+        }
       return {
         isDragging: dragging
       };
     },
     canDrag: () => {
       const canDrag = magnet.status === MagnetStatus.Available;
-      console.log('🔍 canDrag check for:', magnet.name, 'Result:', canDrag, 'Status:', magnet.status);
       return canDrag;
     }
   }), [magnet, onDragStart, isShiftPressed, isAssigned]);
@@ -107,24 +97,19 @@ const DraggableQuickSelectCard: React.FC<DraggableQuickSelectCardProps> = ({
       style={{ opacity: isDragging ? 0.5 : 1 }}
       title={`Drag ${magnet.name} to assign to a job`}
       onMouseDown={(e) => {
-        console.log('🖱️ MOUSE DOWN on DraggableQuickSelectCard:', magnet.name, 'Event:', e.type, 'Shift held:', e.shiftKey);
         // Update shift state based on actual mouse event (more reliable than keyboard events)
         if (e.shiftKey !== isShiftPressed) {
           setIsShiftPressed(e.shiftKey);
-          console.log('🔄 Updated shift state from mouse event:', e.shiftKey);
-        }
+          }
         // Prevent default browser behavior when shift is held (text selection, etc.)
         if (e.shiftKey) {
           e.preventDefault();
-          console.log('🚫 Prevented default shift+click behavior');
-        }
+          }
       }}
       onMouseMove={(e) => {
-        console.log('🖱️ MOUSE MOVE on DraggableQuickSelectCard:', magnet.name, 'Event:', e.type);
-      }}
+        }}
       onDragStart={(e) => {
-        console.log('🎯 DRAG START EVENT on DraggableQuickSelectCard:', magnet.name, 'Event:', e.type, 'Shift held:', isShiftPressed);
-      }}
+        }}
     >
       {isSelected && selectedIndex !== undefined && (
         <div className="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold z-10">

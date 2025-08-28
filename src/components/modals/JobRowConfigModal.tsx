@@ -60,10 +60,7 @@ const BoxConfig: React.FC<BoxConfigProps> = ({
   const [showRules, setShowRules] = useState(false);
   const [isExpanded, setIsExpanded] = useState(depth === 0);
 
-  console.log(`Rendering BoxConfig for ${box.name} (ID: ${box.id}) at depth ${depth}`);
-  console.log(`  box.isSplit: ${box.isSplit}`);
-  console.log(`  box.subBoxes: ${box.subBoxes ? box.subBoxes.length : 'none'}`);
-
+  at depth ${depth}`);
   const handleUpdateAllowedTypes = (resourceType: ResourceType, allowed: boolean) => {
     const newAllowedTypes = allowed 
       ? [...box.allowedTypes, resourceType]

@@ -1,4 +1,29 @@
+// View Types
+export type ViewType = 'day' | 'week' | 'month';
+
 // Job Types
+export interface JobPhase {
+  id: string;
+  job_id: string;
+  phase_type: 'milling' | 'paving' | 'excavation' | 'drainage' | 'concrete' | 'prep' | 'finishing';
+  estimated_start: string; // YYYY-MM-DD
+  estimated_end: string; // YYYY-MM-DD
+  actual_start?: string; // YYYY-MM-DD
+  actual_end?: string; // YYYY-MM-DD
+  daily_target: number;
+  daily_unit: 'sqyards' | 'tons' | 'cubic_yards' | 'linear_feet';
+  sequence_order: number;
+}
+
+export interface JobEstimate {
+  total_days: number;
+  milling_days?: number;
+  paving_days?: number;
+  excavation_days?: number;
+  drainage_days?: number;
+  concrete_days?: number;
+}
+
 export interface Job {
   id: string;
   name: string;
@@ -9,11 +34,27 @@ export interface Job {
   startTime?: string; // Default start time for crew (format: "HH:MM")
   finalized?: boolean; // Whether the job is finalized and ready for export
   plants?: string[]; // Plants for paving jobs (Lydel, East Island, competitors)
+  schedule_date?: string; // The date this job is scheduled for (YYYY-MM-DD)
+  end_date?: string; // The estimated/actual end date (YYYY-MM-DD)
+  recurrence_pattern?: any; // JSON object defining recurrence rules
+  is_template?: boolean; // Whether this job is a template for creating other jobs
+  original_job_id?: string; // Reference to the template job this was created from
   location?: {
     address: string;
     lat: number;
     lng: number;
   };
+  // Duration estimation fields
+  estimated_sqyards?: number; // For milling jobs
+  estimated_tons?: number; // For paving jobs
+  estimated_cubic_yards?: number; // For excavation
+  estimated_linear_feet?: number; // For drainage
+  estimated_duration?: JobEstimate;
+  complexity_factor?: number; // 0.5-2.0 for adjusting estimates
+  job_category?: 'highway' | 'parking_lot' | 'residential' | 'commercial' | 'municipal';
+  actual_start?: string; // YYYY-MM-DD
+  actual_end?: string; // YYYY-MM-DD
+  phases?: JobPhase[]; // For multi-phase jobs like drainage
 }
 
 // Resource Types
@@ -110,6 +151,7 @@ export interface Assignment {
   timeSlot?: TimeSlot; // Time slot for this assignment
   note?: string; // Personal note for this assignment
   truckConfig?: 'flowboy' | 'dump-trailer'; // Truck configuration stored with assignment
+  schedule_date?: string; // The date this assignment is scheduled for (YYYY-MM-DD)
 }
 
 // Row override to toggle row visibility/availability

@@ -8,10 +8,13 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   test: {
-
     environment: 'jsdom',
     setupFiles: './tests/setup.ts',
-    globals: true
-
+    globals: true,
+    exclude: [
+      'node_modules/**',
+      'playwright/**',
+      'playwright/tests/**'
+    ]
   }
 });
