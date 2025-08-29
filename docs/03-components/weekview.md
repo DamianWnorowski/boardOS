@@ -16,7 +16,7 @@ WeekView is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `WeekView.tsx`
-- **Line**: 330
+- **Line**: 332
 - **Category**: Board
 - **Has JSDoc**: ❌
 

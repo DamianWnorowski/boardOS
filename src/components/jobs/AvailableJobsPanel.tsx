@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Plus, Clock, MapPin, Calculator, Briefcase, Calendar, AlertCircle } from 'lucide-react';
+import { Search, X, Plus } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { Job } from '../../types';
 import { DurationEstimationService } from '../../services/DurationEstimationService';
@@ -94,52 +94,47 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
   const upcomingStats = getTotalEstimate(jobGroups.upcoming);
 
   return (
-    <div className="flex flex-col h-full w-96 bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 shadow-lg">
+    <div className="flex flex-col h-full w-96 bg-white border-r border-gray-200">
       {/* Header */}
-      <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <Briefcase size={24} />
-            <h3 className="font-bold text-2xl">Available Jobs</h3>
-          </div>
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-800">Available Jobs</h3>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-blue-200 hover:text-white transition-colors p-1 hover:bg-blue-500/20 rounded"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           )}
         </div>
-
-        {/* Stats Bar */}
-        <div className="flex items-center justify-between text-base text-blue-100">
-          <span>{availableJobs.length} total jobs</span>
-          <span>{Math.round(availableJobs.reduce((sum, job) => {
+        
+        <div className="text-base text-gray-600">
+          {availableJobs.length} jobs • {Math.round(availableJobs.reduce((sum, job) => {
             const est = DurationEstimationService.calculateJobDuration(job);
             return sum + est.total_days;
-          }, 0))} est. days</span>
+          }, 0))} days total
         </div>
       </div>
 
       {/* Controls */}
-      <div className="px-6 py-4 bg-white border-b border-gray-200 space-y-3">
+      <div className="p-4 space-y-2">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
           <input
             type="text"
-            placeholder="Search by name, number, or location..."
+            placeholder="Search jobs..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-white transition-colors"
+            className="w-full pl-9 pr-3 py-2.5 text-base border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
             >
-              <X size={18} />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -148,9 +143,9 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)}
-          className="w-full px-4 py-3 text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 hover:bg-white transition-colors cursor-pointer"
+          className="w-full px-3 py-2.5 text-base border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
         >
-          <option value="all">All Job Types</option>
+          <option value="all">All Types</option>
           <option value="milling">Milling</option>
           <option value="paving">Paving</option>
           <option value="both">Mill & Pave</option>
@@ -161,54 +156,38 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4">
         {/* Summary Stats */}
-        <div className="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between mb-2">
-                <Clock size={20} className="text-gray-500" />
-                <span className="text-lg font-bold text-gray-900">{jobGroups.unscheduled.length}</span>
+        {(jobGroups.unscheduled.length > 0 || jobGroups.inProgress.length > 0 || jobGroups.upcoming.length > 0) && (
+          <div className="flex gap-2 mb-3 text-base">
+            {jobGroups.unscheduled.length > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
+                <span className="font-medium">Unscheduled:</span>
+                <span>{jobGroups.unscheduled.length}</span>
               </div>
-              <div className="text-sm font-semibold text-gray-700">Unscheduled</div>
-              <div className="text-sm text-gray-500 mt-1">{unscheduledStats.totalDays} days</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between mb-2">
-                <AlertCircle size={20} className="text-orange-500" />
-                <span className="text-lg font-bold text-orange-700">{jobGroups.inProgress.length}</span>
+            )}
+            {jobGroups.inProgress.length > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 rounded">
+                <span className="font-medium">Active:</span>
+                <span>{jobGroups.inProgress.length}</span>
               </div>
-              <div className="text-sm font-semibold text-orange-700">Active</div>
-              <div className="text-sm text-gray-500 mt-1">{inProgressStats.totalDays} days</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-blue-200 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between mb-2">
-                <Calendar size={20} className="text-blue-500" />
-                <span className="text-lg font-bold text-blue-700">{jobGroups.upcoming.length}</span>
+            )}
+            {jobGroups.upcoming.length > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded">
+                <span className="font-medium">Scheduled:</span>
+                <span>{jobGroups.upcoming.length}</span>
               </div>
-              <div className="text-sm font-semibold text-blue-700">Scheduled</div>
-              <div className="text-sm text-gray-500 mt-1">{upcomingStats.totalDays} days</div>
-            </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Unscheduled Jobs */}
         {jobGroups.unscheduled.length > 0 && (
-          <div className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <Clock size={20} className="text-gray-500" />
-                <h4 className="text-lg font-semibold text-gray-800">Unscheduled</h4>
-                <span className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full font-bold">
-                  {jobGroups.unscheduled.length}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
+          <div className="mb-4">
+            <h4 className="text-base font-semibold text-gray-600 mb-3">Unscheduled Jobs</h4>
+            <div className="space-y-2">
               {jobGroups.unscheduled.map(job => (
-                <div key={job.id} className="transform transition-all hover:scale-[1.02]">
-                  <JobEstimateCard job={job} showScheduleButton />
-                </div>
+                <JobEstimateCard key={job.id} job={job} showScheduleButton />
               ))}
             </div>
           </div>
@@ -216,21 +195,11 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
 
         {/* In Progress Jobs */}
         {jobGroups.inProgress.length > 0 && (
-          <div className="p-6 bg-orange-50/50 border-t border-orange-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <AlertCircle size={20} className="text-orange-500" />
-                <h4 className="text-lg font-semibold text-orange-800">Active Jobs</h4>
-                <span className="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-full font-bold">
-                  {jobGroups.inProgress.length}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
+          <div className="mb-4">
+            <h4 className="text-base font-semibold text-gray-600 mb-3">Active Jobs</h4>
+            <div className="space-y-2">
               {jobGroups.inProgress.map(job => (
-                <div key={job.id} className="transform transition-all hover:scale-[1.02]">
-                  <JobEstimateCard job={job} showProgressIndicator />
-                </div>
+                <JobEstimateCard key={job.id} job={job} showProgressIndicator />
               ))}
             </div>
           </div>
@@ -238,21 +207,11 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
 
         {/* Upcoming Jobs */}
         {jobGroups.upcoming.length > 0 && (
-          <div className="p-6 bg-blue-50/50 border-t border-blue-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <Calendar size={20} className="text-blue-500" />
-                <h4 className="text-lg font-semibold text-blue-800">Scheduled</h4>
-                <span className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full font-bold">
-                  {jobGroups.upcoming.length}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
+          <div className="mb-4">
+            <h4 className="text-base font-semibold text-gray-600 mb-3">Scheduled Jobs</h4>
+            <div className="space-y-2">
               {jobGroups.upcoming.map(job => (
-                <div key={job.id} className="transform transition-all hover:scale-[1.02]">
-                  <JobEstimateCard key={job.id} job={job} />
-                </div>
+                <JobEstimateCard key={job.id} job={job} />
               ))}
             </div>
           </div>
@@ -260,37 +219,21 @@ const AvailableJobsPanel: React.FC<AvailableJobsPanelProps> = ({ onClose }) => {
 
         {/* Empty state */}
         {availableJobs.length === 0 && (
-          <div className="p-8 text-center">
-            <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-              <Briefcase size={32} className="text-gray-400" />
-            </div>
-            <p className="text-gray-700 font-medium mb-2">No jobs found</p>
-            {searchTerm ? (
-              <p className="text-sm text-gray-500">
-                Try adjusting your search terms or filters
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500">
-                Click "Add New Job" to create your first job
-              </p>
-            )}
+          <div className="text-center text-gray-500 mt-4">
+            <p className="text-base">No jobs available</p>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="p-6 bg-white border-t border-gray-200 shadow-lg">
+      <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleAddJob}
-          className="w-full flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-lg font-medium"
+          className="flex items-center justify-center w-full py-2.5 bg-blue-600 text-white text-base rounded-md hover:bg-blue-700 transition-colors"
         >
-          <Plus size={20} className="mr-2" />
-          Add New Job
+          <Plus size={16} className="mr-1" />
+          <span>Add Job</span>
         </button>
-        
-        <div className="mt-4 text-center text-sm text-gray-500">
-          Tip: Drag jobs to calendar to schedule them
-        </div>
       </div>
 
       {/* Add Job Modal */}
