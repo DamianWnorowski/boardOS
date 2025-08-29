@@ -15,6 +15,9 @@
 
 ## Recent Fixes (2025-08-26)
 
+### 2025-08-29 - Code update
+- Modified: `src/context/SchedulerContext.tsx`
+
 ### 1. Equipment Colors
 - All equipment types now use yellow background (`bg-yellow-500`) with black text
 - Border color: `border-yellow-700`

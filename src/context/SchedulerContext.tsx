@@ -155,8 +155,22 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setAssignments(scheduleData.assignments);
         setMagnetInteractionRules(scheduleData.magnetRules);
         setDropRules(scheduleData.dropRules);
+      } else if (forDate && currentView === 'week') {
+        // Load jobs for the entire week in week view
+        const weekStart = new Date(forDate);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start from Sunday
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // End on Saturday
+        
+        jobsData = await DatabaseService.getJobsByDateRange(weekStart, weekEnd);
+        // Load other schedule data
+        scheduleData = await DatabaseService.getAllScheduleData();
+        setResources(scheduleData.resources);
+        setAssignments(scheduleData.assignments);
+        setMagnetInteractionRules(scheduleData.magnetRules);
+        setDropRules(scheduleData.dropRules);
       } else {
-        // Load all jobs for week/month view or when no specific date
+        // Load all jobs for month view or when no specific date/view
         scheduleData = await DatabaseService.getAllScheduleData();
         jobsData = scheduleData.jobs;
         setResources(scheduleData.resources);
@@ -235,9 +249,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     loadScheduleData();
   }, [loadScheduleData]);
 
-  // Reload data when selected date changes in day view
+  // Reload data when selected date changes or view changes
   useEffect(() => {
-    if (currentView === 'day') {
+    if (currentView === 'day' || currentView === 'week') {
       loadScheduleData(false, selectedDate); // Don't show loading spinner for date changes
     }
   }, [selectedDate, currentView, loadScheduleData]);
