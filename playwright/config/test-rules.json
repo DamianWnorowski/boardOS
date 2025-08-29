@@ -1,0 +1,283 @@
+{
+  "mockRules": {
+    "magnetRules": [
+      {
+        "id": "1",
+        "parent_type": "excavator",
+        "child_type": "operator",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Excavator requires operator"
+      },
+      {
+        "id": "2",
+        "parent_type": "paver",
+        "child_type": "operator",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Paver requires operator"
+      },
+      {
+        "id": "3",
+        "parent_type": "paver",
+        "child_type": "screwman",
+        "max_children": 2,
+        "required": false,
+        "auto_attach": false,
+        "description": "Paver can have up to 2 screwmen"
+      },
+      {
+        "id": "4",
+        "parent_type": "truck",
+        "child_type": "driver",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Truck requires driver"
+      },
+      {
+        "id": "5",
+        "parent_type": "millingMachine",
+        "child_type": "operator",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Milling machine requires operator"
+      },
+      {
+        "id": "6",
+        "parent_type": "millingMachine",
+        "child_type": "groundman",
+        "max_children": 1,
+        "required": false,
+        "auto_attach": false,
+        "description": "Milling machine can have 1 groundman"
+      },
+      {
+        "id": "7",
+        "parent_type": "roller",
+        "child_type": "operator",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Roller requires operator"
+      },
+      {
+        "id": "8",
+        "parent_type": "sweeper",
+        "child_type": "operator",
+        "max_children": 1,
+        "required": true,
+        "auto_attach": true,
+        "description": "Sweeper requires operator"
+      }
+    ],
+    "dropRules": [
+      {
+        "id": "1",
+        "resource_type": "operator",
+        "target_type": "Equipment",
+        "is_allowed": true,
+        "requires_attachment": false,
+        "description": "Operators can be assigned to Equipment row"
+      },
+      {
+        "id": "2",
+        "resource_type": "operator",
+        "target_type": "Crew",
+        "is_allowed": true,
+        "requires_attachment": false,
+        "description": "Operators can be assigned to Crew row"
+      },
+      {
+        "id": "3",
+        "resource_type": "driver",
+        "target_type": "Trucks",
+        "is_allowed": true,
+        "requires_attachment": false,
+        "description": "Drivers can be assigned to Trucks row"
+      },
+      {
+        "id": "4",
+        "resource_type": "driver",
+        "target_type": "Crew",
+        "is_allowed": true,
+        "requires_attachment": false,
+        "description": "Drivers can be assigned to Crew row"
+      },
+      {
+        "id": "5",
+        "resource_type": "excavator",
+        "target_type": "Equipment",
+        "is_allowed": true,
+        "requires_attachment": true,
+        "description": "Excavators can only be assigned to Equipment row with operator"
+      },
+      {
+        "id": "6",
+        "resource_type": "paver",
+        "target_type": "Equipment",
+        "is_allowed": true,
+        "requires_attachment": true,
+        "description": "Pavers can only be assigned to Equipment row with operator"
+      },
+      {
+        "id": "7",
+        "resource_type": "truck",
+        "target_type": "Trucks",
+        "is_allowed": true,
+        "requires_attachment": true,
+        "description": "Trucks can only be assigned to Trucks row with driver"
+      },
+      {
+        "id": "8",
+        "resource_type": "foreman",
+        "target_type": "Forman",
+        "is_allowed": true,
+        "requires_attachment": false,
+        "description": "Foremen can only be assigned to Forman row"
+      },
+      {
+        "id": "9",
+        "resource_type": "foreman",
+        "target_type": "Crew",
+        "is_allowed": false,
+        "requires_attachment": false,
+        "description": "Foremen cannot be assigned to Crew row"
+      },
+      {
+        "id": "10",
+        "resource_type": "sweeper",
+        "target_type": "Sweeper",
+        "is_allowed": true,
+        "requires_attachment": true,
+        "description": "Sweepers can only be assigned to Sweeper row with operator"
+      }
+    ],
+    "jobRowConfigs": [
+      {
+        "id": "1",
+        "job_type": "street",
+        "row_type": "Forman",
+        "allowed_resource_types": ["foreman"],
+        "position": 0,
+        "is_required": false
+      },
+      {
+        "id": "2",
+        "job_type": "street",
+        "row_type": "Equipment",
+        "allowed_resource_types": ["excavator", "paver", "roller", "millingMachine", "operator"],
+        "position": 1,
+        "is_required": true
+      },
+      {
+        "id": "3",
+        "job_type": "street",
+        "row_type": "Crew",
+        "allowed_resource_types": ["operator", "driver", "laborer", "screwman"],
+        "position": 2,
+        "is_required": true
+      },
+      {
+        "id": "4",
+        "job_type": "street",
+        "row_type": "Trucks",
+        "allowed_resource_types": ["truck", "driver"],
+        "position": 3,
+        "is_required": true
+      },
+      {
+        "id": "5",
+        "job_type": "street",
+        "row_type": "Sweeper",
+        "allowed_resource_types": ["sweeper", "operator"],
+        "position": 4,
+        "is_required": false
+      },
+      {
+        "id": "6",
+        "job_type": "highway",
+        "row_type": "Forman",
+        "allowed_resource_types": ["foreman"],
+        "position": 0,
+        "is_required": true
+      },
+      {
+        "id": "7",
+        "job_type": "highway",
+        "row_type": "Equipment",
+        "allowed_resource_types": ["excavator", "paver", "roller", "millingMachine", "operator"],
+        "position": 1,
+        "is_required": true
+      },
+      {
+        "id": "8",
+        "job_type": "highway",
+        "row_type": "Crew",
+        "allowed_resource_types": ["operator", "driver", "laborer", "screwman", "striper"],
+        "position": 2,
+        "is_required": true
+      },
+      {
+        "id": "9",
+        "job_type": "highway",
+        "row_type": "Trucks",
+        "allowed_resource_types": ["truck", "driver"],
+        "position": 3,
+        "is_required": true
+      },
+      {
+        "id": "10",
+        "job_type": "parking-lot",
+        "row_type": "Equipment",
+        "allowed_resource_types": ["paver", "roller", "operator"],
+        "position": 0,
+        "is_required": true
+      },
+      {
+        "id": "11",
+        "job_type": "parking-lot",
+        "row_type": "Crew",
+        "allowed_resource_types": ["operator", "laborer", "striper"],
+        "position": 1,
+        "is_required": true
+      }
+    ]
+  },
+  "testScenarios": {
+    "doubleShiftPrevention": {
+      "name": "Double Shift Prevention",
+      "description": "Resources cannot work both day and night shifts on same date",
+      "criticalPath": true
+    },
+    "equipmentSafety": {
+      "name": "Equipment Safety Requirements",
+      "description": "All equipment must have operators before job finalization",
+      "criticalPath": true
+    },
+    "attachmentCascade": {
+      "name": "Attachment Cascade",
+      "description": "Moving parent resource moves all attached children",
+      "criticalPath": true
+    },
+    "realTimeSync": {
+      "name": "Real-time Synchronization",
+      "description": "Changes sync across all connected clients in real-time",
+      "criticalPath": true
+    },
+    "optimisticUpdates": {
+      "name": "Optimistic UI Updates",
+      "description": "UI updates immediately while waiting for server confirmation",
+      "criticalPath": false
+    }
+  },
+  "performanceTargets": {
+    "dragLatency": 50,
+    "syncLatency": 500,
+    "pageLoadTime": 2000,
+    "searchDebounce": 300
+  }
+}

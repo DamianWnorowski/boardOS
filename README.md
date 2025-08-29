@@ -196,13 +196,85 @@ Current coverage: ~70% of components have tests
 - Component tests with React Testing Library
 - Mock Supabase client for isolated testing
 
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+### 📚 Core Documentation
+- **[Getting Started](docs/00-getting-started/README.md)** - Quick setup and installation
+- **[Architecture Overview](docs/01-architecture/overview.md)** - System design and patterns
+- **[API Reference](docs/02-api/README.md)** - Complete API documentation
+- **[Component Library](docs/03-components/index.md)** - All UI components
+- **[Features Guide](docs/04-features/)** - Feature documentation
+
+### 🏗️ Architecture Guides
+- **[Data Flow](docs/01-architecture/data-flow.md)** - How data moves through the system
+- **[State Management](docs/01-architecture/state-management.md)** - Context and state patterns
+- **[Database Schema](docs/01-architecture/database-schema.md)** - Complete database documentation
+- **[Security](docs/01-architecture/security.md)** - Authentication and authorization
+
+### 🔧 Development
+- **[Setup Guide](docs/05-development/setup-guide.md)** - Development environment setup
+- **[Development Workflow](docs/05-development/workflow.md)** - Git workflow and best practices
+- **[Testing Guide](docs/07-testing/testing-guide.md)** - Testing strategies and patterns
+
+### 🚀 Deployment
+- **[Production Deployment](docs/06-deployment/production.md)** - Deploy to production
+- **[Supabase Setup](docs/06-deployment/supabase-setup.md)** - Database configuration
+- **[Environment Variables](docs/06-deployment/environment-variables.md)** - Configuration guide
+- **[Monitoring](docs/06-deployment/monitoring.md)** - Observability and monitoring
+
+### 📋 Feature Documentation
+- **[Business Rules](docs/04-features/business-rules.md)** - Validation and constraints
+- **[Drag & Drop System](docs/04-features/drag-and-drop.md)** - DnD implementation
+- **[Magnet System](docs/04-features/magnet-system.md)** - Resource attachment logic
+- **[Real-time Sync](docs/04-features/real-time-sync.md)** - Live updates
+
+### 🔌 API Documentation
+- **[Database Service](docs/02-api/database-service.md)** - Core data operations
+- **[React Contexts](docs/02-api/contexts.md)** - State management contexts
+- **[Custom Hooks](docs/02-api/hooks.md)** - Reusable React hooks
+
 ## Contributing
 
-1. Follow existing code patterns
-2. Add tests for new features
-3. Update documentation for significant changes
-4. Use TypeScript strictly
-5. Follow the established component structure
+See our [Development Workflow Guide](docs/05-development/workflow.md) for detailed contribution guidelines:
+
+1. Fork and clone the repository
+2. Create a feature branch following naming conventions
+3. Write tests for new features
+4. Submit a pull request with the template
+5. Respond to code review feedback
+
+## Quick Commands
+
+```bash
+# Development
+npm run dev                 # Start development server
+npm run build              # Build for production
+npm run preview            # Preview production build
+
+# Testing
+npm test                   # Run unit tests
+npm run test:watch         # Watch mode for tests
+npm run test:coverage      # Generate coverage report
+npm run test:e2e           # Run E2E tests with Playwright
+
+# Code Quality
+npm run lint               # Run ESLint
+npm run type-check         # TypeScript type checking
+npm run format             # Format with Prettier
+
+# Documentation
+npm run docs:generate      # Generate component docs
+npm run docs:serve         # Serve documentation locally
+```
+
+## Support
+
+For issues and questions:
+- Check the [Troubleshooting Guide](#troubleshooting) above
+- Review [Business Rules Documentation](docs/04-features/business-rules.md)
+- See [Testing Guide](docs/07-testing/testing-guide.md) for test-related issues
 
 ## License
 

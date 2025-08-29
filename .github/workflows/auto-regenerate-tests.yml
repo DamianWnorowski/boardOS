@@ -1,0 +1,138 @@
+name: Auto-Regenerate E2E Tests
+
+on:
+  # Run when database migrations are pushed
+  push:
+    paths:
+      - 'supabase/migrations/**/*.sql'
+      - 'src/lib/database.types.ts'
+    branches:
+      - main
+      - develop
+  
+  # Run on schedule to catch external database changes
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual regeneration'
+        required: false
+        default: 'Manual test update'
+
+jobs:
+  check-and-regenerate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for rule changes
+        id: check-changes
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          # Generate current tests
+          npm run test:e2e:generate
+          
+          # Check if the generated file has changed
+          if git diff --quiet playwright/tests/dynamic/auto-generated-rules.spec.ts; then
+            echo "No changes detected in business rules"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Business rules have changed!"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            
+            # Count the changes
+            ADDITIONS=$(git diff --numstat playwright/tests/dynamic/auto-generated-rules.spec.ts | awk '{print $1}')
+            DELETIONS=$(git diff --numstat playwright/tests/dynamic/auto-generated-rules.spec.ts | awk '{print $2}')
+            echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
+            echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit regenerated tests
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Stage the regenerated test file
+          git add playwright/tests/dynamic/auto-generated-rules.spec.ts
+          
+          # Create commit message with details
+          COMMIT_MSG="🤖 Auto-regenerate E2E tests from database rules
+
+          Changes detected:
+          - Added lines: ${{ steps.check-changes.outputs.additions }}
+          - Removed lines: ${{ steps.check-changes.outputs.deletions }}
+          
+          Trigger: ${{ github.event_name }}
+          ${{ github.event.inputs.reason || '' }}"
+          
+          git commit -m "$COMMIT_MSG"
+
+      - name: Push changes
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: Run regenerated tests
+        if: steps.check-changes.outputs.changed == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          # Run a smoke test of the regenerated tests
+          npx playwright install chromium
+          npx playwright test --project=chromium --grep="can attach" --reporter=list || true
+
+      - name: Create issue if tests fail
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 E2E Test Auto-Regeneration Failed',
+              body: `## Test Regeneration Failure
+              
+              The automatic E2E test regeneration workflow has failed.
+              
+              **Workflow Run**: [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              **Trigger**: ${context.eventName}
+              **Branch**: ${context.ref}
+              
+              ### Required Actions:
+              1. Check the workflow logs for errors
+              2. Verify database connection settings
+              3. Manually regenerate tests if needed: \`npm run test:e2e:generate\`
+              
+              cc @${context.actor}`,
+              labels: ['bug', 'testing', 'automation']
+            });
+
+      - name: Notify success
+        if: steps.check-changes.outputs.changed == 'true' && success()
+        run: |
+          echo "✅ E2E tests successfully regenerated and committed"
+          echo "📊 Changes: +${{ steps.check-changes.outputs.additions }} -${{ steps.check-changes.outputs.deletions }} lines"

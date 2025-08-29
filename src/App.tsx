@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { MultiBackend } from 'react-dnd-multi-backend';
 import { dndBackendOptions } from './utils/dndBackend';
@@ -14,6 +14,7 @@ import CompactQuickSelect from './components/ui/CompactQuickSelect';
 import KeyboardShortcutsHelp from './components/ui/KeyboardShortcutsHelp';
 import { useKeyboardShortcuts } from './context/KeyboardShortcutsContext';
 import { RefreshCw } from 'lucide-react';
+import testSyncChecker from './utils/testSyncChecker';
 
 function App() {
   const { isMobile } = useMobile();
@@ -21,6 +22,17 @@ function App() {
   const { isHelpOpen, closeHelp } = useKeyboardShortcuts();
   const [showDatabaseTest, setShowDatabaseTest] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Start test sync monitoring in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      testSyncChecker.startMonitoring();
+      
+      return () => {
+        testSyncChecker.stopMonitoring();
+      };
+    }
+  }, []);
   
   const handleRefresh = async () => {
     setIsRefreshing(true);

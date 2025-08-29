@@ -93,10 +93,14 @@ class DocumentationGenerator {
   async generateComponentDocs() {
     console.log('🧩 Generating component documentation...');
     
+    const ComponentParser = require('./component-parser.cjs');
+    const parser = new ComponentParser();
+    
     const componentsDir = path.join(this.srcDir, 'components');
     const outputDir = path.join(this.docsDir, '03-components');
     
-    const componentDocs = await this.extractComponentInfo(componentsDir);
+    // Use new AST-based parser
+    const componentDocs = await parser.parseDirectory(componentsDir);
     
     // Generate main components index
     const indexContent = this.generateComponentIndex(componentDocs);
@@ -358,7 +362,7 @@ BoardOS contains ${components.length} React components organized into ${Object.k
     return `---
 title: ${component.name}
 category: components
-tags: [${component.category.toLowerCase()}, component]
+tags: [${component.category.toLowerCase()}, component, ${component.type}]
 related: []
 last-updated: ${new Date().toISOString().split('T')[0]}
 ---
@@ -366,43 +370,60 @@ last-updated: ${new Date().toISOString().split('T')[0]}
 # ${component.name}
 
 ## Quick Answer
-${component.description || `${component.name} is a React component in the ${component.category} category.`}
+${component.description || `${component.name} is a ${component.type} React component in the ${component.category} category.`}
+
+## Component Info
+
+- **Type**: ${component.type}
+- **Export**: ${component.isDefaultExport ? 'Default' : 'Named'}
+- **File**: \`${component.fileName}\`
+- **Line**: ${component.lineNumber}
+- **Category**: ${component.category}
+- **Has JSDoc**: ${component.hasJSDoc ? '✅' : '❌'}
 
 ## Props Interface
 
-${component.props.length > 0 ? `
+${component.props && component.props.length > 0 ? `
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 ${component.props.map(prop => 
-  `| ${prop.name} | \`${prop.type}\` | ${prop.optional ? 'No' : 'Yes'} | - |`
+  `| ${prop.name} | \`${prop.type}\` | ${prop.required ? 'Yes' : 'No'} | ${prop.description || '-'} |`
 ).join('\n')}
-` : 'This component has no props.'}
+` : 'This component has no props interface defined.'}
 
 ## Usage Example
 
 \`\`\`typescript
-import { ${component.name} } from '${component.filePath.replace(/.*src\//, '@/').replace(/\.(tsx?|jsx?)$/, '')}';
+import { ${component.name} } from '${component.filePath.replace(/.*[\\/]src[\\/]/, '@/').replace(/\.(tsx?|jsx?)$/, '').replace(/\\/g, '/')}';
 
 function ExampleUsage() {
   return (
-    <${component.name}${component.props.filter(p => !p.optional).map(p => ` ${p.name}={/* ${p.type} */}`).join('')} />
+    <${component.name}${component.props ? component.props.filter(p => p.required).map(p => ` ${p.name}={/* ${p.type} */}`).join('') : ''} />
   );
 }
 \`\`\`
 
 ## Dependencies
 
-${component.dependencies.length > 0 ? `
+${component.dependencies && component.dependencies.length > 0 ? `
 - ${component.dependencies.map(dep => `\`${dep}\``).join('\n- ')}
-` : 'No external dependencies.'}
+` : 'No external dependencies detected.'}
 
 ## File Location
 
-\`${component.filePath}\`
+\`${path.relative(path.join(__dirname, '..'), component.filePath).replace(/\\/g, '/')}\`
+
+## Component Signature
+
+\`\`\`typescript
+${component.isDefaultExport ? 'export default' : 'export'} ${component.type === 'arrow' ? 'const' : 'function'} ${component.name}${component.props && component.props.length > 0 ? `(props: {${component.props.map(p => `${p.name}${p.required ? '' : '?'}: ${p.type}`).join(', ')}})` : '()'} ${component.type === 'arrow' ? '=>' : '{'} 
+  // Component implementation
+${component.type === 'arrow' ? '' : '}'}
+\`\`\`
 
 ---
 
-*This documentation was auto-generated from source code.*`;
+*This documentation was auto-generated from TypeScript source code using AST parsing.*`;
   }
 
   /**

@@ -1,12 +1,11 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
-echo "🚀 Pre-commit: Updating documentation..."
+# Update CLAUDE.md with staged changes
+node scripts/update-claude-md.js
 
-# Generate documentation from code changes
-npm run docs:generate
+# Add the updated CLAUDE.md to the commit
+git add CLAUDE.md
 
-# Add any generated docs to staging
-git add docs/
-
-echo "✅ Documentation updated and staged"
+# Generate documentation (optional - comment out if too slow)
+# npm run docs:generate --silent
+# git add docs/

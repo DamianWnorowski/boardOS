@@ -24,7 +24,13 @@
       "Bash(mkdir:*)",
       "Bash(npm install:*)",
       "Bash(chmod:*)",
-      "Bash(start docs/02-api/generated/index.html)"
+      "Bash(start docs/02-api/generated/index.html)",
+      "Bash(find:*)",
+      "Bash(set VITE_SUPABASE_URL=https://eqbgcfdoyndocuomntdx.supabase.co)",
+      "Bash(set VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxYmdjZmRveW5kb2N1b21udGR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4ODQxMzMsImV4cCI6MjA3MTQ2MDEzM30.fUM25Cb_uWkJJ75Dw_uZVPn9qzZ-7z5o2zOq8jkQ0d8)",
+      "Bash(npx playwright test:*)",
+      "Bash(pkill:*)",
+      "Bash(npx husky init:*)"
     ],
     "deny": [],
     "ask": []

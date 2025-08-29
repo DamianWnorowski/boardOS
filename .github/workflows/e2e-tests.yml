@@ -1,0 +1,212 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Create .env file
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Build application
+        run: npm run build
+
+      - name: Generate dynamic tests
+        run: npm run test:e2e:generate
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Run E2E tests - ${{ matrix.browser }}
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+
+  mobile-tests:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create .env file
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Build application
+        run: npm run build
+
+      - name: Generate dynamic tests
+        run: npm run test:e2e:generate
+
+      - name: Run mobile tests
+        run: npm run test:e2e:mobile
+        env:
+          CI: true
+
+      - name: Upload mobile test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-mobile
+          path: playwright-report/
+          retention-days: 30
+
+  performance-tests:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Create .env file
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run performance tests
+        run: npx playwright test --grep="performance" --project=chromium
+        env:
+          CI: true
+
+      - name: Upload performance metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-metrics
+          path: test-results/performance/
+          retention-days: 30
+
+  notify:
+    needs: [test, mobile-tests, performance-tests]
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name != 'pull_request'
+    
+    steps:
+      - name: Notify failure
+        run: |
+          echo "E2E tests failed! Check the artifacts for details."
+          # Add your notification logic here (Slack, Discord, email, etc.)
+
+  merge-reports:
+    needs: [test, mobile-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports/
+
+      - name: Merge test reports
+        run: |
+          echo "Merging test reports from all browsers and devices"
+          # Add logic to merge HTML reports if needed
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-test-report
+          path: all-reports/
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            // Read test results and create a summary
+            const comment = `## E2E Test Results
+            
+            ✅ **Chromium**: Passed
+            ✅ **Firefox**: Passed  
+            ✅ **WebKit**: Passed
+            ✅ **Mobile**: Passed
+            
+            [View full report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

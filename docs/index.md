@@ -19,7 +19,8 @@ Welcome to the comprehensive documentation for BoardOS - a real-time constructio
 
 ### API Reference
 - [🔌 **Database Service**](02-api/database-service.md) - Core API
-- [⚡ **Edge Functions**](02-api/supabase-edge.md) - Supabase functions
+- [📤 **Export Service**](02-api/export-service.md) - Data export
+- [⏱️ **Duration Estimation**](02-api/duration-estimation-service.md) - Job estimates
 - [🌐 **Contexts**](02-api/contexts.md) - React Context API
 - [🎣 **Hooks**](02-api/hooks.md) - Custom hooks reference
 
@@ -31,30 +32,25 @@ Welcome to the comprehensive documentation for BoardOS - a real-time constructio
 - [📱 **Mobile Components**](03-components/mobile/) - Mobile-specific UI
 
 ### Features & Systems
-- [🖱️ **Drag & Drop**](04-features/drag-drop.md) - DnD system
+- [🖱️ **Drag & Drop**](04-features/drag-and-drop.md) - DnD system
 - [🧲 **Magnet System**](04-features/magnet-system.md) - Attachment rules
-- [⚡ **Real-time Sync**](04-features/real-time.md) - Live updates
-- [🌙 **Multi-shift**](04-features/multi-shift.md) - Day/night scheduling
-- [📱 **Mobile Support**](04-features/mobile-support.md) - Touch interface
+- [⚡ **Real-time Sync**](04-features/real-time-sync.md) - Live updates
+- [📅 **Calendar Views**](04-features/calendar-views.md) - Multi-day scheduling
+- [📋 **Business Rules**](04-features/business-rules.md) - Validation logic
 
 ### Development
+- [⚙️ **Setup Guide**](05-development/setup-guide.md) - Environment setup
 - [⚡ **Workflow**](05-development/workflow.md) - Dev process
-- [🧪 **Testing**](05-development/testing.md) - Test guidelines
-- [🐛 **Debugging**](05-development/debugging.md) - Debug tips
-- [🚀 **Performance**](05-development/performance.md) - Optimization
-- [🤝 **Contributing**](05-development/contributing.md) - Contribution guide
+- [🧪 **Testing Guide**](07-testing/testing-guide.md) - Test strategies
 
 ### Deployment
 - [🚀 **Production**](06-deployment/production.md) - Deploy guide
-- [🌍 **Environment**](06-deployment/environment.md) - Env setup
+- [🔧 **Supabase Setup**](06-deployment/supabase-setup.md) - Database config
+- [🌍 **Environment Variables**](06-deployment/environment-variables.md) - Configuration
 - [📈 **Monitoring**](06-deployment/monitoring.md) - Observability
-- [🔧 **Troubleshooting**](06-deployment/troubleshooting.md) - Issue resolution
 
-### Business Logic
-- [📋 **Rules**](07-business-logic/rules.md) - Business rules
-- [🛠️ **Resource Types**](07-business-logic/resource-types.md) - Resource definitions
-- [📅 **Job Types**](07-business-logic/job-types.md) - Job specifications
-- [🔄 **Workflows**](07-business-logic/workflows.md) - Business workflows
+### Testing
+- [🧪 **Testing Guide**](07-testing/testing-guide.md) - Complete testing documentation
 
 ---
 
@@ -72,14 +68,14 @@ This documentation is optimized for AI assistants. Each section includes:
 
 | Section | Coverage | Last Updated | Status |
 |---------|----------|--------------|--------|
-| Getting Started | 🟡 Partial | 2025-01-28 | In Progress |
-| Architecture | 🔴 Missing | - | Planned |
-| API Reference | 🔴 Missing | - | Planned |
-| Components | 🔴 Missing | - | Planned |
-| Features | 🟡 Partial | 2025-01-28 | In Progress |
-| Development | 🟢 Complete | 2025-01-28 | Current |
-| Deployment | 🔴 Missing | - | Planned |
-| Business Logic | 🟡 Partial | 2025-01-28 | In Progress |
+| Getting Started | 🟢 Complete | 2025-08-29 | Current |
+| Architecture | 🟢 Complete | 2025-08-29 | Current |
+| API Reference | 🟢 Complete | 2025-08-29 | Current |
+| Components | 🟢 Complete | 2025-08-29 | Current |
+| Features | 🟢 Complete | 2025-08-29 | Current |
+| Development | 🟢 Complete | 2025-08-29 | Current |
+| Deployment | 🟢 Complete | 2025-08-29 | Current |
+| Testing | 🟢 Complete | 2025-08-29 | Current |
 
 ---
 
@@ -87,11 +83,12 @@ This documentation is optimized for AI assistants. Each section includes:
 
 **Looking for something specific?**
 
-- **Setup Issues**: Check [Troubleshooting](06-deployment/troubleshooting.md)
+- **Setup Issues**: Check [Supabase Setup](06-deployment/supabase-setup.md)
 - **Component Usage**: Browse [Component Library](03-components/index.md)
 - **API Reference**: See [Database Service](02-api/database-service.md)
-- **Business Rules**: Review [Rules Documentation](07-business-logic/rules.md)
-- **Performance**: Read [Optimization Guide](05-development/performance.md)
+- **Business Rules**: Review [Business Rules](04-features/business-rules.md)
+- **Testing**: Read [Testing Guide](07-testing/testing-guide.md)
+- **Deployment**: See [Production Guide](06-deployment/production.md)
 
 ---
 
