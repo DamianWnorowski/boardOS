@@ -114,14 +114,27 @@ export class DatabaseService {
   // Get jobs for a specific date
   static async getJobsByDate(date: Date): Promise<Job[]> {
     const dateStr = date.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
     
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('schedule_date', dateStr);
-    
-    if (error) throw error;
-    return data.map(this.transformDbJob);
+    // If asking for today, include jobs without schedule_date (legacy jobs)
+    // Otherwise, only return jobs specifically scheduled for that date
+    if (dateStr === today) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .or(`schedule_date.eq.${dateStr},schedule_date.is.null`);
+      
+      if (error) throw error;
+      return data.map(this.transformDbJob);
+    } else {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('schedule_date', dateStr);
+      
+      if (error) throw error;
+      return data.map(this.transformDbJob);
+    }
   }
 
   // Get jobs for a date range

@@ -76,7 +76,7 @@ export class DurationEstimationService {
    */
   static calculateJobDuration(job: Partial<Job>): JobEstimate {
     const complexity = job.complexity_factor || 1.0;
-    let estimate: JobEstimate = { total_days: 0 };
+    const estimate: JobEstimate = { total_days: 0 };
 
     switch (job.type) {
       case 'milling':

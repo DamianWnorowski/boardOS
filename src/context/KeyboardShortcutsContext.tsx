@@ -161,7 +161,7 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
 
       case 'magnets':
         const magnet = selected as Magnet;
-        // TODO: Implement magnet selection action
+        magnet.startDrag();
         closeQuickSelect();
         break;
     }
@@ -341,7 +341,7 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
   };
 
   const executeMagnet = (magnet: Magnet) => {
-    // TODO: Implement magnet selection action
+    magnet.startDrag();
     closeQuickSelect();
   };
 

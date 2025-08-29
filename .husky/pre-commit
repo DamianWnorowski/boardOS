@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🚀 Pre-commit: Updating documentation..."
+
+# Generate documentation from code changes
+npm run docs:generate
+
+# Add any generated docs to staging
+git add docs/
+
+echo "✅ Documentation updated and staged"

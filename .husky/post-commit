@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "📊 Post-commit: Updating project memory..."
+
+# Update CLAUDE.md with latest changes
+node scripts/update-claude-memory.cjs
+
+# Generate AI context files
+npm run docs:generate
+
+echo "✅ Project memory and AI context updated"

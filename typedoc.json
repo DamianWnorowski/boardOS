@@ -1,0 +1,62 @@
+{
+  "entryPoints": ["./src"],
+  "entryPointStrategy": "expand",
+  "out": "./docs/02-api/generated",
+  "theme": "default",
+  "name": "BoardOS API Documentation",
+  "includeVersion": true,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "skipErrorChecking": true,
+  "readme": "./docs/02-api/README.md",
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "Context",
+    "Hooks", 
+    "Services",
+    "Components",
+    "Types",
+    "Utils",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Project",
+    "Module",
+    "Namespace",
+    "Enum",
+    "EnumMember", 
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Constructor",
+    "Property",
+    "Variable",
+    "Function",
+    "Method",
+    "Parameter",
+    "TypeParameter",
+    "Accessor",
+    "GetSignature",
+    "SetSignature",
+    "TypeLiteral",
+    "CallSignature",
+    "ConstructorSignature",
+    "IndexSignature",
+    "Reference"
+  ],
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "titleLink": "/",
+  "navigationLinks": {
+    "Documentation": "/docs/",
+    "GitHub": "https://github.com/your-org/boardOS"
+  },
+  "sidebarLinks": {
+    "Getting Started": "/docs/00-getting-started/",
+    "Components": "/docs/03-components/",
+    "Features": "/docs/04-features/"
+  }
+}
