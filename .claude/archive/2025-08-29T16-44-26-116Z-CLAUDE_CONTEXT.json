@@ -1,0 +1,201 @@
+{
+  "sessionId": "claude-1756485783509-juehptg6j",
+  "timestamp": "2025-08-29T16:43:03.509Z",
+  "mode": "NEW_SESSION",
+  "git": {
+    "branch": "main",
+    "hasChanges": true,
+    "uncommittedFiles": [
+      ".claude/history.json",
+      ".claude/last-status.json",
+      ".claude/settings.local.json",
+      ".husky/pre-commit",
+      "docs/ai-context/api.aimd",
+      "docs/ai-context/business-logic.aimd",
+      "docs/ai-context/components.aimd",
+      "package.json",
+      "scripts/check-migration.js",
+      "scripts/claude-handoff.js",
+      "scripts/claude-history.js",
+      "scripts/claude-reset.js",
+      "scripts/claude-resume.js",
+      "scripts/claude-session.js",
+      "scripts/claude-smart-start.js",
+      "scripts/setup-claude.js"
+    ],
+    "unpushedCommits": [],
+    "lastCommit": "e477a85 fix: enhance available jobs panel visibility and sizing",
+    "status": "M .claude/history.json\n M .claude/last-status.json\n M .claude/settings.local.json\n M .husky/pre-commit\n M docs/ai-context/api.aimd\n M docs/ai-context/business-logic.aimd\n M docs/ai-context/components.aimd\n M package.json\n M scripts/check-migration.js\n M scripts/claude-handoff.js\n M scripts/claude-history.js\n M scripts/claude-reset.js\n M scripts/claude-resume.js\n M scripts/claude-session.js\n M scripts/claude-smart-start.js\n M scripts/setup-claude.js\n?? .claude/archive/\n?? .claude/sessions/\n?? AI_CONTEXT.json\n?? AI_CONTEXT_MEMORY.json\n?? CLAUDE_CONTEXT_RESUMED.json\n?? CLAUDE_CONTEXT_RESUMED.md\n?? CLAUDE_HANDOFF.json\n?? CLAUDE_HANDOFF.md\n?? nul\n?? scripts/ai-context-agent.js\n?? scripts/collectors/\n?? scripts/generate-ai-context.js\n?? scripts/update-ai-context.js\n?? vite.config.ts.timestamp-1756473652157-e2cddc7204ea.mjs"
+  },
+  "tests": {
+    "passing": 0,
+    "failing": 0,
+    "total": 0,
+    "coverage": 0,
+    "failures": [],
+    "success": false
+  },
+  "lint": {
+    "total": 552,
+    "errors": 534,
+    "warnings": 18,
+    "issues": [
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 1,
+        "message": "'test' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 1,
+        "message": "'expect' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 3,
+        "message": "'TestDataFactory' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 4,
+        "message": "'SchedulerPage' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 5,
+        "message": "'MagnetPage' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 202,
+        "message": "'scenario' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 219,
+        "message": "'scenario' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 234,
+        "message": "'scenario' is defined but never used.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-unused-vars"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 299,
+        "message": "Unexpected any. Specify a different type.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-explicit-any"
+      },
+      {
+        "file": "\\playwright\\generators\\test-generator.ts",
+        "line": 376,
+        "message": "A `require()` style import is forbidden.",
+        "severity": "error",
+        "rule": "@typescript-eslint/no-require-imports"
+      }
+    ]
+  },
+  "server": {
+    "devServerRunning": true,
+    "port": 5173
+  },
+  "database": {
+    "migrationApplied": false,
+    "migrationFileExists": true,
+    "handoffExists": true
+  },
+  "critical": [
+    {
+      "type": "lint_errors",
+      "severity": "medium",
+      "message": "534 ESLint errors",
+      "impact": "Code quality issues",
+      "files": [
+        "\\playwright\\generators\\test-generator.ts",
+        "\\playwright\\generators\\test-generator.ts",
+        "\\playwright\\generators\\test-generator.ts"
+      ]
+    },
+    {
+      "type": "uncommitted_changes",
+      "severity": "low",
+      "message": "16 uncommitted files",
+      "impact": "Risk of losing work",
+      "files": [
+        ".claude/history.json",
+        ".claude/last-status.json",
+        ".claude/settings.local.json"
+      ]
+    }
+  ],
+  "recommendations": [
+    "🔴 CRITICAL: Apply database migration to enable Week View and multi-day features",
+    "🟡 MEDIUM: Clean up 534 ESLint errors (focus on unused vars and types)",
+    "🟢 LOW: Commit 16 uncommitted files",
+    "🔧 SETUP: Tests not running properly - check test environment"
+  ],
+  "projectInfo": {
+    "name": "construction-scheduler",
+    "version": "0.1.0",
+    "type": "React + TypeScript + Vite + Supabase",
+    "mainTech": [
+      "React 18",
+      "TypeScript",
+      "Tailwind CSS",
+      "React DnD",
+      "Supabase"
+    ],
+    "testFramework": "Vitest + Testing Library + Playwright"
+  },
+  "recentActivity": {
+    "recentCommits": [
+      "e477a85 fix: enhance available jobs panel visibility and sizing",
+      "80e77fe test: update test coverage",
+      "8713f1f test: update test coverage",
+      "036c3d7 fix: resolve issues in multiple areas",
+      "6bba52f fix: load full week of jobs when in week view"
+    ],
+    "recentlyModified": [
+      "./playwright/fixtures/auth.ts",
+      "./playwright/fixtures/test-data.ts",
+      "./playwright/generators/test-generator.ts",
+      "./playwright/pages/MagnetPage.ts",
+      "./playwright/pages/SchedulerPage.ts",
+      "./playwright/services/rule-fetcher.ts",
+      "./playwright/tests/business-rules/magnet-attachments.spec.ts",
+      "./playwright/tests/core/drag-and-drop.spec.ts",
+      "./playwright/tests/dynamic/auto-generated-rules.spec.ts",
+      "./playwright/tests/integration/real-time-sync.spec.ts"
+    ],
+    "workingDirectory": "C:\\Users\\ai\\Desktop\\boardOS"
+  },
+  "previousSession": {
+    "sessionId": "claude-1756485741042-sct4hdgnx",
+    "timestamp": "2025-08-29T16:41:48.672Z",
+    "type": "resume",
+    "originalSession": "claude-1756485361374-zz04f8v6d",
+    "summary": {
+      "timeSinceHandoff": "6 minute(s) ago",
+      "testsPassing": 0,
+      "testsFailing": 0,
+      "tasksRemaining": 1
+    }
+  }
+}

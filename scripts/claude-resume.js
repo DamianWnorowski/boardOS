@@ -399,6 +399,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this script is being run directly
+if (process.argv[1] && process.argv[1].endsWith('claude-resume.js')) {
   main();
 }

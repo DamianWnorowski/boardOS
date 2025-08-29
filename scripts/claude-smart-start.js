@@ -186,6 +186,6 @@ async function main() {
 }
 
 // Run smart start
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && process.argv[1].endsWith('claude-smart-start.js')) {
   main();
 }

@@ -3,6 +3,10 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

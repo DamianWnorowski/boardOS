@@ -1,5 +1,66 @@
 {
-  "sessions": [],
+  "sessions": [
+    {
+      "sessionId": "claude-1756485863981-x7dqpcvrn",
+      "timestamp": "2025-08-29T16:43:51.535Z",
+      "type": "resume",
+      "originalSession": "claude-1756485361374-zz04f8v6d",
+      "summary": {
+        "timeSinceHandoff": "8 minute(s) ago",
+        "testsPassing": 0,
+        "testsFailing": 0,
+        "tasksRemaining": 1
+      }
+    },
+    {
+      "sessionId": "claude-1756485783509-juehptg6j",
+      "timestamp": "2025-08-29T16:43:03.509Z",
+      "type": "new_session",
+      "summary": {
+        "testsPassing": 0,
+        "testsFailing": 0,
+        "lintErrors": 534,
+        "criticalIssues": 2,
+        "recommendations": 4
+      }
+    },
+    {
+      "sessionId": "claude-1756485741042-sct4hdgnx",
+      "timestamp": "2025-08-29T16:41:48.672Z",
+      "type": "resume",
+      "originalSession": "claude-1756485361374-zz04f8v6d",
+      "summary": {
+        "timeSinceHandoff": "6 minute(s) ago",
+        "testsPassing": 0,
+        "testsFailing": 0,
+        "tasksRemaining": 1
+      }
+    },
+    {
+      "sessionId": "claude-1756485479225-70ewce1dd",
+      "timestamp": "2025-08-29T16:37:26.946Z",
+      "type": "resume",
+      "originalSession": "claude-1756485361374-zz04f8v6d",
+      "summary": {
+        "timeSinceHandoff": "1 minute(s) ago",
+        "testsPassing": 0,
+        "testsFailing": 0,
+        "tasksRemaining": 1
+      }
+    },
+    {
+      "sessionId": "claude-1756485361374-zz04f8v6d",
+      "timestamp": "2025-08-29T16:36:01.374Z",
+      "type": "handoff",
+      "summary": {
+        "task": "Fixing test failures",
+        "priority": "high",
+        "completed": 4,
+        "testsPassing": 0,
+        "testsFailing": 0
+      }
+    }
+  ],
   "created": "2025-08-28T19:13:00.000Z",
   "version": "1.0.0"
 }

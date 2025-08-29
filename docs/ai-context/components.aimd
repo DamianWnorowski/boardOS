@@ -1,1 +1,494 @@
-COMPONENT_CONTEXT: Generated from components
+<!-- AUTO-GENERATED METADATA -->
+<!-- Last Updated: 2025-08-29T16:47:21.181Z -->
+<!-- Component Files: 59 -->
+<!-- END METADATA -->
+
+# Components Context for BoardOS Construction Scheduler
+
+## Core Scheduling Components
+
+### Board
+**File**: `src/components/board/Board.tsx`
+**Description**: Main scheduling grid container
+
+#### Props: None (uses context)
+#### Key Features:
+- Displays all job columns in a horizontal scrollable layout
+- Shows loading indicator during database sync
+- Contains "Add New Job" button
+- Wraps content in ErrorBoundary
+- Responsive design with min-width constraints
+
+#### Context Dependencies:
+- `useScheduler()` - Access jobs and loading state
+- `useModal()` - Handle modal management
+
+### JobColumn
+**File**: `src/components/board/JobColumn.tsx`
+**Description**: Individual job column with resource assignments
+
+#### Props:
+- `job: Job` - Job data to display
+
+#### Key Features:
+- Displays job header with name, type, and status
+- Contains JobRow components for different resource types
+- Shows job finalization status
+- Handles job-level drag and drop operations
+- Responsive column width (typically 256px)
+
+### JobRow
+**File**: `src/components/board/JobRow.tsx`
+**Description**: Row container for specific resource types within a job
+
+#### Props:
+- `job: Job` - Parent job
+- `rowType: RowType` - Type of row (Foreman, Equipment, Crew, etc.)
+- `assignments: Assignment[]` - Assignments for this row
+
+#### Key Features:
+- Drop zone for resource assignments
+- Visual feedback for valid/invalid drops
+- Row-specific styling and layout
+- Assignment card containers
+
+### AssignmentCard
+**File**: `src/components/resources/AssignmentCard.tsx`
+**Description**: Draggable resource assignment cards
+
+#### Props:
+- `assignment: Assignment` - Assignment data
+- `attachedAssignments: Assignment[]` - Related attachments
+- `isDragging?: boolean` - Drag state
+- `isPreview?: boolean` - Preview mode
+
+#### Key Features:
+- **Drag and Drop**: Draggable resource cards
+- **Attachment Display**: Shows attached operators/equipment
+- **Time Indicators**: Color-coded time badges
+  - Green: On-site time
+  - Blue: Yard departure time
+- **Visual States**: Hover, drag, and error states
+- **Context Menus**: Right-click for options
+- **Modal Integration**: Opens time/person modals on interaction
+
+#### Time Indicator Logic:
+- Vehicles (trucks/sweepers): Blue if offsite, green if onsite
+- Personnel: Always green (job site time)
+- Personnel attached to vehicles: Blue if vehicle offsite
+
+### ResourceCard
+**File**: `src/components/resources/ResourceCard.tsx`
+**Description**: Resource pool cards for unassigned resources
+
+#### Props:
+- `resource: Resource` - Resource data
+- `isDragging?: boolean` - Drag state
+
+#### Key Features:
+- Draggable from resource pool
+- Color-coded by resource type
+- Shows resource availability status
+- Quick assignment via drag-and-drop
+
+## Calendar View Components
+
+### WeekView
+**File**: `src/components/board/WeekView.tsx`
+**Description**: Weekly calendar view with job scheduling
+
+#### Props:
+- `selectedDate: Date` - Current week to display
+
+#### Key Features:
+- 7-day horizontal layout
+- Job bars spanning multiple days
+- Drag-and-drop for job rescheduling
+- Day/night shift indicators
+
+### MonthView
+**File**: `src/components/board/MonthView.tsx`
+**Description**: Monthly calendar overview
+
+#### Props:
+- `selectedDate: Date` - Current month to display
+
+#### Key Features:
+- Calendar grid layout
+- Job duration estimation
+- Available jobs sidebar
+- Month navigation controls
+
+### MonthViewJobBar
+**File**: `src/components/board/MonthViewJobBar.tsx`
+**Description**: Job representation in monthly view
+
+#### Props:
+- `job: Job` - Job to display
+- `startDate: Date` - Job start date
+- `duration: number` - Estimated duration in days
+
+#### Key Features:
+- Spans multiple calendar days
+- Shows job progress
+- Click to view details
+- Color-coded by job type
+
+## Modal Components
+
+### AddJobModal
+**File**: `src/components/modals/AddJobModal.tsx`
+**Description**: Create new job modal
+
+#### Props:
+- `isOpen: boolean` - Modal visibility
+- `onClose: () => void` - Close handler
+
+#### Key Features:
+- Job creation form
+- Validation and error handling
+- Integration with DurationEstimationService
+
+### EditJobModal  
+**File**: `src/components/modals/EditJobModal.tsx`
+**Description**: Edit existing job modal
+
+#### Props:
+- `job: Job` - Job to edit
+- `isOpen: boolean` - Modal visibility
+- `onClose: () => void` - Close handler
+
+#### Key Features:
+- Pre-filled form with job data
+- Update job properties
+- Delete job functionality
+
+### TimeSlotModal
+**File**: `src/components/modals/TimeSlotModal.tsx`
+**Description**: Configure assignment time slots
+
+#### Props:
+- `assignment: Assignment` - Assignment to configure
+- `isOpen: boolean` - Modal visibility
+- `onClose: () => void` - Close handler
+
+#### Key Features:
+- Time picker interface
+- Shift selection (day/night)
+- Time conflict validation
+
+### PersonModal
+**File**: `src/components/modals/PersonModal.tsx`
+**Description**: Resource/person details and management
+
+#### Props:
+- `resource: Resource` - Resource to display
+- `assignment?: Assignment` - Optional assignment context
+- `isOpen: boolean` - Modal visibility
+- `onClose: () => void` - Close handler
+
+#### Key Features:
+- Resource information display
+- Assignment management
+- Contact information (for personnel)
+
+### EquipmentSelectorModal
+**File**: `src/components/modals/EquipmentSelectorModal.tsx`
+**Description**: Equipment selection interface
+
+#### Props:
+- `isOpen: boolean` - Modal visibility
+- `onSelect: (equipment: Resource) => void` - Selection handler
+- `filterType?: ResourceType` - Equipment type filter
+
+#### Key Features:
+- Filtered equipment list
+- Search and filter capabilities
+- Multi-selection support
+
+## Mobile Components
+
+### MobileSchedulerLayout
+**File**: `src/components/mobile/MobileSchedulerLayout.tsx`
+**Description**: Mobile-optimized scheduler layout
+
+#### Props: None (uses context)
+#### Key Features:
+- Touch-friendly interface
+- Swipe navigation
+- Collapsed sidebar
+- Mobile-specific drag handling
+
+### MobileDragLayer
+**File**: `src/components/mobile/MobileDragLayer.tsx`
+**Description**: Custom drag layer for mobile devices
+
+#### Props:
+- `isDragging: boolean` - Drag state
+- `currentOffset: XYCoord` - Drag position
+
+#### Key Features:
+- Touch-based drag preview
+- Mobile-specific positioning
+- Performance optimizations
+
+### MobileJobCard
+**File**: `src/components/mobile/MobileJobCard.tsx`
+**Description**: Mobile-optimized job display
+
+#### Props:
+- `job: Job` - Job to display
+
+#### Key Features:
+- Compact job representation
+- Touch interactions
+- Swipe gestures
+
+### MobileResourcePool
+**File**: `src/components/mobile/MobileResourcePool.tsx`
+**Description**: Mobile resource selection interface
+
+#### Props: None (uses context)
+#### Key Features:
+- Scrollable resource list
+- Quick assignment buttons
+- Search and filter
+
+## Context Provider Components
+
+### SchedulerProvider
+**File**: `src/context/SchedulerContext.tsx`
+**Description**: Global schedule state management
+
+#### Props:
+- `children: React.ReactNode` - Child components
+
+#### Provides:
+- Schedule state (jobs, resources, assignments)
+- CRUD operations
+- Real-time synchronization
+- Optimistic updates
+
+### DragProvider
+**File**: `src/context/DragContext.tsx`
+**Description**: Drag-and-drop state management
+
+#### Props:
+- `children: React.ReactNode` - Child components
+
+#### Provides:
+- Drag state tracking
+- Drop zone management
+- Drag preview handling
+- Mobile drag support
+
+### MobileProvider
+**File**: `src/context/MobileContext.tsx`
+**Description**: Mobile device detection and handling
+
+#### Props:
+- `children: React.ReactNode` - Child components
+
+#### Provides:
+- Device detection (mobile/desktop)
+- Touch event handling
+- Responsive behavior flags
+
+### ModalProvider
+**File**: `src/context/ModalContext.tsx`
+**Description**: Modal state and z-index management
+
+#### Props:
+- `children: React.ReactNode` - Child components
+
+#### Provides:
+- Modal stack management
+- Z-index coordination
+- Modal state tracking
+- Backdrop handling
+
+## UI Components
+
+### QuickSelectOverlay
+**File**: `src/components/ui/QuickSelectOverlay.tsx`
+**Description**: Quick resource selection interface
+
+#### Props:
+- `isVisible: boolean` - Overlay visibility
+- `position: { x: number, y: number }` - Screen position
+- `onSelect: (resource: Resource) => void` - Selection handler
+
+#### Key Features:
+- Context-aware resource filtering
+- Keyboard navigation
+- Quick assignment shortcuts
+
+### ViewSwitcher
+**File**: `src/components/ui/ViewSwitcher.tsx`
+**Description**: Calendar view selection controls
+
+#### Props:
+- `currentView: ViewType` - Active view
+- `onViewChange: (view: ViewType) => void` - View change handler
+
+#### Key Features:
+- Day/Week/Month view toggle
+- Responsive button layout
+- Keyboard shortcuts
+
+### CompactQuickSelect
+**File**: `src/components/ui/CompactQuickSelect.tsx`
+**Description**: Compact resource selection widget
+
+#### Props:
+- `resources: Resource[]` - Available resources
+- `onSelect: (resource: Resource) => void` - Selection handler
+- `filterType?: ResourceType` - Resource type filter
+
+#### Key Features:
+- Minimal UI footprint
+- Type-ahead search
+- Category filtering
+
+### DraggableQuickSelectCard
+**File**: `src/components/ui/DraggableQuickSelectCard.tsx`
+**Description**: Draggable resource cards for quick assignment
+
+#### Props:
+- `resource: Resource` - Resource data
+- `category: string` - Resource category
+
+#### Key Features:
+- Drag-and-drop enabled
+- Category-based styling
+- Visual feedback on drag
+
+## Layout Components
+
+### SchedulerLayout
+**File**: `src/components/layout/SchedulerLayout.tsx`
+**Description**: Main application layout container
+
+#### Props:
+- `children: React.ReactNode` - Main content
+
+#### Key Features:
+- Sidebar + main content layout
+- Responsive design
+- Header and navigation
+- Context provider wrapping
+
+### Sidebar
+**File**: `src/components/layout/Sidebar.tsx`
+**Description**: Resource pool and navigation sidebar
+
+#### Props:
+- `isCollapsed?: boolean` - Collapsed state
+
+#### Key Features:
+- Resource pool display
+- Search and filtering
+- Category organization
+- Collapsible design
+
+### Navbar
+**File**: `src/components/layout/Navbar.tsx`
+**Description**: Top navigation bar
+
+#### Props: None (uses context)
+#### Key Features:
+- Date navigation
+- View controls
+- User actions
+- Responsive design
+
+## Specialized Components
+
+### TruckCard
+**File**: `src/components/resources/TruckCard.tsx`
+**Description**: Specialized truck resource card
+
+#### Props:
+- `resource: Resource` - Truck resource
+- `assignment?: Assignment` - Optional assignment
+
+#### Key Features:
+- Truck-specific information
+- Driver assignment status
+- Configuration options (flowboy, dump-trailer)
+
+### MagnetCard
+**File**: `src/components/magnets/MagnetCard.tsx`
+**Description**: Magnet system visualization card
+
+#### Props:
+- `magnet: Magnet` - Magnet data
+- `isActive?: boolean` - Active state
+
+#### Key Features:
+- Magnet attachment visualization
+- Rule configuration interface
+- Visual connection indicators
+
+### AvailableJobsPanel
+**File**: `src/components/jobs/AvailableJobsPanel.tsx`
+**Description**: Unscheduled jobs display panel
+
+#### Props: None (uses context)
+#### Key Features:
+- List of available jobs
+- Job priority indicators
+- Quick scheduling actions
+- Drag-and-drop to calendar
+
+## Testing and Debug Components
+
+### DebugPanel
+**File**: `src/components/debug/DebugPanel.tsx`
+**Description**: Development debugging interface
+
+#### Props:
+- `isVisible: boolean` - Panel visibility
+
+#### Key Features:
+- State inspection
+- Performance metrics
+- Debug logging controls
+- Development-only rendering
+
+### DatabaseStatus
+**File**: `src/components/database/DatabaseStatus.tsx`
+**Description**: Database connection status indicator
+
+#### Props: None (uses context)
+#### Key Features:
+- Connection status display
+- Real-time sync indicators
+- Error state handling
+- Retry mechanisms
+
+## Component Communication Patterns
+
+### Context Usage:
+- **useScheduler()**: Primary data access
+- **useDragContext()**: Drag-and-drop coordination  
+- **useMobile()**: Device-specific behavior
+- **useModal()**: Modal management
+
+### Event Flow:
+1. **User Interaction** → Component Event Handler
+2. **Optimistic Update** → Local State Change
+3. **Database Operation** → Service Layer Call
+4. **Real-time Sync** → Context Update
+5. **UI Refresh** → Component Re-render
+
+### Props vs Context:
+- **Props**: Component-specific data and configuration
+- **Context**: Shared application state and actions
+- **Local State**: Transient UI state (hover, focus, etc.)
+
+### Performance Optimizations:
+- **React.memo()**: Prevent unnecessary re-renders
+- **useMemo()**: Expensive calculations
+- **useCallback()**: Stable function references
+- **Virtual scrolling**: Large resource lists

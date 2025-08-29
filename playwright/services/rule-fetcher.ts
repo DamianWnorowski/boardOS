@@ -1,4 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 // Use environment variables or test config
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://eqbgcfdoyndocuomntdx.supabase.co';

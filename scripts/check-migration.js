@@ -5,6 +5,10 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://eqbgcfdoyndocuomntdx.supabase.co';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -75,7 +79,7 @@ async function checkMigration() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && process.argv[1].endsWith('check-migration.js')) {
   checkMigration()
     .then(success => {
       if (!success) {
