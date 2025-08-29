@@ -39,13 +39,15 @@ const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChan
       setIsLoading(true);
       try {
         const jobsByDate = new Map<string, Job[]>();
+        const today = new Date().toISOString().split('T')[0];
         
         for (const date of weekDates) {
           const dateStr = date.toISOString().split('T')[0];
           
-          // Filter jobs by schedule_date, falling back to today's jobs if no schedule_date
+          // Filter jobs by schedule_date
           const dateJobs = jobs.filter(job => {
-            const jobDate = job.schedule_date || new Date().toISOString().split('T')[0];
+            // If job has no schedule_date, it defaults to today
+            const jobDate = job.schedule_date || today;
             return jobDate === dateStr;
           });
           
@@ -61,7 +63,7 @@ const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChan
     };
     
     loadWeekJobs();
-  }, [startDate, jobs, weekDates]);
+  }, [startDate, jobs, assignments]); // Reload when jobs or assignments change
   
   // Navigate weeks
   const handlePreviousWeek = () => {

@@ -92,7 +92,9 @@ export class DatabaseService {
       startTime: dbJob.start_time || undefined,
       finalized: dbJob.finalized,
       plants: (dbJob.plants as string[]) || [],
-      location: dbJob.location as Job['location'] || undefined
+      location: dbJob.location as Job['location'] || undefined,
+      schedule_date: dbJob.schedule_date || undefined,
+      end_date: dbJob.end_date || undefined
     };
   }
 
@@ -141,16 +143,29 @@ export class DatabaseService {
   static async getJobsByDateRange(startDate: Date, endDate: Date): Promise<Job[]> {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
     
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*')
-      .gte('schedule_date', startDateStr)
-      .lte('schedule_date', endDateStr)
-      .order('schedule_date');
-    
-    if (error) throw error;
-    return data.map(this.transformDbJob);
+    // If the date range includes today, also include jobs without schedule_date
+    if (startDateStr <= today && endDateStr >= today) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .or(`and(schedule_date.gte.${startDateStr},schedule_date.lte.${endDateStr}),and(schedule_date.is.null,schedule_date.is.null)`)
+        .order('schedule_date', { nullsFirst: false });
+      
+      if (error) throw error;
+      return data.map(this.transformDbJob);
+    } else {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .gte('schedule_date', startDateStr)
+        .lte('schedule_date', endDateStr)
+        .order('schedule_date');
+      
+      if (error) throw error;
+      return data.map(this.transformDbJob);
+    }
   }
 
   // Update job date and log the change

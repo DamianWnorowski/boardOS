@@ -43,13 +43,15 @@ const WeekView: React.FC<WeekViewProps> = ({ startDate, onDateChange }) => {
       try {
         const jobsByDate = new Map<string, Job[]>();
         
-        // Use the new multi-day functionality
+        // Group jobs by their schedule_date
         for (const date of weekDates) {
           const dateStr = date.toISOString().split('T')[0];
+          const today = new Date().toISOString().split('T')[0];
           
-          // Filter jobs by schedule_date, falling back to today's jobs if no schedule_date
+          // Filter jobs by schedule_date
           const dateJobs = jobs.filter(job => {
-            const jobDate = job.schedule_date || new Date().toISOString().split('T')[0];
+            // If job has no schedule_date, it defaults to today
+            const jobDate = job.schedule_date || today;
             return jobDate === dateStr;
           });
           
@@ -65,7 +67,7 @@ const WeekView: React.FC<WeekViewProps> = ({ startDate, onDateChange }) => {
     };
     
     loadWeekJobs();
-  }, [startDate, jobs]);
+  }, [startDate, jobs, assignments]); // Also reload when assignments change
   
   // Navigate weeks
   const handlePreviousWeek = () => {
