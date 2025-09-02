@@ -253,6 +253,9 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     if (currentView === 'day' || currentView === 'week') {
       loadScheduleData(false, selectedDate); // Don't show loading spinner for date changes
+    } else if (currentView === 'month') {
+      // Month view needs all jobs loaded when switching from day/week views
+      loadScheduleData(false); // Load all jobs without date filter
     }
   }, [selectedDate, currentView, loadScheduleData]);
 
