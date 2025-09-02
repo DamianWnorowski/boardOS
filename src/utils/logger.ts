@@ -4,14 +4,14 @@ interface LogEntry {
   level: LogLevel;
   message: string;
   timestamp: Date;
-  context?: any;
+  context?: unknown;
 }
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   private logs: LogEntry[] = [];
 
-  private log(level: LogLevel, message: string, context?: any) {
+  private log(level: LogLevel, message: string, context?: unknown) {
     const entry: LogEntry = {
       level,
       message,
@@ -37,19 +37,19 @@ class Logger {
     }
   }
 
-  debug(message: string, context?: any) {
+  debug(message: string, context?: unknown) {
     this.log('debug', message, context);
   }
 
-  info(message: string, context?: any) {
+  info(message: string, context?: unknown) {
     this.log('info', message, context);
   }
 
-  warn(message: string, context?: any) {
+  warn(message: string, context?: unknown) {
     this.log('warn', message, context);
   }
 
-  error(message: string, context?: any) {
+  error(message: string, context?: unknown) {
     this.log('error', message, context);
   }
 

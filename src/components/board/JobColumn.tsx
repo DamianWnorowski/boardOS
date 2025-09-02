@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Edit, X, StickyNote, Check, Lock, MessageSquare } from 'lucide-react';
-import { Job, RowType } from '../../types';
+import { Job } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import { useModal } from '../../context/ModalContext';
 import JobRow from './JobRow';
@@ -8,19 +8,19 @@ import { rowTypes, rowTypeLabels } from '../../data/mockData';
 import EditJobModal from '../modals/EditJobModal';
 import SendSMSModal from '../modals/SendSMSModal';
 import ErrorBoundary from '../common/ErrorBoundary';
-import logger from '../../utils/logger';
+// Removed unused logger import
 
 interface JobColumnProps {
   job: Job;
 }
 
 const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
-  const { removeJob, getJobNotes, finalizeJob, unfinalizeJob, assignments, getResourceById, isLoading } = useScheduler();
-  const { openModal, closeModal, getZIndex } = useModal();
+  const { removeJob, getJobNotes, finalizeJob, unfinalizeJob, assignments } = useScheduler();
+  const { openModal, closeModal } = useModal();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSendSMSModalOpen, setIsSendSMSModalOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Removed unused isProcessing state
   
   // Get all notes for this job
   const jobNotes = getJobNotes(job.id);
@@ -120,119 +120,120 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
     }
   };
 
-  const handleExportJob = () => {
-    // Generate job export text
-    const jobAssignments = assignments.filter(a => a.jobId === job.id);
-    
-    // Filter out attached assignments - we'll handle them separately
-    const mainAssignments = jobAssignments.filter(a => !a.attachedTo);
-    
-    const groupedByRow = mainAssignments.reduce((groups, assignment) => {
-      if (!groups[assignment.row]) {
-        groups[assignment.row] = [];
-      }
-      const resource = getResourceById(assignment.resourceId);
-      if (resource) {
-        // Get attached assignments for this main assignment
-        const attachedAssignments = jobAssignments.filter(a => a.attachedTo === assignment.id);
-        const attachedResources = attachedAssignments.map(a => getResourceById(a.resourceId)).filter(Boolean);
-        
-        const assignmentGroup = {
-          resource,
-          assignment,
-          startTime: assignment.timeSlot?.startTime || job.startTime || '07:00',
-          attachedAssignments: attachedAssignments.map(a => ({
-            resource: getResourceById(a.resourceId)!,
-            assignment: a,
-            startTime: a.timeSlot?.startTime || assignment.timeSlot?.startTime || job.startTime || '07:00'
-          }))
-        };
-        
-        groups[assignment.row].push(assignmentGroup);
-      }
-      return groups;
-    }, {} as Record<string, any[]>);
+  // TODO: Export functionality - currently unused
+  // const handleExportJob = () => {
+  //   // Generate job export text
+  //   const jobAssignments = assignments.filter(a => a.jobId === job.id);
+  //   
+  //   // Filter out attached assignments - we'll handle them separately
+  //   const mainAssignments = jobAssignments.filter(a => !a.attachedTo);
+  //   
+  //   const groupedByRow = mainAssignments.reduce((groups, assignment) => {
+  //     if (!groups[assignment.row]) {
+  //       groups[assignment.row] = [];
+  //     }
+  //     const resource = getResourceById(assignment.resourceId);
+  //     if (resource) {
+  //       // Get attached assignments for this main assignment
+  //       const attachedAssignments = jobAssignments.filter(a => a.attachedTo === assignment.id);
+  //       const _attachedResources = attachedAssignments.map(a => getResourceById(a.resourceId)).filter(Boolean);
+  //       
+  //       const assignmentGroup = {
+  //         resource,
+  //         assignment,
+  //         startTime: assignment.timeSlot?.startTime || job.startTime || '07:00',
+  //         attachedAssignments: attachedAssignments.map(a => ({
+  //           resource: getResourceById(a.resourceId)!,
+  //           assignment: a,
+  //           startTime: a.timeSlot?.startTime || assignment.timeSlot?.startTime || job.startTime || '07:00'
+  //         }))
+  //       };
+  //       
+  //       groups[assignment.row].push(assignmentGroup);
+  //     }
+  //     return groups;
+  //   }, {} as Record<string, unknown[]>);
 
-    let exportText = `JOB: ${job.name}\n`;
-    if (job.number) exportText += `Job #: ${job.number}\n`;
-    exportText += `Type: ${jobTypeLabel()}\n`;
-    if (job.location) exportText += `Location: ${job.location.address}\n`;
-    exportText += `Start Time: ${job.startTime || '07:00'}\n`;
-    exportText += `Date: ${new Date().toLocaleDateString()}\n\n`;
+  //   let exportText = `JOB: ${job.name}\n`;
+  //   if (job.number) exportText += `Job #: ${job.number}\n`;
+  //   exportText += `Type: ${jobTypeLabel()}\n`;
+  //   if (job.location) exportText += `Location: ${job.location.address}\n`;
+  //   exportText += `Start Time: ${job.startTime || '07:00'}\n`;
+  //   exportText += `Date: ${new Date().toLocaleDateString()}\n\n`;
 
-    // Add plant information for paving jobs
-    if ((job.type === 'paving' || job.type === 'both') && job.plants && job.plants.length > 0) {
-      exportText += `Asphalt Plants: ${job.plants.join(', ')}\n\n`;
-    }
+  //   // Add plant information for paving jobs
+  //   if ((job.type === 'paving' || job.type === 'both') && job.plants && job.plants.length > 0) {
+  //     exportText += `Asphalt Plants: ${job.plants.join(', ')}\n\n`;
+  //   }
 
-    // Add crew assignments by row
-    Object.entries(groupedByRow).forEach(([rowType, rowAssignments]) => {
-      if (rowAssignments.length > 0) {
-        exportText += `${rowTypeLabels[rowType as RowType]}:\n`;
-        rowAssignments.forEach(({ resource, startTime, attachedAssignments }) => {
-          const cleanName = resource.name.replace(/\([^)]*\)\s*/g, '');
-          
-          // For equipment and trucks, show the main resource first
-          if (['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
-               'roller', 'dozer', 'payloader', 'equipment', 'truck'].includes(resource.type)) {
-            exportText += `  • ${cleanName}`;
-            if (attachedAssignments && attachedAssignments.length > 0) {
-              // For vehicles (trucks and sweepers) with people attached, show yard departure time
-              if (resource.type === 'truck' || resource.type === 'sweeper') {
-                const attachedNames = attachedAssignments.map(a => 
-                  a.resource.name.replace(/\([^)]*\)\s*/g, '')
-                );
-                exportText += ` with ${attachedNames.map((name, i) => 
-                  `${name} (${attachedAssignments[i].startTime})`
-                ).join(', ')}`;
-              } else {
-                // Only show equipment time if no attached personnel
-                exportText += ` (${startTime})`;
-              }
-            } else {
-              exportText += ` (${startTime})`;
-            }
-            exportText += '\n';
-          } else if (resource.type === 'truck') {
-            // For trucks (vehicles) with people attached, show yard departure time
-            exportText += `  • ${cleanName}`;
-            if (attachedAssignments && attachedAssignments.length > 0) {
-              const attachedNames = attachedAssignments.map(a => 
-                a.resource.name.replace(/\([^)]*\)\s*/g, '')
-              ).join(', ');
-              exportText += ` with ${attachedNames} (${startTime})`;
-            } else {
-              exportText += ` (${startTime})`;
-            }
-            exportText += '\n';
-          } else {
-            // For personnel, show with time
-            exportText += `  • ${cleanName} (${startTime})`;
-            if (attachedAssignments && attachedAssignments.length > 0) {
-              const attachedInfo = attachedAssignments.map(a => 
-                `${a.resource.name.replace(/\([^)]*\)\s*/g, '')} (${a.startTime})`
-              ).join(', ');
-              exportText += ` with ${attachedInfo}`;
-            }
-            exportText += '\n';
-          }
-        });
-        exportText += '\n';
-      }
-    });
+  //   // Add crew assignments by row
+  //   Object.entries(groupedByRow).forEach(([rowType, rowAssignments]) => {
+  //     if (rowAssignments.length > 0) {
+  //       exportText += `${rowTypeLabels[rowType as RowType]}:\n`;
+  //       rowAssignments.forEach(({ resource, startTime, attachedAssignments }) => {
+  //         const cleanName = resource.name.replace(/\([^)]*\)\s*/g, '');
+  //         
+  //         // For equipment and trucks, show the main resource first
+  //         if (['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
+  //              'roller', 'dozer', 'payloader', 'equipment', 'truck'].includes(resource.type)) {
+  //           exportText += `  • ${cleanName}`;
+  //           if (attachedAssignments && attachedAssignments.length > 0) {
+  //             // For vehicles (trucks and sweepers) with people attached, show yard departure time
+  //             if (resource.type === 'truck' || resource.type === 'sweeper') {
+  //               const attachedNames = attachedAssignments.map(a => 
+  //                 a.resource.name.replace(/\([^)]*\)\s*/g, '')
+  //               );
+  //               exportText += ` with ${attachedNames.map((name, i) => 
+  //                 `${name} (${attachedAssignments[i].startTime})`
+  //               ).join(', ')}`;
+  //             } else {
+  //               // Only show equipment time if no attached personnel
+  //               exportText += ` (${startTime})`;
+  //             }
+  //           } else {
+  //             exportText += ` (${startTime})`;
+  //           }
+  //           exportText += '\n';
+  //         } else if (resource.type === 'truck') {
+  //           // For trucks (vehicles) with people attached, show yard departure time
+  //           exportText += `  • ${cleanName}`;
+  //           if (attachedAssignments && attachedAssignments.length > 0) {
+  //             const attachedNames = attachedAssignments.map(a => 
+  //               a.resource.name.replace(/\([^)]*\)\s*/g, '')
+  //             ).join(', ');
+  //             exportText += ` with ${attachedNames} (${startTime})`;
+  //           } else {
+  //             exportText += ` (${startTime})`;
+  //           }
+  //           exportText += '\n';
+  //         } else {
+  //           // For personnel, show with time
+  //           exportText += `  • ${cleanName} (${startTime})`;
+  //           if (attachedAssignments && attachedAssignments.length > 0) {
+  //             const attachedInfo = attachedAssignments.map(a => 
+  //               `${a.resource.name.replace(/\([^)]*\)\s*/g, '')} (${a.startTime})`
+  //             ).join(', ');
+  //             exportText += ` with ${attachedInfo}`;
+  //           }
+  //           exportText += '\n';
+  //         }
+  //       });
+  //       exportText += '\n';
+  //     }
+  //   });
 
-    if (job.notes) {
-      exportText += `Notes: ${job.notes}\n`;
-    }
+  //   if (job.notes) {
+  //     exportText += `Notes: ${job.notes}\n`;
+  //   }
 
-    // Copy to clipboard and show alert
-    navigator.clipboard.writeText(exportText).then(() => {
-      alert('Job details copied to clipboard!');
-    }).catch(() => {
-      // Fallback: show in alert
-      alert(`Job details:\n\n${exportText}`);
-    });
-  };
+  //   // Copy to clipboard and show alert
+  //   navigator.clipboard.writeText(exportText).then(() => {
+  //     alert('Job details copied to clipboard!');
+  //   }).catch(() => {
+  //     // Fallback: show in alert
+  //     alert(`Job details:\n\n${exportText}`);
+  //   });
+  // };
 
   const handleSendSMS = () => {
     setIsSendSMSModalOpen(true);

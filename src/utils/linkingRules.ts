@@ -1,12 +1,12 @@
 import { Resource, ResourceType } from '../types';
 
 // This is now repurposed to handle attachment compatibility rules
-export const canResourcesLink = (resource1: Resource, resource2: Resource): boolean => {
+export const canResourcesLink = (_resource1: Resource, _resource2: Resource): boolean => {
   // For attachment functionality, we'll allow any resources to attach
   return true;
 };
 
-export const getValidLinkTypes = (resourceType: ResourceType): ResourceType[] => {
+export const getValidLinkTypes = (_resourceType: ResourceType): ResourceType[] => {
   // All resource types can be attached
   return [
     'operator', 

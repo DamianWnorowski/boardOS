@@ -1,6 +1,6 @@
 // Color system utility functions for the scheduler application
 
-import { Resource } from '../types';
+// Removed unused Resource import
 
 // Resource type color mappings
 const resourceColors = {

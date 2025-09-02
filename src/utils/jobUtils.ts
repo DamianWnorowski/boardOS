@@ -55,7 +55,7 @@ export function isRowNeededForJobType(rowType: RowType, jobType: string): boolea
  * @param rowType The type of row
  * @returns boolean indicating if the row can be toggled
  */
-export function isRowTogglable(rowType: RowType): boolean {
+export function isRowTogglable(_rowType: RowType): boolean {
   // All row types can be toggled/overridden
   return true;
 }

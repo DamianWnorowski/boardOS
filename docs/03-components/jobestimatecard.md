@@ -16,7 +16,7 @@ JobEstimateCard is a exported React component in the Jobs category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `JobEstimateCard.tsx`
-- **Line**: 246
+- **Line**: 51
 - **Category**: Jobs
 - **Has JSDoc**: ❌
 
@@ -40,7 +40,6 @@ function ExampleUsage() {
 
 
 - `react`
-- `lucide-react`
 - `../../types`
 - `../../services/DurationEstimationService`
 

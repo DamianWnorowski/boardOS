@@ -16,7 +16,7 @@ AvailableJobsPanel is a exported React component in the Jobs category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `AvailableJobsPanel.tsx`
-- **Line**: 312
+- **Line**: 255
 - **Category**: Jobs
 - **Has JSDoc**: ❌
 
