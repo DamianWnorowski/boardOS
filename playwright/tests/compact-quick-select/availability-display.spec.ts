@@ -46,7 +46,7 @@ test.describe('Compact Quick Select - Availability Display', () => {
         const subcategoryElement = await compactQuickSelect.getSubcategoryByName(subcategory);
         const countBadge = subcategoryElement.locator('.bg-gray-800.text-white');
         expect(await countBadge.isVisible()).toBe(true);
-      } catch (error) {
+      } catch {
         // Some subcategories might not exist in test data
         console.log(`Subcategory ${subcategory} not found - skipping`);
       }
@@ -105,7 +105,7 @@ test.describe('Compact Quick Select - Availability Display', () => {
           const className = await subcategoryElement.getAttribute('class');
           expect(className).toContain('opacity-50');
         }
-      } catch (error) {
+      } catch {
         // Some subcategories might not exist
         console.log(`Subcategory ${subcategory} not found - skipping`);
       }

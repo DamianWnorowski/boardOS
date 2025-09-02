@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test';
+// TODO: These imports are for future test generation functionality
+// import { test, expect } from '@playwright/test';
 import { RuleFetcher, BusinessRule, TestScenario } from '../services/rule-fetcher.js';
-import { TestDataFactory } from '../fixtures/test-data.js';
-import { SchedulerPage } from '../pages/SchedulerPage.js';
-import { MagnetPage } from '../pages/MagnetPage.js';
+// import { TestDataFactory } from '../fixtures/test-data.js';
+// import { SchedulerPage } from '../pages/SchedulerPage.js';
+// import { MagnetPage } from '../pages/MagnetPage.js';
 
 export class DynamicTestGenerator {
   private ruleFetcher: RuleFetcher;
@@ -162,7 +163,7 @@ test.describe('Custom Business Rules', () => {
     return code;
   }
 
-  private generateTestCase(scenario: TestScenario, type: string): string {
+  private generateTestCase(_scenario: TestScenario, type: string): string {
     let code = `
   test('${scenario.name}', async ({ page }) => {
     // Setup test data
@@ -199,7 +200,7 @@ test.describe('Custom Business Rules', () => {
     return code;
   }
 
-  private generateMagnetActions(scenario: TestScenario): string {
+  private generateMagnetActions(_scenario: TestScenario): string {
     return `
     // Perform magnet attachment
     if (testData.parent && testData.child) {
@@ -216,7 +217,7 @@ test.describe('Custom Business Rules', () => {
 `;
   }
 
-  private generateDropActions(scenario: TestScenario): string {
+  private generateDropActions(_scenario: TestScenario): string {
     return `
     // Perform drop operation
     if (testData.resource && testData.target) {
@@ -231,7 +232,7 @@ test.describe('Custom Business Rules', () => {
 `;
   }
 
-  private generateJobRowActions(scenario: TestScenario): string {
+  private generateJobRowActions(_scenario: TestScenario): string {
     return `
     // Test job row configuration
     if (testData.resource && testData.job && testData.row) {
@@ -245,7 +246,7 @@ test.describe('Custom Business Rules', () => {
 `;
   }
 
-  private generateCustomActions(scenario: TestScenario): string {
+  private generateCustomActions(_scenario: TestScenario): string {
     // Custom actions based on the scenario name
     if (scenario.name.includes('double shift')) {
       return `
@@ -296,7 +297,7 @@ test.describe('Custom Business Rules', () => {
 `;
   }
 
-  private generateAssertion(assertion: any): string {
+  private generateAssertion(assertion: unknown): string {
     switch (assertion.type) {
       case 'attachment':
         if (assertion.expected.attached !== undefined) {
@@ -373,7 +374,7 @@ test.describe('Custom Business Rules', () => {
    */
   async generateAndSaveTests(outputPath: string): Promise<void> {
     const testCode = await this.generateTestCode();
-    const fs = require('fs').promises;
+    const { promises: fs } = await import('fs');
     await fs.writeFile(outputPath, testCode, 'utf-8');
     console.log(`Generated dynamic tests saved to: ${outputPath}`);
   }

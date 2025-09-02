@@ -38,17 +38,17 @@ export interface JobRowConfig {
 
 export interface BusinessRule {
   type: 'magnet' | 'drop' | 'job_row' | 'custom';
-  rule: MagnetRule | DropRule | JobRowConfig | any;
+  rule: MagnetRule | DropRule | JobRowConfig | unknown;
   testScenarios?: TestScenario[];
 }
 
 export interface TestScenario {
   name: string;
-  setup: () => any;
+  setup: () => unknown;
   expectedBehavior: string;
   assertions: Array<{
     type: 'attachment' | 'drop' | 'validation' | 'ui';
-    expected: any;
+    expected: unknown;
   }>;
 }
 
@@ -85,7 +85,7 @@ export class RuleFetcher {
 
   private getMockMagnetRules(): MagnetRule[] {
     try {
-      const mockConfig = require('../config/test-rules.json');
+      const mockConfig = await import('../config/test-rules.json');
       return mockConfig.mockRules.magnetRules;
     } catch (err) {
       console.error('Could not load mock rules:', err);
@@ -113,7 +113,7 @@ export class RuleFetcher {
 
   private getMockDropRules(): DropRule[] {
     try {
-      const mockConfig = require('../config/test-rules.json');
+      const mockConfig = await import('../config/test-rules.json');
       return mockConfig.mockRules.dropRules;
     } catch (err) {
       console.error('Could not load mock rules:', err);
@@ -141,7 +141,7 @@ export class RuleFetcher {
 
   private getMockJobRowConfigs(): JobRowConfig[] {
     try {
-      const mockConfig = require('../config/test-rules.json');
+      const mockConfig = await import('../config/test-rules.json');
       return mockConfig.mockRules.jobRowConfigs;
     } catch (err) {
       console.error('Could not load mock configs:', err);

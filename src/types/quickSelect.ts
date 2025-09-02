@@ -33,7 +33,7 @@ export const RESOURCE_CATEGORIES: ResourceCategory[] = [
   {
     id: 'equipment',
     name: 'Equipment',
-    icon: '🚜',
+    icon: '',
     description: 'Heavy machinery and construction equipment',
     resourceTypes: ['paver', 'roller', 'excavator', 'sweeper', 'millingMachine', 'grader', 'dozer', 'payloader', 'skidsteer', 'equipment'],
     hasSubcategories: true
@@ -49,7 +49,7 @@ export const RESOURCE_CATEGORIES: ResourceCategory[] = [
   {
     id: 'driver',
     name: 'Driver',
-    icon: '🚛',
+    icon: '',
     description: 'Vehicle drivers',
     resourceTypes: ['driver'],
     hasSubcategories: false
@@ -73,7 +73,7 @@ export const RESOURCE_CATEGORIES: ResourceCategory[] = [
   {
     id: 'truck',
     name: 'Truck',
-    icon: '🚚',
+    icon: '',
     description: 'Trucks and transport vehicles',
     resourceTypes: ['truck'],
     hasSubcategories: false
@@ -101,21 +101,21 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubcategory[] = [
   {
     id: 'paver',
     name: 'Paver',
-    icon: '🛣️',
+    icon: '',
     description: 'Asphalt pavers',
     resourceType: 'paver'
   },
   {
     id: 'roller',
     name: 'Roller',
-    icon: '🚜',
+    icon: '',
     description: 'Compaction rollers',
     resourceType: 'roller'
   },
   {
     id: 'excavator',
     name: 'Excavator',
-    icon: '🚜',
+    icon: '',
     description: 'Excavators and diggers',
     resourceType: 'excavator'
   },
@@ -136,28 +136,28 @@ export const EQUIPMENT_SUBCATEGORIES: EquipmentSubcategory[] = [
   {
     id: 'grader',
     name: 'Grader',
-    icon: '🚜',
+    icon: '',
     description: 'Motor graders',
     resourceType: 'grader'
   },
   {
     id: 'dozer',
     name: 'Dozer',
-    icon: '🚜',
+    icon: '',
     description: 'Bulldozers',
     resourceType: 'dozer'
   },
   {
     id: 'payloader',
     name: 'Payloader',
-    icon: '🚜',
+    icon: '',
     description: 'Wheel loaders',
     resourceType: 'payloader'
   },
   {
     id: 'skidsteer',
     name: 'Skidsteer',
-    icon: '🚜',
+    icon: '',
     description: 'Skid steer loaders',
     resourceType: 'skidsteer'
   },

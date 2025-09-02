@@ -677,7 +677,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const assignment = getAssignmentById(assignmentId);
       
       // Optimistic update - remove from local state immediately
-      logger.info('🚀 Optimistic update: removing assignment', assignmentId);
+      logger.info('Optimistic update: removing assignment', assignmentId);
       const attachmentIds = assignment?.attachments || [];
       
       setAssignments(prev => {
@@ -772,15 +772,15 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
         
         // Optimistic update - update local state immediately
-        logger.info('🚀 Optimistic update: attaching', sourceId, 'to', targetId);
+        logger.info('Optimistic update: attaching', sourceId, 'to', targetId);
         setAssignments(prev => {
           const updated = prev.map(a => {
             if (a.id === sourceId) {
-              logger.info('🚀 Updating source assignment:', sourceId);
+              logger.info('Updating source assignment:', sourceId);
               return updatedSourceAssignment;
             }
             if (a.id === targetId) {
-              logger.info('🚀 Adding attachment to target:', targetId);
+              logger.info('Adding attachment to target:', targetId);
               return {
                 ...a,
                 attachments: [...(a.attachments || []), sourceId]
@@ -788,7 +788,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
             return a;
           });
-          logger.info('🚀 Assignments after optimistic update:', updated.length, 'total');
+          logger.info('Assignments after optimistic update:', updated.length, 'total');
           return updated;
         });
         
@@ -850,7 +850,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       );
       
       // Optimistic update - remove old assignments and add new ones
-      logger.info('🚀 Optimistic update: moving assignment group', assignmentGroup.map(a => a.id), 'to', jobId);
+      logger.info('Optimistic update: moving assignment group', assignmentGroup.map(a => a.id), 'to', jobId);
       
       setAssignments(prev => {
         // Remove old assignments
@@ -980,14 +980,14 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
         
         // Optimistic update for existing assignment
-        logger.info('🚀 Optimistic update: converting existing assignment to attached', existingJobRowAssignment.id);
+        logger.info('Optimistic update: converting existing assignment to attached', existingJobRowAssignment.id);
         setAssignments(prev => prev.map(a => {
           if (a.id === existingJobRowAssignment.id) {
-            logger.info('🚀 Converting to attached assignment:', existingJobRowAssignment.id);
+            logger.info('Converting to attached assignment:', existingJobRowAssignment.id);
             return updatedAssignment;
           }
           if (a.id === parentAssignmentId) {
-            logger.info('🚀 Adding attachment to parent:', parentAssignmentId);
+            logger.info('Adding attachment to parent:', parentAssignmentId);
             return {
               ...a,
               attachments: [...(a.attachments || []), existingJobRowAssignment.id]
@@ -1014,11 +1014,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       };
       
       // Optimistic update for new assignment
-      logger.info('🚀 Optimistic update: creating new attached assignment with temp ID:', tempId);
+      logger.info('Optimistic update: creating new attached assignment with temp ID:', tempId);
       setAssignments(prev => [
         ...prev.map(a => {
           if (a.id === parentAssignmentId) {
-            logger.info('🚀 Adding temp attachment to parent:', parentAssignmentId);
+            logger.info('Adding temp attachment to parent:', parentAssignmentId);
             return {
               ...a,
               attachments: [...(a.attachments || []), tempId]

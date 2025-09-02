@@ -56,9 +56,9 @@ const MonthViewJobBar: React.FC<MonthViewJobBarProps> = ({
     if (job.type === 'both' && job.estimated_duration) {
       const millingDays = job.estimated_duration.milling_days || 0;
       if (currentDayIndex < millingDays) {
-        return '⚒️ Mill';
+        return 'Mill';
       } else {
-        return '🛣️ Pave';
+        return 'Pave';
       }
     }
     
@@ -69,9 +69,9 @@ const MonthViewJobBar: React.FC<MonthViewJobBarProps> = ({
         const phaseEnd = new Date(phase.estimated_end);
         if (date >= phaseStart && date <= phaseEnd) {
           switch (phase.phase_type) {
-            case 'excavation': return '🚜 Excavation';
-            case 'drainage': return '💧 Drainage';
-            case 'concrete': return '🏗️ Concrete';
+            case 'excavation': return 'Excavation';
+            case 'drainage': return 'Drainage';
+            case 'concrete': return 'Concrete';
             default: return phase.phase_type;
           }
         }
@@ -86,12 +86,12 @@ const MonthViewJobBar: React.FC<MonthViewJobBarProps> = ({
     if (phase) return '';
     
     switch (job.type) {
-      case 'milling': return '⚒️';
-      case 'paving': return '🛣️';
-      case 'both': return '🔄';
-      case 'drainage': return '💧';
-      case 'stripping': return '🌱';
-      default: return '🚧';
+      case 'milling': return '';
+      case 'paving': return '';
+      case 'both': return '';
+      case 'drainage': return '';
+      case 'stripping': return '';
+      default: return '';
     }
   };
 

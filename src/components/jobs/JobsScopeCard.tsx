@@ -25,12 +25,12 @@ const JobsScopeCard: React.FC<JobsScopeCardProps> = ({
   
   const getJobTypeIcon = () => {
     switch (job.type) {
-      case 'milling': return '⚒️';
-      case 'paving': return '🛣️';
-      case 'drainage': return '💧';
-      case 'stripping': return '🌱';
-      case 'both': return '🔄';
-      default: return '🚧';
+      case 'milling': return '';
+      case 'paving': return '';
+      case 'drainage': return '';
+      case 'stripping': return '';
+      case 'both': return '';
+      default: return '';
     }
   };
 

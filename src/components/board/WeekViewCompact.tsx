@@ -146,11 +146,11 @@ const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChan
   // Get job type icon
   const getJobTypeIcon = (jobType: Job['type']) => {
     switch (jobType) {
-      case 'paving': return '🛣️';
-      case 'milling': return '⚒️';
-      case 'drainage': return '💧';
-      case 'stripping': return '🌱';
-      default: return '🚧';
+      case 'paving': return '';
+      case 'milling': return '';
+      case 'drainage': return '';
+      case 'stripping': return '';
+      default: return '';
     }
   };
   

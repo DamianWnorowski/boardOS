@@ -47,9 +47,10 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedMonth, onMonthChange }) =
     const jobMap = new Map<string, Job[]>();
     
     jobs.forEach(job => {
-      if (!job.schedule_date) return;
+      // Use schedule_date if available, otherwise default to today for display
+      const scheduleDate = job.schedule_date ? new Date(job.schedule_date) : new Date();
       
-      const startDate = new Date(job.schedule_date);
+      const startDate = scheduleDate;
       const endDate = job.end_date ? new Date(job.end_date) : startDate;
       
       // Check if job overlaps with current month view

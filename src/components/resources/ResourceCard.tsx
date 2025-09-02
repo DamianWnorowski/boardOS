@@ -83,7 +83,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   const [{ opacity, isDragging: dragIsDragging }, drag] = useDrag({
     type: ItemTypes.RESOURCE,
     item: (monitor) => {
-     logger.debug('🚀 ResourceCard drag STARTED for:', resource.name, resource.type);
+     logger.debug('ResourceCard drag STARTED for:', resource.name, resource.type);
       const isCtrlHeld = getIsCtrlHeld();
       
       const dragItem = { 
@@ -97,13 +97,13 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       // Store drag item globally for visual feedback
       (window as any).currentDragItem = dragItem;
       
-     logger.debug('🚀 ResourceCard created drag item:', dragItem);
+     logger.debug('ResourceCard created drag item:', dragItem);
       
       return dragItem;
     },
     options: touchEnabled ? getMobileDragSourceOptions() : undefined,
    end: (item, monitor) => {
-     logger.debug('🚀 ResourceCard drag END for:', resource.name, 'didDrop:', monitor.didDrop(), 'dropResult:', monitor.getDropResult());
+     logger.debug('ResourceCard drag END for:', resource.name, 'didDrop:', monitor.didDrop(), 'dropResult:', monitor.getDropResult());
      // Reset the handled flag for next drag
      if (item) {
        (item as any)._handled = false;

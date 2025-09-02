@@ -15,15 +15,15 @@ const MagnetTemplateCard: React.FC<MagnetTemplateCardProps> = ({
   // Get emoji and colors based on equipment type
   const getEmojiForType = () => {
     switch (type) {
-      case 'paver': return '🏗️';
-      case 'roller': return '🎯';
-      case 'sweeper': return '🧹';
-      case 'millingMachine': return '⚙️';
-      case 'truck': return '🚛';
-      case 'operator': return '👨‍🔧';
-      case 'laborer': return '👷';
-      case 'foreman': return '📋';
-      default: return '🚜';
+      case 'paver': return '';
+      case 'roller': return '';
+      case 'sweeper': return '';
+      case 'millingMachine': return '';
+      case 'truck': return '';
+      case 'operator': return '';
+      case 'laborer': return '';
+      case 'foreman': return '';
+      default: return '';
     }
   };
   

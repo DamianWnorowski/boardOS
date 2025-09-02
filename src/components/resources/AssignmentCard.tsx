@@ -103,7 +103,7 @@ const AttachedResourcesGroup: React.FC<AttachedResourcesGroupProps> = ({
   
   // For trucks, display all attachments horizontally
   if (mainResource.type === 'truck') {
-    logger.debug('🚛 Rendering truck group with attachments:', attachedAssignments.length);
+    logger.debug('Rendering truck group with attachments:', attachedAssignments.length);
     return (
       <div 
         className="cursor-move group relative"
@@ -811,7 +811,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       .filter(attachedType => attachedType === 'laborer')
       .length;
     
-    logger.debug('🔧 Screwman button check:', {
+    logger.debug('Screwman button check:', {
       resourceType: resource.type,
       resourceName: resource.name,
       rule: rule,

@@ -18,12 +18,12 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
   // Get emoji and colors based on equipment type
   const getEmojiForType = () => {
     switch (equipmentType) {
-      case 'paver': return '🏗️';
-      case 'roller': return '🎯';
-      case 'sweeper': return '🧹';
-      case 'millingMachine': return '⚙️';
-      case 'truck': return '🚛';
-      default: return '🚜';
+      case 'paver': return '';
+      case 'roller': return '';
+      case 'sweeper': return '';
+      case 'millingMachine': return '';
+      case 'truck': return '';
+      default: return '';
     }
   };
   
