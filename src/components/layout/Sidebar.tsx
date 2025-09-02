@@ -5,10 +5,6 @@ import { useModal } from '../../context/ModalContext';
 import ResourceCard from '../resources/ResourceCard';
 import TruckDriverSection from '../resources/TruckDriverSection';
 import PersonModal from '../modals/PersonModal';
-import MagnetInteractionRulesModal from '../modals/MagnetInteractionRulesModal';
-import DropRulesModal from '../modals/DropRulesModal';
-import JobTypeConfigModal from '../modals/DemoJobModal';
-import RuleTemplateModal from '../modals/RuleTemplateModal';
 import { Assignment } from '../../types';
 import { ResourceType } from '../../types';
 import ErrorBoundary from '../common/ErrorBoundary';
@@ -64,16 +60,12 @@ const ResourceTypeFilter: React.FC = () => {
 };
 
 const Sidebar: React.FC = () => {
-  const { getAvailableResources, searchTerm, setSearchTerm, resources, getAssignmentByResource, filteredResourceType, setFilteredResourceType, getResourceById, assignments, isWorkingDouble } = useScheduler();
+  const { getAvailableResources, searchTerm, setSearchTerm, resources, getAssignmentByResource, filteredResourceType, setFilteredResourceType, getResourceById, assignments, isWorkingDouble, jobs, selectedDate, currentView } = useScheduler();
   const { openModal, closeModal, getZIndex } = useModal();
   const [isAddingResource, setIsAddingResource] = useState(false);
   const [activeTab, setActiveTab] = useState<'resources' | 'trucks'>('resources');
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [selectedPersonAssignment, setSelectedPersonAssignment] = useState<Assignment | null>(null);
-  const [isMagnetRulesModalOpen, setIsMagnetRulesModalOpen] = useState(false);
-  const [isDropRulesModalOpen, setIsDropRulesModalOpen] = useState(false);
-  const [isJobTypeConfigModalOpen, setIsJobTypeConfigModalOpen] = useState(false);
-  const [isRuleTemplateModalOpen, setIsRuleTemplateModalOpen] = useState(false);
   const [newResource, setNewResource] = useState({
     type: 'laborer' as ResourceType,
     name: '',
@@ -96,19 +88,72 @@ const Sidebar: React.FC = () => {
     return true;
   });
   
-  // Separate into available and assigned
+  // Get truly available resources (not assigned in current view's date range)
   const availableResources = getAvailableResources();
-  const assignedResourceIds = new Set(assignments.map(a => a.resourceId));
   
-  // Separate equipment and non-equipment resources
+  // Get assignments for the current view's date range
+  const getAssignmentsForCurrentView = () => {
+    if (currentView === 'month') {
+      // For month view, show all assignments (global availability)
+      return assignments;
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (currentView === 'day') {
+      // For day view, only show assignments for the selected date
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      return assignments.filter(assignment => {
+        const job = jobs.find(j => j.id === assignment.jobId);
+        if (!job) return false;
+        
+        // If job has no schedule_date, it defaults to today
+        const jobDate = job.schedule_date || today;
+        return jobDate === dateStr;
+      });
+    }
+    
+    if (currentView === 'week') {
+      // For week view, show assignments for the current week
+      const weekStart = new Date(selectedDate);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start from Sunday
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6); // End on Saturday
+      
+      const weekStartStr = weekStart.toISOString().split('T')[0];
+      const weekEndStr = weekEnd.toISOString().split('T')[0];
+      
+      return assignments.filter(assignment => {
+        const job = jobs.find(j => j.id === assignment.jobId);
+        if (!job) return false;
+        
+        // If job has no schedule_date, it defaults to today
+        const jobDate = job.schedule_date || today;
+        return jobDate >= weekStartStr && jobDate <= weekEndStr;
+      });
+    }
+    
+    return assignments;
+  };
+  
+  // Only consider assignments for the current view's date range
+  const relevantAssignments = getAssignmentsForCurrentView();
+  const assignedResourceIds = new Set(relevantAssignments.map(a => a.resourceId));
+  
+  // Filter to only show unassigned resources for the current view's date range
+  const unassignedResources = availableResources.filter(resource => 
+    !assignedResourceIds.has(resource.id)
+  );
+  
+  // Separate equipment and non-equipment resources from unassigned resources
   const equipmentTypes = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
                        'roller', 'dozer', 'payloader', 'equipment'];
   
-  const equipmentResources = allResources.filter(resource => 
+  const equipmentResources = unassignedResources.filter(resource => 
     equipmentTypes.includes(resource.type)
   );
   
-  const personnelResources = allResources.filter(resource => 
+  const personnelResources = unassignedResources.filter(resource => 
     !equipmentTypes.includes(resource.type)
   );
   
@@ -201,9 +246,9 @@ const Sidebar: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-3">
           <ErrorBoundary>
             {activeTab === 'resources' ? (
-              allResources.length === 0 ? (
+              unassignedResources.length === 0 ? (
                 <p className="text-center text-gray-500 mt-4">
-                  No resources available with current filters
+                  No unassigned resources available with current filters
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -259,42 +304,13 @@ const Sidebar: React.FC = () => {
               <span>Add Resource</span>
             </button>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => {
-                    setIsRuleTemplateModalOpen(true);
-                    openModal('rule-templates');
-                  }}
-                  className="flex items-center justify-center py-2 px-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-xs"
-                >
-                  <Settings size={14} className="mr-1" />
-                  <span>Templates</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setIsMagnetRulesModalOpen(true);
-                    openModal('magnet-rules');
-                  }}
-                  className="flex items-center justify-center py-2 px-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-xs"
-                >
-                  <Settings size={14} className="mr-1" />
-                  <span>Magnet Rules</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setIsDropRulesModalOpen(true);
-                    openModal('drop-rules');
-                  }}
-                  className="flex items-center justify-center py-2 px-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs"
-                >
-                  <Target size={14} className="mr-1" />
-                  <span>Drop Rules</span>
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={() => openModal('master-settings')}
+              className="flex items-center justify-center w-full py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors"
+            >
+              <Settings size={16} className="mr-2" />
+              <span>Settings</span>
+            </button>
           </div>
         </div>
         
@@ -310,45 +326,6 @@ const Sidebar: React.FC = () => {
           />
         )}
         
-        {/* Magnet Interaction Rules Modal */}
-        {isMagnetRulesModalOpen && (
-          <MagnetInteractionRulesModal
-            onClose={() => {
-              setIsMagnetRulesModalOpen(false);
-              closeModal('magnet-rules');
-            }}
-          />
-        )}
-        
-        {/* Job Config Rules Modal */}
-        {isJobTypeConfigModalOpen && (
-          <JobTypeConfigModal
-            onClose={() => {
-              setIsJobTypeConfigModalOpen(false);
-              closeModal('job-type-config');
-            }}
-          />
-        )}
-        
-        {/* Drop Rules Modal */}
-        {isDropRulesModalOpen && (
-          <DropRulesModal
-            onClose={() => {
-              setIsDropRulesModalOpen(false);
-              closeModal('drop-rules');
-            }}
-          />
-        )}
-        
-        {/* Rule Template Modal */}
-        {isRuleTemplateModalOpen && (
-          <RuleTemplateModal
-            onClose={() => {
-              setIsRuleTemplateModalOpen(false);
-              closeModal('rule-templates');
-            }}
-          />
-        )}
       </aside>
     </ErrorBoundary>
   );

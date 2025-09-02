@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Plus, Users, Briefcase, Clock } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { DatabaseService } from '../../services/DatabaseService';
@@ -11,16 +11,16 @@ interface WeekViewCompactProps {
 }
 
 const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChange }) => {
-  const { jobs, resources, assignments, addJob } = useScheduler();
+  const { jobs, resources, assignments, addJob, isLoading: schedulerLoading } = useScheduler();
   const [weekJobs, setWeekJobs] = useState<Map<string, Job[]>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   
-  // Calculate week dates
-  const getWeekDates = (start: Date): Date[] => {
+  // Calculate week dates (memoized to prevent infinite re-renders)
+  const weekDates = useMemo(() => {
     const dates: Date[] = [];
-    const current = new Date(start);
+    const current = new Date(startDate);
     current.setDate(current.getDate() - current.getDay()); // Start from Sunday
     
     for (let i = 0; i < 7; i++) {
@@ -29,41 +29,35 @@ const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChan
     }
     
     return dates;
-  };
+  }, [startDate]);
   
-  const weekDates = getWeekDates(startDate);
-  
-  // Load jobs for the week
+  // Organize jobs by date for the week
   useEffect(() => {
-    const loadWeekJobs = async () => {
+    // Set loading while SchedulerContext is loading
+    if (schedulerLoading) {
       setIsLoading(true);
-      try {
-        const jobsByDate = new Map<string, Job[]>();
-        const today = new Date().toISOString().split('T')[0];
-        
-        for (const date of weekDates) {
-          const dateStr = date.toISOString().split('T')[0];
-          
-          // Filter jobs by schedule_date
-          const dateJobs = jobs.filter(job => {
-            // If job has no schedule_date, it defaults to today
-            const jobDate = job.schedule_date || today;
-            return jobDate === dateStr;
-          });
-          
-          jobsByDate.set(dateStr, dateJobs);
-        }
-        
-        setWeekJobs(jobsByDate);
-      } catch (error) {
-        console.error('Error loading week jobs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      return;
+    }
     
-    loadWeekJobs();
-  }, [startDate, jobs, assignments]); // Reload when jobs or assignments change
+    const jobsByDate = new Map<string, Job[]>();
+    const today = new Date().toISOString().split('T')[0];
+    
+    for (const date of weekDates) {
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Filter jobs by schedule_date from the jobs already loaded by SchedulerContext
+      const dateJobs = jobs.filter(job => {
+        // If job has no schedule_date, it defaults to today
+        const jobDate = job.schedule_date || today;
+        return jobDate === dateStr;
+      });
+      
+      jobsByDate.set(dateStr, dateJobs);
+    }
+    
+    setWeekJobs(jobsByDate);
+    setIsLoading(false);
+  }, [weekDates, jobs, schedulerLoading]); // Reload when scheduler loading state changes
   
   // Navigate weeks
   const handlePreviousWeek = () => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Briefcase, Magnet, Target, Plus, Users, Settings as SettingsIcon } from 'lucide-react';
+import { useModal } from '../../context/ModalContext';
 import JobTypeManagerModal from './JobTypeManagerModal';
 import MagnetInteractionRulesModal from './MagnetInteractionRulesModal';
 import DropRulesModal from './DropRulesModal';
@@ -12,6 +13,7 @@ interface SettingsModalProps {
 type TabType = 'jobTypes' | 'magnetRules' | 'dropRules' | 'resources';
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const { getZIndex } = useModal();
   const [activeTab, setActiveTab] = useState<TabType>('jobTypes');
   const [showAddResource, setShowAddResource] = useState(false);
 
@@ -23,7 +25,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: getZIndex('settings') }}>
       <div className="bg-white rounded-lg w-full max-w-7xl h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">

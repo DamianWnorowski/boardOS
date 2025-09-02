@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, MapPin } from 'lucide-react';
+import { X, Search, MapPin, RefreshCw } from 'lucide-react';
 import { useModal } from '../../context/ModalContext';
 import logger from '../../utils/logger';
 
@@ -8,8 +8,12 @@ interface LocationSelectorProps {
   onClose: () => void;
 }
 
-// Get Google Maps API key from environment variables
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+// Declare Leaflet global types
+declare global {
+  interface Window {
+    L: any;
+  }
+}
 
 const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }) => {
   const { getZIndex } = useModal();
@@ -23,132 +27,203 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
   const mapInstance = useRef<any>(null);
   const markerInstance = useRef<any>(null);
 
-  // Initialize Google Maps
+  // Initialize OpenStreetMap with Leaflet
   useEffect(() => {
     const initMap = () => {
-      if (mapRef.current && window.google) {
+      if (!mapRef.current) {
+        logger.warn('Map container not ready');
+        return;
+      }
+
+      // Check if map is already initialized to prevent duplicates
+      if (mapInstance.current) {
+        logger.debug('Map already initialized, skipping');
+        return;
+      }
+
+      if (window.L) {
         setIsMapLoading(true);
         setMapError(null);
         
-        const map = new window.google.maps.Map(mapRef.current, {
-          center: { lat: 39.8283, lng: -98.5795 }, // Center of US
-          zoom: 4,
-          styles: [
-            {
-              featureType: 'poi',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            }
-          ]
-        });
+        try {
+          // Small delay to ensure DOM is fully ready
+          setTimeout(() => {
+            if (!mapRef.current) return;
 
-        mapInstance.current = map;
-        
-        // Set loading to false once map is ready
-        map.addListener('idle', () => {
+            // Check if container already has a map
+            const container = mapRef.current;
+            if (container._leaflet_id) {
+              logger.debug('Removing existing Leaflet instance');
+              container._leaflet_id = null;
+              container.innerHTML = '';
+            }
+
+            // Create Leaflet map
+            const map = window.L.map(mapRef.current, {
+              center: [39.8283, -98.5795],
+              zoom: 4,
+              zoomControl: true,
+              scrollWheelZoom: true
+            });
+            
+            // Add OpenStreetMap tiles
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              maxZoom: 19,
+              subdomains: ['a', 'b', 'c']
+            }).addTo(map);
+
+            mapInstance.current = map;
+            setIsMapLoading(false);
+
+            // Add click listener to map
+            map.on('click', async (e: any) => {
+              const lat = e.latlng.lat;
+              const lng = e.latlng.lng;
+              
+              // Reverse geocode to get address using OpenStreetMap Nominatim
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+                );
+                const data = await response.json();
+                
+                if (data && data.display_name) {
+                  const location = {
+                    address: data.display_name,
+                    lat,
+                    lng
+                  };
+                  setSelectedLocation(location);
+                  updateMarker(lat, lng);
+                }
+              } catch (error) {
+                logger.error('Reverse geocoding failed:', error);
+              }
+            });
+          }, 100); // Small delay for DOM readiness
+        } catch (error) {
+          logger.error('Failed to initialize map:', error);
+          setMapError('Failed to initialize map');
           setIsMapLoading(false);
-        });
-
-        // Add click listener to map
-        map.addListener('click', (event: any) => {
-          const lat = event.latLng.lat();
-          const lng = event.latLng.lng();
-          
-          // Reverse geocode to get address
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-            if (status === 'OK' && results[0]) {
-              const location = {
-                address: results[0].formatted_address,
-                lat,
-                lng
-              };
-              setSelectedLocation(location);
-              updateMarker(lat, lng);
-            }
-          });
-        });
+        }
       } else {
-        setMapError('Google Maps API not available');
+        setMapError('Map library not available');
         setIsMapLoading(false);
       }
     };
 
-    // Check if Google Maps script already exists in the DOM
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
-    
-    // Load Google Maps script if not already loaded and not already in DOM
-    if (!window.google && !existingScript && GOOGLE_MAPS_API_KEY) {
+    // Load Leaflet CSS and JS
+    const loadLeaflet = () => {
+      // Check if Leaflet is already loaded
+      if (window.L) {
+        initMap();
+        return;
+      }
+
+      // Check if we're already loading to prevent duplicate script tags
+      const existingScript = document.querySelector('script[src*="leaflet"]');
+      if (existingScript) {
+        // If script exists but L is not available, wait and retry
+        let retries = 0;
+        const checkInterval = setInterval(() => {
+          retries++;
+          if (window.L) {
+            clearInterval(checkInterval);
+            initMap();
+          } else if (retries > 10) { // 5 seconds timeout
+            clearInterval(checkInterval);
+            setMapError('Failed to load map library');
+            setIsMapLoading(false);
+          }
+        }, 500);
+        return;
+      }
+
       setIsMapLoading(true);
+      
+      // Load Leaflet CSS (remove integrity to prevent CORS issues)
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(css);
+
+      // Load Leaflet JS (remove integrity to prevent CORS issues)
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry`;
-      script.onload = initMap;
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => {
+        logger.info('Leaflet library loaded successfully');
+        initMap();
+      };
       script.onerror = () => {
-        logger.error('Failed to load Google Maps API');
-        setMapError('Failed to load Google Maps API');
+        logger.error('Failed to load Leaflet library');
+        setMapError('Failed to load map library');
         setIsMapLoading(false);
       };
       document.head.appendChild(script);
-    } else if (!GOOGLE_MAPS_API_KEY) {
-      logger.warn('Google Maps API key not found in environment variables');
-      setMapError('Google Maps API key not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your environment variables.');
-      setIsMapLoading(false);
-    } else {
-      initMap();
-    }
+    };
+
+    loadLeaflet();
+
+    // Cleanup function
+    return () => {
+      if (mapInstance.current) {
+        try {
+          mapInstance.current.remove();
+          mapInstance.current = null;
+        } catch (error) {
+          logger.error('Error cleaning up map:', error);
+        }
+      }
+      if (markerInstance.current) {
+        markerInstance.current = null;
+      }
+    };
   }, []);
 
   // Update marker on map
   const updateMarker = (lat: number, lng: number) => {
-    if (mapInstance.current) {
+    if (mapInstance.current && window.L) {
       // Remove existing marker
       if (markerInstance.current) {
-        markerInstance.current.setMap(null);
+        mapInstance.current.removeLayer(markerInstance.current);
       }
 
       // Add new marker
-      const marker = new window.google.maps.Marker({
-        position: { lat, lng },
-        map: mapInstance.current,
-        title: 'Selected Location'
-      });
-
+      const marker = window.L.marker([lat, lng]).addTo(mapInstance.current);
+      marker.bindPopup('Selected Location').openPopup();
       markerInstance.current = marker;
 
       // Center map on marker
-      mapInstance.current.setCenter({ lat, lng });
-      mapInstance.current.setZoom(15);
+      mapInstance.current.setView([lat, lng], 15);
     }
   };
 
-  // Search for locations
+  // Search for locations using OpenStreetMap Nominatim
   const handleSearch = async () => {
-    if (!searchTerm.trim() || !window.google) return;
+    if (!searchTerm.trim()) return;
 
     setIsLoading(true);
-    const service = new window.google.maps.places.PlacesService(document.createElement('div'));
-    
-    const request = {
-      query: searchTerm,
-      fields: ['name', 'geometry', 'formatted_address']
-    };
-
-    service.textSearch(request, (results: any, status: any) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&addressdetails=1`
+      );
+      const results = await response.json();
+      setSearchResults(results);
+    } catch (error) {
+      logger.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
       setIsLoading(false);
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-        setSearchResults(results.slice(0, 5)); // Show top 5 results
-      } else {
-        setSearchResults([]);
-      }
-    });
+    }
   };
 
   // Handle search result selection
   const handleResultSelect = (result: any) => {
     const location = {
-      address: result.formatted_address,
-      lat: result.geometry.location.lat(),
-      lng: result.geometry.location.lng()
+      address: result.display_name,
+      lat: parseFloat(result.lat),
+      lng: parseFloat(result.lon)
     };
     
     setSelectedLocation(location);
@@ -229,8 +304,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
                       <div className="flex items-start">
                         <MapPin size={16} className="text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
                         <div>
-                          <div className="font-medium text-sm">{result.name}</div>
-                          <div className="text-xs text-gray-600 mt-1">{result.formatted_address}</div>
+                          <div className="font-medium text-sm">{result.name || result.display_name?.split(',')[0]}</div>
+                          <div className="text-xs text-gray-600 mt-1">{result.display_name}</div>
                         </div>
                       </div>
                     </button>
@@ -275,16 +350,24 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onSelect, onClose }
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Map Not Available</h3>
                   <p className="text-gray-600 mb-4">{mapError}</p>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-left">
-                    <p className="text-sm text-yellow-800">
-                      <strong>To enable location selection:</strong>
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-left">
+                    <p className="text-sm text-blue-800">
+                      <strong>Map powered by:</strong>
                     </p>
-                    <ol className="text-sm text-yellow-700 mt-2 space-y-1">
-                      <li>1. Get a Google Maps API key from Google Cloud Console</li>
-                      <li>2. Add it to your .env file as VITE_GOOGLE_MAPS_API_KEY</li>
-                      <li>3. Restart the development server</li>
-                    </ol>
+                    <p className="text-sm text-blue-700 mt-2">
+                      OpenStreetMap - Free and open-source map data
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      If the map fails to load, please check your internet connection and try refreshing.
+                    </p>
                   </div>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    <RefreshCw size={16} className="mr-2" />
+                    Refresh Page
+                  </button>
                 </div>
               </div>
             ) : (

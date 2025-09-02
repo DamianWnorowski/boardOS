@@ -318,10 +318,10 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
                 <button 
                   onClick={() => {
                     if ('lat' in job.location! && 'lng' in job.location!) {
-                      window.open(`https://maps.google.com/?q=${job.location!.lat},${job.location!.lng}`, '_blank');
+                      window.open(`https://www.openstreetmap.org/?mlat=${job.location!.lat}&mlon=${job.location!.lng}&zoom=15`, '_blank');
                     } else if ('street' in job.location!) {
                       const query = `${job.location!.street}, ${job.location!.city}, ${job.location!.province}`;
-                      window.open(`https://maps.google.com/?q=${encodeURIComponent(query)}`, '_blank');
+                      window.open(`https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}`, '_blank');
                     }
                   }}
                   className="text-blue-600 hover:text-blue-800 underline text-sm truncate max-w-32 flex items-center"

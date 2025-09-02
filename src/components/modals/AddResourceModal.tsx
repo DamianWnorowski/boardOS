@@ -60,7 +60,7 @@ const AddResourceModal: React.FC<AddResourceModalProps> = ({ onClose }) => {
   return (
     <Portal>
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]"
         onClick={handleBackdropClick}
       >
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">

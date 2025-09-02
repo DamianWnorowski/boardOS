@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useModal } from '../../context/ModalContext';
 import Portal from '../common/Portal';
 
 interface TruckConfigModalProps {
@@ -8,6 +9,7 @@ interface TruckConfigModalProps {
 }
 
 const TruckConfigModal: React.FC<TruckConfigModalProps> = ({ onSelect, onClose }) => {
+  const { getZIndex } = useModal();
   const [selectedConfig, setSelectedConfig] = useState<'flowboy' | 'dump-trailer'>('flowboy');
 
   const handleSubmit = () => {
@@ -23,7 +25,8 @@ const TruckConfigModal: React.FC<TruckConfigModalProps> = ({ onSelect, onClose }
   return (
     <Portal>
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        style={{ zIndex: getZIndex('truck-config') }}
         onClick={handleBackdropClick}
       >
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">

@@ -12,7 +12,9 @@ import MagnetDragLayer from './components/ui/MagnetDragLayer';
 import DatabaseTestPage from './components/layout/DatabaseTestPage';
 import CompactQuickSelect from './components/ui/CompactQuickSelect';
 import KeyboardShortcutsHelp from './components/ui/KeyboardShortcutsHelp';
+import MasterSettingsModal from './components/modals/MasterSettingsModal';
 import { useKeyboardShortcuts } from './context/KeyboardShortcutsContext';
+import { useModal } from './context/ModalContext';
 import { RefreshCw } from 'lucide-react';
 import testSyncChecker from './utils/testSyncChecker';
 
@@ -20,8 +22,12 @@ function App() {
   const { isMobile } = useMobile();
   const { refreshData } = useScheduler();
   const { isHelpOpen, closeHelp } = useKeyboardShortcuts();
+  const { modalState, closeModal } = useModal();
   const [showDatabaseTest, setShowDatabaseTest] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Check if the master settings modal should be shown
+  const isMasterSettingsOpen = modalState.openModals.includes('master-settings');
   
   // Start test sync monitoring in development
   useEffect(() => {
@@ -75,6 +81,13 @@ function App() {
         <MagnetDragLayer />
         <CompactQuickSelect />
         <KeyboardShortcutsHelp isOpen={isHelpOpen} onClose={closeHelp} />
+        
+        {/* Master Settings Modal - renders at app level for full screen overlay */}
+        {isMasterSettingsOpen && (
+          <MasterSettingsModal
+            onClose={() => closeModal('master-settings')}
+          />
+        )}
       </DndProvider>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Target } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
+import { useModal } from '../../context/ModalContext';
 import { RowType, ResourceType } from '../../types';
 import { rowTypeLabels } from '../../data/mockData';
 import Portal from '../common/Portal';
@@ -36,6 +37,7 @@ const resourceTypeLabels: Record<ResourceType, string> = {
 };
 
 const DropRulesModal: React.FC<DropRulesModalProps> = ({ onClose }) => {
+  const { getZIndex } = useModal();
   const { dropRules, updateDropRule, getDropRule } = useScheduler();
   const [selectedRowType, setSelectedRowType] = useState<RowType | null>(null);
   const [currentDropRules, setCurrentDropRules] = useState(dropRules);
@@ -82,7 +84,8 @@ const DropRulesModal: React.FC<DropRulesModalProps> = ({ onClose }) => {
   return (
     <Portal>
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        style={{ zIndex: getZIndex('drop-rules') }}
         onClick={handleBackdropClick}
       >
         <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl mx-4 max-h-[95vh] flex flex-col">

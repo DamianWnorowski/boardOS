@@ -3,7 +3,7 @@ title: Calendar Views
 category: features
 tags: [calendar, views, month-view, week-view, scheduling]
 related: [/03-components/monthview.md, /03-components/weekview.md]
-last-updated: 2025-08-29
+last-updated: 2025-09-02
 ---
 
 # Calendar Views
@@ -74,37 +74,58 @@ const DayView: React.FC<DayViewProps> = ({
 
 ### Week View
 
+Week view automatically loads jobs for the entire 7-day range and handles navigation correctly:
+
 ```typescript
-const WeekView: React.FC = () => {
-  const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
-  const weekDays = generateWeekDays(weekStart);
+const WeekViewCompact: React.FC = ({ startDate, onDateChange }) => {
+  const { jobs, isLoading: schedulerLoading } = useScheduler();
+  const [weekJobs, setWeekJobs] = useState<Map<string, Job[]>>(new Map());
+  
+  // Calculate week dates (Sunday to Saturday)
+  const getWeekDates = (start: Date): Date[] => {
+    const dates: Date[] = [];
+    const current = new Date(start);
+    current.setDate(current.getDate() - current.getDay()); // Start from Sunday
+    
+    for (let i = 0; i < 7; i++) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+  
+  // Organize jobs by date, synchronized with SchedulerContext loading
+  useEffect(() => {
+    if (schedulerLoading) {
+      setIsLoading(true);
+      return;
+    }
+    
+    const jobsByDate = new Map<string, Job[]>();
+    const today = new Date().toISOString().split('T')[0];
+    
+    weekDates.forEach(date => {
+      const dateStr = date.toISOString().split('T')[0];
+      const dateJobs = jobs.filter(job => {
+        const jobDate = job.schedule_date || today;
+        return jobDate === dateStr;
+      });
+      jobsByDate.set(dateStr, dateJobs);
+    });
+    
+    setWeekJobs(jobsByDate);
+    setIsLoading(false);
+  }, [weekDates, jobs, schedulerLoading]);
   
   return (
-    <div className="week-view grid grid-cols-7">
-      {weekDays.map(day => (
-        <div key={day.toISOString()} className="day-column">
-          <DayHeader 
-            date={day}
-            isToday={isToday(day)}
-            isWeekend={isWeekend(day)}
-          />
-          
-          <DroppableDay 
-            date={day}
-            jobs={getJobsForDate(day)}
-            onDrop={(item) => handleDayDrop(item, day)}
-          />
-          
-          <div className="day-jobs-list">
-            {getJobsForDate(day).map(job => (
-              <CompactJobCard 
-                key={job.id}
-                job={job}
-                assignmentCount={getAssignmentCount(job.id)}
-              />
-            ))}
-          </div>
-        </div>
+    <div className="week-view-compact">
+      {weekDates.map(day => (
+        <DayColumn
+          key={day.toISOString()}
+          date={day}
+          jobs={weekJobs.get(day.toISOString().split('T')[0]) || []}
+          onAddJob={() => handleAddJob(day)}
+        />
       ))}
     </div>
   );
@@ -469,6 +490,42 @@ const CalendarDayDropZone: React.FC<{ date: Date }> = ({ date }) => {
 
 ## View Synchronization
 
+### Intelligent Date Synchronization
+
+BoardOS provides intelligent date synchronization when switching between views to ensure users always see relevant data.
+
+```typescript
+// View switching with automatic date adjustment
+const setCurrentView = useCallback((view: ViewType) => {
+  const previousView = currentView;
+  
+  // Handle date adjustments when switching between views
+  if (previousView === 'month' && view === 'day') {
+    // When switching from month to day view, if selectedDate is the 1st of the month,
+    // set it to today's date if we're viewing the current month, otherwise keep it
+    const today = new Date();
+    const selectedMonth = selectedDate.getMonth();
+    const selectedYear = selectedDate.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    if (selectedDate.getDate() === 1) { // If we're on the first day of a month
+      if (selectedMonth === currentMonth && selectedYear === currentYear) {
+        // If it's the current month, switch to today
+        setSelectedDate(today);
+      } else {
+        // If it's a different month, use a reasonable day in that month
+        const dayOfMonth = Math.min(today.getDate(), 28);
+        setSelectedDate(new Date(selectedYear, selectedMonth, dayOfMonth));
+      }
+    }
+  }
+  
+  setCurrentViewState(view);
+  localStorage.setItem('boardOS-view', view);
+}, [currentView, selectedDate]);
+```
+
 ### Shared View State
 
 ```typescript
@@ -745,5 +802,27 @@ class CalendarExporter {
   }
 }
 ```
+
+## Recent Improvements (2025-09-02)
+
+### Week View Data Loading
+- **Fixed**: Week navigation now properly loads all jobs for the entire week
+- **Issue**: Previously, navigating to "last week" only showed jobs for one day
+- **Solution**: Synchronized WeekViewCompact component with SchedulerContext loading state
+
+### Resource Availability
+- **Fixed**: Resource sidebar now shows only truly available resources
+- **Issue**: Resources assigned on other dates appeared as "available"  
+- **Solution**: Proper filtering to exclude resources assigned on any date
+
+### Date Filtering Consistency
+- **Fixed**: All data operations now maintain current view's date filtering
+- **Issue**: Creating jobs, refreshing data, etc. would load all jobs regardless of selected date
+- **Solution**: Centralized `reloadDataForCurrentView()` function used consistently
+
+### OpenStreetMap Integration
+- **Added**: Complete replacement of Google Maps with OpenStreetMap
+- **Benefits**: No API keys required, open-source, better privacy
+- **Features**: Location search, click-to-select, reverse geocoding via Nominatim
 
 The calendar view system provides comprehensive scheduling visualization with flexible perspectives, intelligent job management, and seamless drag-and-drop functionality across all time scales.

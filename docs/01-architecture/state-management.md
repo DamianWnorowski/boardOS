@@ -98,7 +98,7 @@ setJob(prev => ({ ...prev, status: 'active' }));
 ## Context Architecture
 
 ### SchedulerContext
-Core business state management.
+Core business state management with intelligent view synchronization.
 
 ```typescript
 interface SchedulerState {
@@ -111,6 +111,7 @@ interface SchedulerState {
   searchTerm: string;
   filteredResourceType: ResourceType | null;
   selectedView: ViewType;
+  selectedDate: Date;
   
   // Actions
   addJob: (job: Job) => Promise<void>;
@@ -118,11 +119,35 @@ interface SchedulerState {
   removeJob: (id: string) => Promise<void>;
   assignResource: (resourceId: string, jobId: string) => Promise<string>;
   removeAssignment: (id: string) => Promise<void>;
+  setCurrentView: (view: ViewType) => void; // Includes date synchronization logic
   
   // Derived State
   availableResources: Resource[];
   assignedResourceIds: Set<string>;
 }
+
+// Intelligent view switching with date adjustments
+const setCurrentView = useCallback((view: ViewType) => {
+  const previousView = currentView;
+  
+  // Auto-adjust dates when switching from month to day view
+  if (previousView === 'month' && view === 'day') {
+    if (selectedDate.getDate() === 1) { // Month navigation sets to 1st
+      const today = new Date();
+      if (selectedDate.getMonth() === today.getMonth() && 
+          selectedDate.getFullYear() === today.getFullYear()) {
+        setSelectedDate(today); // Current month → today
+      } else {
+        // Different month → reasonable day in that month
+        const dayOfMonth = Math.min(today.getDate(), 28);
+        setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), dayOfMonth));
+      }
+    }
+  }
+  
+  setCurrentViewState(view);
+  localStorage.setItem('boardOS-view', view);
+}, [currentView, selectedDate]);
 ```
 
 ### DragContext

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';\nimport { getZIndexClass } from '../../utils/zIndexLayers';
 import { X, ChevronDown, ChevronUp, Bug, Database, Activity, AlertCircle, CheckCircle } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { supabase } from '../../lib/supabase';
@@ -119,7 +119,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-0 right-0 w-96 bg-gray-900 text-white rounded-tl-lg shadow-2xl z-[9999] max-h-[600px] overflow-hidden flex flex-col">
+    <div className={`fixed bottom-0 right-0 w-96 bg-gray-900 text-white rounded-tl-lg shadow-2xl ${getZIndexClass('DEBUG_PANEL')} max-h-[600px] overflow-hidden flex flex-col`}>
       {/* Header */}
       <div className="bg-gray-800 p-3 flex justify-between items-center border-b border-gray-700">
         <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react';\nimport { getZIndexClass } from '../../utils/zIndexLayers';
 import { useKeyboardShortcuts } from '../../context/KeyboardShortcutsContext';
 import MagnetCard from '../magnets/MagnetCard';
 import BreadcrumbNavigation from './BreadcrumbNavigation';
@@ -179,7 +179,7 @@ const QuickSelectOverlay: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid="quick-select-overlay">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${getZIndexClass('OVERLAY')}`} data-testid="quick-select-overlay">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-4xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{getTitle()}</h2>

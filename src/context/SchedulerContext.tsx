@@ -60,7 +60,7 @@ interface SchedulerContextType {
   
   // Filter actions
   setSelectedDate: (date: Date) => void;
-  setCurrentView: (view: ViewType) => void;
+  setCurrentView: (view: ViewType) => Promise<void>;
   setFilteredResourceType: (type: string | null) => void;
   setSearchTerm: (term: string) => void;
   
@@ -249,7 +249,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     loadScheduleData();
   }, [loadScheduleData]);
 
-  // Reload data when selected date changes or view changes
+  // Reload data when selected date changes (view changes are handled in setCurrentView)
   useEffect(() => {
     if (currentView === 'day' || currentView === 'week') {
       loadScheduleData(false, selectedDate); // Don't show loading spinner for date changes
@@ -257,7 +257,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Month view needs all jobs loaded when switching from day/week views
       loadScheduleData(false); // Load all jobs without date filter
     }
-  }, [selectedDate, currentView, loadScheduleData]);
+  }, [selectedDate, loadScheduleData]); // Removed currentView dependency to avoid double loading
 
   // Check if resources need to be populated from the data files
   const checkAndPopulateResources = useCallback(async () => {
@@ -427,7 +427,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       },
       onJobRowConfigChange: (payload) => {
         logger.info('📡 Real-time job row config change received:', payload);
-        loadScheduleData(false); // Background reload without loading state
+        reloadDataForCurrentView(); // Background reload with proper date filtering
       },
       onTruckDriverAssignmentChange: (payload) => {
         logger.info('📡 Real-time truck driver assignment change received:', payload);
@@ -451,8 +451,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const newJob = await DatabaseService.createJob(job);
       logger.info('Job created:', newJob.name);
-      // Reload data to include the new job
-      await loadScheduleData(false);
+      // Reload data to include the new job with proper date filtering
+      await reloadDataForCurrentView();
     } catch (err: any) {
       logger.error('Error creating job:', err);
       setError(`Failed to create job: ${err.message}`);
@@ -533,8 +533,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const newResource = await DatabaseService.createResource(resource);
       logger.info('Resource created:', newResource.name);
-      // Reload data to include the new resource
-      await loadScheduleData(false);
+      // Reload data to include the new resource with proper date filtering
+      await reloadDataForCurrentView();
       return newResource;
     } catch (err: any) {
       logger.error('Error creating resource:', err);
@@ -594,7 +594,34 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
       });
       
-      logger.info('Resource assigned:', resourceId, 'to job:', jobId);
+      logger.info('✅ Resource assigned:', resourceId, 'to job:', jobId, 'assignment ID:', newAssignment.id);
+      
+      // Check if this is a truck and if it has an assigned driver
+      const resource = getResourceById(resourceId);
+      if (resource?.type === 'truck') {
+        const assignedDriver = getTruckDriver(resourceId);
+        if (assignedDriver) {
+          logger.info('🚛 Truck has assigned driver, automatically attaching:', assignedDriver.name);
+          
+          try {
+            // Create driver assignment attached to the truck
+            const driverAssignment = await DatabaseService.createAssignment({
+              resourceId: assignedDriver.id,
+              jobId,
+              row,
+              position: position || 0,
+              attachedTo: newAssignment.id,
+              timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
+            });
+            
+            logger.info('✅ Driver automatically attached:', assignedDriver.name, 'attachment ID:', driverAssignment.id);
+          } catch (driverErr: any) {
+            logger.error('Failed to attach driver automatically:', driverErr);
+            // Continue with just the truck assignment even if driver attachment fails
+          }
+        }
+      }
+      
       return newAssignment.id;
     } catch (err: any) {
       logger.error('Error assigning resource:', err);
@@ -643,16 +670,58 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       logger.info('✅ Resource assigned with truck config:', resourceId, 'config:', truckConfig, 'assignment ID:', newAssignment.id);
       
-      // Force immediate UI update
-      setAssignments(prev => {
-        logger.info('📝 Manually adding assignment to state:', newAssignment);
-        return [...prev, newAssignment];
-      });
+      // Check if this is a truck and if it has an assigned driver
+      const resource = getResourceById(resourceId);
+      if (resource?.type === 'truck') {
+        const assignedDriver = getTruckDriver(resourceId);
+        if (assignedDriver) {
+          logger.info('🚛 Truck has assigned driver, automatically attaching:', assignedDriver.name);
+          
+          try {
+            // Create driver assignment attached to the truck
+            const driverAssignment = await DatabaseService.createAssignment({
+              resourceId: assignedDriver.id,
+              jobId,
+              row,
+              position: position || 0,
+              attachedTo: newAssignment.id,
+              timeSlot: { startTime: defaultStartTime, endTime: '15:30', isFullDay: true }
+            });
+            
+            logger.info('✅ Driver automatically attached:', assignedDriver.name, 'attachment ID:', driverAssignment.id);
+            
+            // Force immediate UI update with both assignments
+            setAssignments(prev => {
+              logger.info('📝 Manually adding truck and driver assignments to state');
+              return [...prev, newAssignment, driverAssignment];
+            });
+          } catch (driverErr: any) {
+            logger.error('Failed to attach driver automatically:', driverErr);
+            // Still update UI with truck assignment even if driver attachment fails
+            setAssignments(prev => {
+              logger.info('📝 Manually adding truck assignment to state (driver attachment failed)');
+              return [...prev, newAssignment];
+            });
+          }
+        } else {
+          // No driver assigned to truck, just add truck assignment
+          setAssignments(prev => {
+            logger.info('📝 Manually adding truck assignment to state (no driver)');
+            return [...prev, newAssignment];
+          });
+        }
+      } else {
+        // Not a truck, just add the assignment
+        setAssignments(prev => {
+          logger.info('📝 Manually adding assignment to state:', newAssignment);
+          return [...prev, newAssignment];
+        });
+      }
       
       // Also trigger a background refresh after a short delay to ensure consistency
       setTimeout(() => {
         logger.info('🔄 Background refresh...');
-        loadScheduleData(false); // false = no loading state
+        reloadDataForCurrentView(); // Background reload with proper date filtering
       }, 1000);
       
       return newAssignment.id;
@@ -712,8 +781,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error removing assignment:', err);
       setError(`Failed to remove assignment: ${err.message}`);
-      // Revert optimistic update on error
-      await loadScheduleData(false);
+      // Revert optimistic update on error with proper date filtering
+      await reloadDataForCurrentView();
       throw err;
     }
   };
@@ -801,8 +870,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error attaching resources:', err);
       setError(`Failed to attach resources: ${err.message}`);
-      // Revert optimistic update on error by refreshing data
-      await loadScheduleData(false);
+      // Revert optimistic update on error by refreshing data with proper date filtering
+      await reloadDataForCurrentView();
       throw err;
     }
   };
@@ -941,8 +1010,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error moving assignment group:', err);
       setError(`Failed to move assignments: ${err.message}`);
-      // Revert optimistic update on error
-      await loadScheduleData(false);
+      // Revert optimistic update on error with proper date filtering
+      await reloadDataForCurrentView();
       throw err;
     }
   };
@@ -1061,8 +1130,8 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (err: any) {
       logger.error('Error creating attached assignment:', err);
       setError(`Failed to attach resource: ${err.message}`);
-      // Revert optimistic update on error
-      await loadScheduleData(false);
+      // Revert optimistic update on error with proper date filtering
+      await reloadDataForCurrentView();
       throw err;
     }
   };
@@ -1080,22 +1149,49 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Truck-driver assignment actions
   const assignDriverToTruck = async (truckId: string, driverId: string) => {
     try {
+      // Optimistic update
+      setTruckDriverAssignments(prev => ({
+        ...prev,
+        [truckId]: driverId
+      }));
+      
       await DatabaseService.updateTruckDriverAssignment(truckId, driverId);
       logger.info('Driver assigned to truck:', driverId, 'to', truckId);
+      
+      // Reload data to ensure consistency
+      const updatedAssignments = await DatabaseService.getTruckDriverAssignments();
+      setTruckDriverAssignments(updatedAssignments);
     } catch (err: any) {
       logger.error('Error assigning driver to truck:', err);
       setError(`Failed to assign driver: ${err.message}`);
+      // Revert optimistic update on error
+      const currentAssignments = await DatabaseService.getTruckDriverAssignments();
+      setTruckDriverAssignments(currentAssignments);
       throw err;
     }
   };
 
   const unassignDriverFromTruck = async (truckId: string) => {
     try {
+      // Optimistic update
+      setTruckDriverAssignments(prev => {
+        const updated = { ...prev };
+        delete updated[truckId];
+        return updated;
+      });
+      
       await DatabaseService.removeTruckDriverAssignment(truckId);
       logger.info('Driver unassigned from truck:', truckId);
+      
+      // Reload data to ensure consistency
+      const updatedAssignments = await DatabaseService.getTruckDriverAssignments();
+      setTruckDriverAssignments(updatedAssignments);
     } catch (err: any) {
       logger.error('Error unassigning driver from truck:', err);
       setError(`Failed to unassign driver: ${err.message}`);
+      // Revert optimistic update on error
+      const currentAssignments = await DatabaseService.getTruckDriverAssignments();
+      setTruckDriverAssignments(currentAssignments);
       throw err;
     }
   };
@@ -1385,15 +1481,56 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return jobRowConfigs.find(c => c.jobId === jobId && c.rowType === rowType);
   };
 
-  // View management with localStorage persistence
-  const setCurrentView = useCallback((view: ViewType) => {
+  // View management with localStorage persistence and date adjustments
+  const setCurrentView = useCallback(async (view: ViewType) => {
+    const previousView = currentView;
+    
+    // Handle date adjustments when switching between views
+    if (previousView === 'month' && view === 'day') {
+      // When switching from month to day view, if selectedDate is the 1st of the month,
+      // set it to today's date if we're viewing the current month, otherwise keep it
+      const today = new Date();
+      const selectedMonth = selectedDate.getMonth();
+      const selectedYear = selectedDate.getFullYear();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      if (selectedDate.getDate() === 1) { // If we're on the first day of a month
+        if (selectedMonth === currentMonth && selectedYear === currentYear) {
+          // If it's the current month, switch to today
+          setSelectedDate(today);
+        } else {
+          // If it's a different month, use a reasonable day in that month (today's date or 15th)
+          const dayOfMonth = Math.min(today.getDate(), 28); // Use current day but cap at 28 to avoid month overflow
+          setSelectedDate(new Date(selectedYear, selectedMonth, dayOfMonth));
+        }
+      }
+    }
+    
+    // Update view state
     setCurrentViewState(view);
     localStorage.setItem('boardOS-view', view);
-  }, []);
+    
+    // Immediately reload data for the new view to ensure proper synchronization
+    if (view === 'day' || view === 'week') {
+      await loadScheduleData(false, selectedDate);
+    } else if (view === 'month') {
+      await loadScheduleData(false); // Load all jobs for month view
+    }
+  }, [currentView, selectedDate, loadScheduleData]);
+
+  // Helper to reload data with proper date filtering based on current view
+  const reloadDataForCurrentView = useCallback(async () => {
+    if (currentView === 'day' || currentView === 'week') {
+      await loadScheduleData(false, selectedDate);
+    } else {
+      await loadScheduleData(false);
+    }
+  }, [loadScheduleData, currentView, selectedDate]);
 
   // Refresh data function - background refresh without loading state
   const refreshData = async () => {
-    await loadScheduleData(false);
+    await reloadDataForCurrentView();
   };
 
   const value: SchedulerContextType = {

@@ -17,7 +17,10 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
     unassignDriverFromTruck,
     getTruckDriver,
     getDriverTruck,
-    truckDriverAssignments
+    truckDriverAssignments,
+    jobs,
+    selectedDate,
+    currentView
   } = useScheduler();
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
   const [selectedPersonAssignment, setSelectedPersonAssignment] = useState<Assignment | null>(null);
@@ -26,8 +29,54 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
   const allTrucks = resources.filter(r => r.type === 'truck');
   const allDrivers = resources.filter(r => r.type === 'driver' || r.type === 'privateDriver');
   
-  // Get assigned resource IDs from assignments
-  const assignedResourceIds = new Set(assignments.map(a => a.resourceId));
+  // Get assignments for the current view's date range
+  const getAssignmentsForCurrentView = () => {
+    if (currentView === 'month') {
+      // For month view, show all assignments (global availability)
+      return assignments;
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (currentView === 'day') {
+      // For day view, only show assignments for the selected date
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      return assignments.filter(assignment => {
+        const job = jobs.find(j => j.id === assignment.jobId);
+        if (!job) return false;
+        
+        // If job has no schedule_date, it defaults to today
+        const jobDate = job.schedule_date || today;
+        return jobDate === dateStr;
+      });
+    }
+    
+    if (currentView === 'week') {
+      // For week view, show assignments for the current week
+      const weekStart = new Date(selectedDate);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start from Sunday
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6); // End on Saturday
+      
+      const weekStartStr = weekStart.toISOString().split('T')[0];
+      const weekEndStr = weekEnd.toISOString().split('T')[0];
+      
+      return assignments.filter(assignment => {
+        const job = jobs.find(j => j.id === assignment.jobId);
+        if (!job) return false;
+        
+        // If job has no schedule_date, it defaults to today
+        const jobDate = job.schedule_date || today;
+        return jobDate >= weekStartStr && jobDate <= weekEndStr;
+      });
+    }
+    
+    return assignments;
+  };
+
+  // Get assigned resource IDs for the current view's date range
+  const relevantAssignments = getAssignmentsForCurrentView();
+  const assignedResourceIds = new Set(relevantAssignments.map(a => a.resourceId));
   
   // Filter by search term
   const filteredTrucks = allTrucks.filter(truck => {

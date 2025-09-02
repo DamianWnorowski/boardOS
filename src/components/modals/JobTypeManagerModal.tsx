@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, Settings, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
+import { useModal } from '../../context/ModalContext';
 import { RowType, ResourceType, MagnetInteractionRule, DropRule } from '../../types';
 import logger from '../../utils/logger';
 
@@ -44,6 +45,7 @@ const ALL_RESOURCE_TYPES: ResourceType[] = [
 ];
 
 const JobTypeManagerModal: React.FC<JobTypeManagerModalProps> = ({ onClose }) => {
+  const { getZIndex } = useModal();
   const { updateDropRule, updateMagnetInteractionRule, getDropRule, getMagnetInteractionRules } = useScheduler();
   
   const [templates, setTemplates] = useState<JobTypeTemplate[]>([]);
@@ -300,7 +302,7 @@ const JobTypeManagerModal: React.FC<JobTypeManagerModalProps> = ({ onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: getZIndex('job-type-manager') }}>
       <div className="bg-white rounded-lg p-6 max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Job Type Manager</h2>

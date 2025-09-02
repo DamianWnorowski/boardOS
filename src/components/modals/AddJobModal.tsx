@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, MapPin, Info } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { Job } from '../../types';
+import { JobRulesConfigurationManager, JobType } from '../../utils/jobRulesConfiguration';
 import LocationSelector from './LocationSelector';
 
 interface AddJobModalProps {
@@ -9,7 +10,7 @@ interface AddJobModalProps {
 }
 
 const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
-  const { addJob } = useScheduler();
+  const { addJob, addJobRowConfig } = useScheduler();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newJob, setNewJob] = useState<Omit<Job, 'id'>>({
@@ -22,8 +23,27 @@ const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
     location: undefined
   });
   const [competitorPlant, setCompetitorPlant] = useState('');
-  
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [jobTypeDescription, setJobTypeDescription] = useState('');
+  const [expectedRows, setExpectedRows] = useState<string[]>([]);
+  
+  // JobRulesConfigurationManager only has static methods, no need to instantiate
+  
+  // Update job type info when job type changes
+  useEffect(() => {
+    updateJobTypeInfo(newJob.type);
+  }, [newJob.type]);
+
+  const updateJobTypeInfo = (jobType: string) => {
+    const config = JobRulesConfigurationManager.getConfiguration(jobType);
+    if (config) {
+      setJobTypeDescription(config.description);
+      setExpectedRows(config.defaultRows.map(row => row.customName || row.rowType));
+    } else {
+      setJobTypeDescription('');
+      setExpectedRows([]);
+    }
+  };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -44,17 +64,38 @@ const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
     
     setIsSubmitting(true);
     try {
-    // Add competitor plant to plants array if specified
-    const finalPlants = [...(newJob.plants || [])];
-    if (competitorPlant.trim()) {
-      finalPlants.push(competitorPlant.trim());
-    }
-    
-    await addJob({
-      ...newJob,
-      plants: finalPlants
-    });
-    onClose();
+      // Add competitor plant to plants array if specified
+      const finalPlants = [...(newJob.plants || [])];
+      if (competitorPlant.trim()) {
+        finalPlants.push(competitorPlant.trim());
+      }
+      
+      // Create the job first
+      const createdJob = await addJob({
+        ...newJob,
+        plants: finalPlants
+      });
+      
+      // Apply job type defaults for row configuration
+      const config = JobRulesConfigurationManager.getConfiguration(newJob.type);
+      if (config && createdJob?.id) {
+        // Add default row configurations based on job type
+        for (const rowConfig of config.defaultRows) {
+          if (rowConfig.enabled) {
+            await addJobRowConfig({
+              jobId: createdJob.id,
+              type: rowConfig.rowType,
+              label: rowConfig.customName || rowConfig.rowType,
+              maxResources: rowConfig.maxCount,
+              resourceTypes: rowConfig.allowedResources
+            });
+          }
+        }
+        
+        console.log(`Applied ${config.defaultRows.length} default rows for ${newJob.type} job`);
+      }
+      
+      onClose();
     } catch (error) {
       console.error('Error creating job:', error);
       // Error handling is done in the context, just show user feedback here if needed
@@ -144,18 +185,44 @@ const AddJobModal: React.FC<AddJobModalProps> = ({ onClose }) => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
               >
-                <option value="milling">Milling</option>
                 <option value="paving">Paving</option>
-                <option value="both">Milling & Paving</option>
+                <option value="milling">Milling</option>
+                <option value="millingAndPaving">Milling & Paving</option>
                 <option value="drainage">Drainage</option>
+                <option value="concrete">Concrete</option>
+                <option value="excavation">Excavation</option>
                 <option value="stripping">Stripping</option>
                 <option value="hired">Hired</option>
                 <option value="other">Other</option>
               </select>
+              
+              {/* Job type description and expected rows */}
+              {jobTypeDescription && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start">
+                    <Info size={16} className="text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="text-blue-800 mb-2">{jobTypeDescription}</p>
+                      {expectedRows.length > 0 && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Expected rows:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {expectedRows.map((row, index) => (
+                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                {row}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Plant Selection for Paving Jobs */}
-            {(newJob.type === 'paving' || newJob.type === 'both') && (
+            {(newJob.type === 'paving' || newJob.type === 'millingAndPaving') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Asphalt Plants

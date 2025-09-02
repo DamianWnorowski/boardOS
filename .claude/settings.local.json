@@ -33,7 +33,8 @@
       "Bash(npx husky init:*)",
       "Bash(git stash:*)",
       "Bash(sed:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

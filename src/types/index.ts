@@ -113,6 +113,14 @@ export interface Equipment {
   inspectionDate?: string;
   isOperational: boolean;
   isActive: boolean;
+  // Enhanced fields for rule generation
+  requiredCertifications?: string[];
+  requiredSkills?: string[];
+  compatibleAttachments?: ResourceType[];
+  operatorRequirements?: {
+    minExperience?: number;
+    requiredTraining?: string[];
+  };
   createdAt: string;
   updatedAt: string;
 }

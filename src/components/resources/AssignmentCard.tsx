@@ -811,23 +811,26 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       .filter(attachedType => attachedType === 'laborer')
       .length;
     
+    // Only show button when no screwmen are attached (normal case)
+    // Second screwman can only be added by dragging directly onto equipment (special case)
+    const shouldShow = rule?.canAttach && currentLaborerCount === 0;
+    
     logger.debug('Screwman button check:', {
       resourceType: resource.type,
       resourceName: resource.name,
       rule: rule,
       currentLaborerCount,
+      maxAllowed: rule?.maxCount || 0,
       attachedAssignments: attachedAssignments.map(a => ({
         id: a.id,
         resourceId: a.resourceId,
         resourceType: getResourceById(a.resourceId)?.type,
         resourceName: getResourceById(a.resourceId)?.name
       })),
-      shouldShow: rule?.canAttach && currentLaborerCount < (rule.maxCount || 0)
+      shouldShow
     });
     
-    if (!rule?.canAttach) return false;
-    
-    return currentLaborerCount < (rule.maxCount || 0);
+    return shouldShow;
   };
   
   // Check if we need to show the "Add groundman" option

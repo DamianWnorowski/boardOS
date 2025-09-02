@@ -476,7 +476,7 @@ describe('AssignmentCard', () => {
       expect(screen.queryByText('+ Operator')).not.toBeInTheDocument();
     });
 
-    it('should show add screwman button for pavers', () => {
+    it('should show add screwman button for pavers without screwmen', () => {
       mockSchedulerContext.getMagnetInteractionRule.mockImplementation((sourceType, targetType) => {
         if (sourceType === 'laborer' && targetType === 'paver') {
           return { canAttach: true, maxCount: 2 };
@@ -487,6 +487,44 @@ describe('AssignmentCard', () => {
       renderAssignmentCard();
       
       expect(screen.getByText('+ Screwman')).toBeInTheDocument();
+    });
+
+    it('should hide add screwman button when paver already has one screwman', () => {
+      const laborerResource: Resource = {
+        id: 'laborer-1',
+        name: 'Screwman Joe',
+        type: 'laborer',
+        identifier: 'L01',
+      };
+
+      const screwmanAssignment: Assignment = {
+        id: 'screwman-assignment-1',
+        resourceId: 'laborer-1',
+        jobId: 'job-1',
+        row: 'equipment',
+        attachedTo: 'assignment-1', // Attached to the paver
+        timeSlot: { startTime: '07:00', endTime: '15:30', isFullDay: true },
+      };
+
+      // Mock the scheduler context to include the screwman assignment
+      mockSchedulerContext.getAttachedAssignments.mockReturnValue([screwmanAssignment]);
+      mockSchedulerContext.getResourceById.mockImplementation((id) => {
+        if (id === 'paver-1') return mockPaverResource;
+        if (id === 'laborer-1') return laborerResource;
+        return undefined;
+      });
+      
+      mockSchedulerContext.getMagnetInteractionRule.mockImplementation((sourceType, targetType) => {
+        if (sourceType === 'laborer' && targetType === 'paver') {
+          return { canAttach: true, maxCount: 2 };
+        }
+        return { canAttach: false, maxCount: 0 };
+      });
+      
+      renderAssignmentCard();
+      
+      // Button should not be shown when paver already has one screwman
+      expect(screen.queryByText('+ Screwman')).not.toBeInTheDocument();
     });
 
     it('should show add groundman button for milling machines', () => {
