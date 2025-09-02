@@ -804,12 +804,28 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   // Check if we need to show the "Add screwman" option
   const shouldShowAddScrewman = () => {
     const rule = getMagnetInteractionRule('laborer', resource.type);
-    if (!rule?.canAttach) return false;
     
+    // Debug logging for screwman button
     const currentLaborerCount = attachedAssignments
       .map(a => getResourceById(a.resourceId)?.type)
       .filter(attachedType => attachedType === 'laborer')
       .length;
+    
+    logger.debug('🔧 Screwman button check:', {
+      resourceType: resource.type,
+      resourceName: resource.name,
+      rule: rule,
+      currentLaborerCount,
+      attachedAssignments: attachedAssignments.map(a => ({
+        id: a.id,
+        resourceId: a.resourceId,
+        resourceType: getResourceById(a.resourceId)?.type,
+        resourceName: getResourceById(a.resourceId)?.name
+      })),
+      shouldShow: rule?.canAttach && currentLaborerCount < (rule.maxCount || 0)
+    });
+    
+    if (!rule?.canAttach) return false;
     
     return currentLaborerCount < (rule.maxCount || 0);
   };
