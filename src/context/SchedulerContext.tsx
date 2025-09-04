@@ -229,17 +229,30 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         rowTypeCounts[a.row] = (rowTypeCounts[a.row] || 0) + 1;
       });
       
+      // Group truck assignments by job ID to see distribution
+      const truckAssignmentsByJob = {};
+      truckAssignments.forEach(a => {
+        if (!truckAssignmentsByJob[a.jobId]) {
+          truckAssignmentsByJob[a.jobId] = [];
+        }
+        truckAssignmentsByJob[a.jobId].push(a);
+      });
+
       logger.info('🚛 Truck data loaded:', {
         totalTrucks: truckResources.length,
         totalTruckAssignments: truckAssignments.length,
         truckRowTypes: Array.from(truckRowTypes),
         rowTypeCounts: rowTypeCounts,
-        trucks: truckResources.map(t => ({ id: t.id, name: t.name, identifier: t.identifier })),
-        truckAssignments: truckAssignments.map(a => ({ 
+        truckAssignmentsByJob: Object.keys(truckAssignmentsByJob).reduce((acc, jobId) => {
+          acc[jobId] = truckAssignmentsByJob[jobId].length;
+          return acc;
+        }, {}),
+        sampleTruckAssignments: truckAssignments.slice(0, 5).map(a => ({ 
           id: a.id, 
           resourceId: a.resourceId, 
           jobId: a.jobId, 
-          row: a.row 
+          row: a.row,
+          resourceName: scheduleData.resources.find(r => r.id === a.resourceId)?.name
         }))
       });
 
@@ -1416,12 +1429,30 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Helper functions (computed from state)
   const getResourcesByAssignment = (jobId: string, row: RowType) => {
     if (jobId && row) {
-      const result = assignments.filter(a => a.jobId === jobId && a.row === row);
+      // Handle potential case mismatch for trucks row
+      const normalizeRowType = (assignmentRow: string) => {
+        if (assignmentRow && assignmentRow.toLowerCase() === 'trucks') {
+          return 'trucks';
+        }
+        return assignmentRow;
+      };
+
+      const result = assignments.filter(a => {
+        if (a.jobId !== jobId) return false;
+        
+        // Normalize both the assignment row and the requested row for comparison
+        const normalizedAssignmentRow = normalizeRowType(a.row);
+        const normalizedRequestedRow = row.toLowerCase() === 'trucks' ? 'trucks' : row;
+        
+        return normalizedAssignmentRow === normalizedRequestedRow;
+      });
+
       logger.info('🚛 getResourcesByAssignment:', {
         jobId,
-        row,
+        requestedRow: row,
         totalAssignments: assignments.length,
         filteredAssignments: result.length,
+        allRowsForThisJob: assignments.filter(a => a.jobId === jobId).map(a => a.row),
         result: result.map(a => ({ id: a.id, resourceId: a.resourceId, row: a.row }))
       });
       return result;

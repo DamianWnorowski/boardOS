@@ -14,7 +14,7 @@ export interface TestResource {
 export interface TestJob {
   id: string;
   name: string;
-  type: 'street' | 'highway' | 'parking-lot';
+  type: 'street' | 'highway' | 'parking-lot' | 'paving' | 'milling' | 'both';
   shift: 'day' | 'night';
   notes?: string;
   finalized: boolean;
@@ -314,6 +314,31 @@ export class TestDataFactory {
       finalized: true,
       scheduleDate: new Date(),
       notes: 'This job is finalized and cannot be modified',
+      ...overrides
+    };
+  }
+
+  // Create specific job types for truck testing
+  static createJob(name: string, type: TestJob['type'], overrides?: Partial<TestJob>): TestJob {
+    return {
+      id: uuidv4(),
+      name,
+      type,
+      shift: 'day',
+      finalized: false,
+      scheduleDate: new Date(),
+      ...overrides
+    };
+  }
+
+  static createTruck(name: string, identifier: string, classType: string = 'Trac', overrides?: Partial<TestResource>): TestResource {
+    return {
+      id: uuidv4(),
+      type: 'truck',
+      name,
+      identifier,
+      model: classType,
+      onSite: false,
       ...overrides
     };
   }
