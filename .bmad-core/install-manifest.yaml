@@ -1,0 +1,23 @@
+# BMad Installation Manifest
+version: 4.43.0
+installed_at: 2025-09-04T19:32:00.000Z
+install_type: full
+expansion_packs:
+agents:
+  - analyst
+  - architect
+  - bmad-master
+  - bmad-orchestrator
+  - dev
+  - pm
+  - po
+  - qa
+  - sm
+  - ux-expert
+agent_teams: []
+workflows: []
+tasks: []
+templates: []
+checklists: []
+installation_method: manual
+project_path: C:\Users\ai\Desktop\boardOS

@@ -3,7 +3,7 @@ title: WeekView
 category: components
 tags: [board, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # WeekView
@@ -16,7 +16,7 @@ WeekView is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `WeekView.tsx`
-- **Line**: 332
+- **Line**: 334
 - **Category**: Board
 - **Has JSDoc**: ❌
 
@@ -46,8 +46,6 @@ function ExampleUsage() {
 - `../../types`
 - `./JobColumn`
 - `../modals/AddJobModal`
-- `react-dnd`
-- `react-dnd-html5-backend`
 
 
 ## File Location

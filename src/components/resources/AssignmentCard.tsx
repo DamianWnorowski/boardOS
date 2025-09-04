@@ -464,7 +464,9 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
     getMagnetInteractionRule,
     getRequiredAttachmentsForType,
     getMaxAttachmentsForType,
-    canMagnetAttachTo
+    canMagnetAttachTo,
+    selectedDate,
+    currentView
   } = useScheduler();
   
   const resource = getResourceById(assignment.resourceId);
@@ -500,7 +502,14 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
     setCustomTime(assignment.timeSlot?.startTime || job?.startTime || '07:00');
   }, [assignment.timeSlot?.startTime, job?.startTime]);
   
-  if (!resource) return null;
+  if (!resource) {
+    logger.warn(`Resource not found for assignment ${assignment.id}, resourceId: ${assignment.resourceId}`);
+    return (
+      <div className="p-1 bg-red-100 border border-red-300 rounded text-xs text-red-600 max-w-24">
+        Missing Resource: {assignment.resourceId.slice(0, 8)}...
+      </div>
+    );
+  }
 
   // Equipment types definition
   const equipmentTypes = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
@@ -571,7 +580,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
       const resource = getResourceById(assignment.resourceId);
       const dragItem = { 
         type: ItemTypes.ASSIGNMENT, 
-        assignments: [assignment, ...attachedAssignments],
+        assignments: isCtrlHeld ? [assignment] : [assignment, ...attachedAssignments],
         primaryAssignment: assignment,
         resource,
         assignmentId: assignment.id,
@@ -907,8 +916,17 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   const hoverStyle = isOver ? (canDrop ? 'ring-2 ring-blue-400' : 'ring-2 ring-red-400') : '';
   const dropAnimation = isDroppingItem ? 'scale-110' : '';
 
-  // Check if resource has multiple job assignments for styling
-  const multiJobStyle = hasMultipleJobAssignments(resource.id) ? 'ring-2 ring-teal-400' : '';
+  // Get current date for multiple job checking
+  const getCurrentDateString = () => {
+    if (currentView === 'month' || !selectedDate) {
+      // For month view or if selectedDate is undefined, don't filter by date
+      return undefined;
+    }
+    return selectedDate.toISOString().split('T')[0];
+  };
+
+  // Check if resource has multiple job assignments for current date only
+  const multiJobStyle = hasMultipleJobAssignments(resource.id, getCurrentDateString()) ? 'ring-2 ring-teal-400' : '';
   
   // Check if resource is working double shift
   const workingDouble = isWorkingDouble(resource.id);

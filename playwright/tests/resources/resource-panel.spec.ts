@@ -10,7 +10,8 @@ test.describe('Resource Panel', () => {
     await schedulerPage.goto();
   });
 
-  test('displays resources by category', async ({ page }) => {
+  test('displays resources by category', async ({ page: _page }) => {
+    void _page;
     const resourcePanel = schedulerPage.resourcePanel;
 
     // Check categories are visible
@@ -22,7 +23,8 @@ test.describe('Resource Panel', () => {
     }
   });
 
-  test('search filters resources correctly', async ({ page }) => {
+  test('search filters resources correctly', async ({ page: _page }) => {
+    void _page;
     await schedulerPage.searchResources('John');
 
     // Only matching resources should be visible
@@ -45,7 +47,8 @@ test.describe('Resource Panel', () => {
     expect(allResourcesCount).toBeGreaterThan(visibleResources.length);
   });
 
-  test('shows availability status correctly', async ({ page }) => {
+  test('shows availability status correctly', async ({ page: _page }) => {
+    void _page;
     const operator = TestDataFactory.createOperator({ name: 'Available Op' });
     
     // Initially available
@@ -65,7 +68,8 @@ test.describe('Resource Panel', () => {
     expect(await assignedIndicator.isVisible()).toBe(true);
   });
 
-  test('groups attached resources visually', async ({ page }) => {
+  test('groups attached resources visually', async ({ page: _page }) => {
+    void _page;
     const { excavator, operator } = TestDataFactory.createEquipmentOperatorScenario();
 
     // Simulate attachment
@@ -236,7 +240,8 @@ test.describe('Resource Panel', () => {
     }
   });
 
-  test('resource colors match type', async ({ page }) => {
+  test('resource colors match type', async ({ page: _page }) => {
+    void _page;
     // Check equipment has yellow background
     const equipment = await schedulerPage.resourcePanel.locator('[data-resource-type="excavator"]').first();
     const equipmentClasses = await equipment.getAttribute('class');
@@ -248,7 +253,8 @@ test.describe('Resource Panel', () => {
     expect(operatorClasses).not.toContain('bg-yellow-500');
   });
 
-  test('on-site indicator shows correctly', async ({ page }) => {
+  test('on-site indicator shows correctly', async ({ page: _page }) => {
+    void _page;
     const operator = TestDataFactory.createOperator({ onSite: true });
     const resource = schedulerPage.resourcePanel.locator(`[data-resource-id="${operator.id}"]`);
 

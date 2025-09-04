@@ -3,7 +3,7 @@ title: TruckConfigModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # TruckConfigModal
@@ -16,7 +16,7 @@ TruckConfigModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `TruckConfigModal.tsx`
-- **Line**: 94
+- **Line**: 97
 - **Category**: Modals
 - **Has JSDoc**: ❌
 
@@ -41,6 +41,7 @@ function ExampleUsage() {
 
 - `react`
 - `lucide-react`
+- `../../context/ModalContext`
 - `../common/Portal`
 
 

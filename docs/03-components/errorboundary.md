@@ -3,7 +3,7 @@ title: ErrorBoundary
 category: components
 tags: [common, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # ErrorBoundary

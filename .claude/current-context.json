@@ -1,0 +1,47 @@
+{
+  "session": {
+    "id": "claude-1757008881845-ev80qkqv9",
+    "startTime": "2025-09-04T18:01:21.845Z",
+    "lastUpdate": "2025-09-04T20:45:25.683Z",
+    "tokenEstimate": 164
+  },
+  "activeWork": {
+    "currentTask": "Testing automated context system",
+    "files": [
+      "test.js"
+    ],
+    "decisions": [],
+    "progress": []
+  },
+  "memory": {
+    "keyDecisions": [
+      {
+        "decision": "Mock decision",
+        "timestamp": "2025-09-04T15:19:53.379Z"
+      }
+    ],
+    "userPreferences": [
+      "Mock preference"
+    ],
+    "codePatterns": [],
+    "fixedIssues": []
+  },
+  "metrics": {
+    "filesModified": 0,
+    "testsFixed": 0,
+    "lintErrorsResolved": 0,
+    "commitsCreated": 0
+  },
+  "environment": {
+    "gitBranch": "main",
+    "devServerStatus": false,
+    "testStatus": {
+      "passing": 0,
+      "failing": 0
+    },
+    "lintStatus": {
+      "errors": 518,
+      "warnings": 22
+    }
+  }
+}

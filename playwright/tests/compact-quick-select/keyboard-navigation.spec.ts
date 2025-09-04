@@ -170,7 +170,8 @@ test.describe('Compact Quick Select - Keyboard Navigation', () => {
     
     // Use keyboard to navigate
     await compactQuickSelect.navigateNext();
-    const keyboardIndex = await compactQuickSelect.getSelectedIndex();
+    const _keyboardIndex = await compactQuickSelect.getSelectedIndex();
+    void _keyboardIndex; // Store index for potential future assertion
     
     // Use mouse to click equipment
     await compactQuickSelect.clickCategory('equipment');

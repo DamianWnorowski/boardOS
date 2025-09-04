@@ -125,6 +125,7 @@ test.describe('Mobile Touch Interactions', () => {
     const resources = Array.from({ length: 50 }, (_, i) => 
       TestDataFactory.createOperator({ name: `Operator ${i}` })
     );
+    void resources; // Array created for scroll performance testing
 
     // Measure scroll performance
     const startTime = Date.now();

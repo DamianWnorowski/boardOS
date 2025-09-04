@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { RuleValidator, ruleAnalyzer } from '../ruleValidator';
 import { MagnetInteractionRule, DropRule, ResourceType, RowType } from '../../types';
 

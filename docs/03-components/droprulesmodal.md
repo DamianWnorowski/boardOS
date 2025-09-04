@@ -3,7 +3,7 @@ title: DropRulesModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # DropRulesModal
@@ -16,7 +16,7 @@ DropRulesModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `DropRulesModal.tsx`
-- **Line**: 251
+- **Line**: 254
 - **Category**: Modals
 - **Has JSDoc**: ❌
 
@@ -42,6 +42,7 @@ function ExampleUsage() {
 - `react`
 - `lucide-react`
 - `../../context/SchedulerContext`
+- `../../context/ModalContext`
 - `../../types`
 - `../../data/mockData`
 - `../common/Portal`

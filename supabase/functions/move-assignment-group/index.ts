@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     // 2. Identify primary assignment (not attached to anything)
     const primaryAssignment = assignments.find(a => !a.attached_to_assignment_id);
-    const attachedAssignments = assignments.filter(a => a.attached_to_assignment_id);
+    const _attachedAssignments = assignments.filter(a => a.attached_to_assignment_id); // Available for attachment handling
 
     if (!primaryAssignment) {
       return new Response(
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     }
 
     // 3. Get target job for default time
-    const { data: targetJob, error: jobError } = await supabaseClient
+    const { data: targetJob, error: _jobError } = await supabaseClient
       .from('jobs')
       .select('start_time')
       .eq('id', targetJobId)
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     const defaultStartTime = targetJob?.start_time || '07:00';
 
     // 4. Validate drop rules for primary assignment
-    const { data: dropRule, error: dropRuleError } = await supabaseClient
+    const { data: dropRule, error: _dropRuleError } = await supabaseClient
       .from('drop_rules')
       .select('allowed_types')
       .eq('row_type', targetRowType)

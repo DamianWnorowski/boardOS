@@ -78,7 +78,7 @@ interface SchedulerContextType {
   getAssignmentById: (id: string) => Assignment | undefined;
   getAssignmentByResource: (resourceId: string) => Assignment | undefined;
   getAttachedAssignments: (assignmentId: string) => Assignment[];
-  hasMultipleJobAssignments: (resourceId: string) => boolean;
+  hasMultipleJobAssignments: (resourceId: string, forDate?: string) => boolean;
   getResourceOtherAssignments: (resourceId: string, excludeAssignmentId: string) => Assignment[];
   hasTimeConflict: (resourceId: string, timeSlot: TimeSlot, excludeAssignmentId?: string) => boolean;
   getJobNotes: (jobId: string) => Array<{assignment: Assignment, resource: Resource, note: string}>;
@@ -210,6 +210,37 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         assignments: scheduleData.assignments.length,
         rules: scheduleData.magnetRules.length,
         magnets: magnetManager.magnets.size
+      });
+
+      // CRITICAL DEBUG: This should ALWAYS run
+      logger.info('🚛 TRUCK ANALYSIS STARTING');
+
+      // Debug truck assignments specifically
+      const truckResources = scheduleData.resources.filter(r => r.type === 'truck');
+      const truckAssignments = scheduleData.assignments.filter(a => {
+        const resource = scheduleData.resources.find(r => r.id === a.resourceId);
+        return resource?.type === 'truck';
+      });
+      
+      // Analyze what row types truck assignments actually have
+      const truckRowTypes = new Set(truckAssignments.map(a => a.row));
+      const rowTypeCounts = {};
+      truckAssignments.forEach(a => {
+        rowTypeCounts[a.row] = (rowTypeCounts[a.row] || 0) + 1;
+      });
+      
+      logger.info('🚛 Truck data loaded:', {
+        totalTrucks: truckResources.length,
+        totalTruckAssignments: truckAssignments.length,
+        truckRowTypes: Array.from(truckRowTypes),
+        rowTypeCounts: rowTypeCounts,
+        trucks: truckResources.map(t => ({ id: t.id, name: t.name, identifier: t.identifier })),
+        truckAssignments: truckAssignments.map(a => ({ 
+          id: a.id, 
+          resourceId: a.resourceId, 
+          jobId: a.jobId, 
+          row: a.row 
+        }))
       });
 
     } catch (err: any) {
@@ -380,10 +411,19 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (payload.eventType === 'INSERT') {
           const newAssignment = DatabaseService.transformDbAssignment(payload.new);
           setAssignments(prev => {
+            // Prevent duplicates: Check if assignment already exists (from optimistic update)
+            const assignmentExists = prev.some(a => a.id === newAssignment.id);
+            if (assignmentExists) {
+              logger.info('📡 Real-time INSERT: Assignment already exists (optimistic update), skipping duplicate');
+              return prev;
+            }
+            
             // Get attachments for this assignment
             const attachments = prev
               .filter(a => a.attachedTo === newAssignment.id)
               .map(a => a.id);
+            
+            logger.info('📡 Real-time INSERT: Adding new assignment to state');
             return [...prev, { ...newAssignment, attachments }];
           });
         } else if (payload.eventType === 'UPDATE') {
@@ -638,6 +678,15 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     position?: number,
     isSecondShift: boolean = false
   ): Promise<string> => {
+    logger.debug('🚛 assignResourceWithTruckConfig called:', {
+      resourceId,
+      jobId,
+      row,
+      truckConfig,
+      position,
+      isSecondShift
+    });
+    
     try {
       // Check if resource is already assigned to this job to prevent duplicates
       // BUT allow second shift assignments (shift+drag)
@@ -690,31 +739,55 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             
             logger.info('✅ Driver automatically attached:', assignedDriver.name, 'attachment ID:', driverAssignment.id);
             
-            // Force immediate UI update with both assignments
+            // Optimistic update: Add to state immediately (real-time subscription will sync later)
             setAssignments(prev => {
-              logger.info('📝 Manually adding truck and driver assignments to state');
-              return [...prev, newAssignment, driverAssignment];
+              // Prevent duplicates by checking if assignments already exist
+              const truckExists = prev.some(a => a.id === newAssignment.id);
+              const driverExists = prev.some(a => a.id === driverAssignment.id);
+              
+              const newAssignments = [];
+              if (!truckExists) newAssignments.push(newAssignment);
+              if (!driverExists) newAssignments.push(driverAssignment);
+              
+              logger.info('📝 Optimistic update: Adding truck and driver assignments to state', {
+                truckAdded: !truckExists,
+                driverAdded: !driverExists
+              });
+              
+              return [...prev, ...newAssignments];
             });
           } catch (driverErr: any) {
             logger.error('Failed to attach driver automatically:', driverErr);
-            // Still update UI with truck assignment even if driver attachment fails
+            // Still add truck assignment optimistically
             setAssignments(prev => {
-              logger.info('📝 Manually adding truck assignment to state (driver attachment failed)');
-              return [...prev, newAssignment];
+              const truckExists = prev.some(a => a.id === newAssignment.id);
+              if (!truckExists) {
+                logger.info('📝 Optimistic update: Adding truck assignment to state (driver attachment failed)');
+                return [...prev, newAssignment];
+              }
+              return prev;
             });
           }
         } else {
-          // No driver assigned to truck, just add truck assignment
+          // No driver assigned to truck, just add truck assignment optimistically
           setAssignments(prev => {
-            logger.info('📝 Manually adding truck assignment to state (no driver)');
-            return [...prev, newAssignment];
+            const truckExists = prev.some(a => a.id === newAssignment.id);
+            if (!truckExists) {
+              logger.info('📝 Optimistic update: Adding truck assignment to state (no driver)');
+              return [...prev, newAssignment];
+            }
+            return prev;
           });
         }
       } else {
-        // Not a truck, just add the assignment
+        // Not a truck, just add the assignment optimistically
         setAssignments(prev => {
-          logger.info('📝 Manually adding assignment to state:', newAssignment);
-          return [...prev, newAssignment];
+          const assignmentExists = prev.some(a => a.id === newAssignment.id);
+          if (!assignmentExists) {
+            logger.info('📝 Optimistic update: Adding assignment to state:', newAssignment);
+            return [...prev, newAssignment];
+          }
+          return prev;
         });
       }
       
@@ -910,6 +983,28 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const primaryAssignment = assignmentGroup[0];
       const attachedAssignments = assignmentGroup.slice(1);
+      
+      // Check if primary resource already exists on destination job to prevent duplicates
+      const existingPrimaryAssignment = assignments.find(a => 
+        a.resourceId === primaryAssignment.resourceId && 
+        a.jobId === jobId && 
+        a.row === row &&
+        !a.attachedTo
+      );
+
+      if (existingPrimaryAssignment) {
+        logger.debug('Resource already assigned to destination job, removing duplicate instead of moving');
+        // Just remove the assignments being moved (they're duplicates)
+        await Promise.all(assignmentGroup.map(a => DatabaseService.deleteAssignment(a.id)));
+        
+        // Remove from local state
+        setAssignments(prev => {
+          const oldIds = assignmentGroup.map(a => a.id);
+          return prev.filter(a => !oldIds.includes(a.id));
+        });
+        
+        return existingPrimaryAssignment.id;
+      }
       
       // Get the job to use its default start time
       const job = getJobById(jobId);
@@ -1321,13 +1416,71 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Helper functions (computed from state)
   const getResourcesByAssignment = (jobId: string, row: RowType) => {
     if (jobId && row) {
-      return assignments.filter(a => a.jobId === jobId && a.row === row);
+      const result = assignments.filter(a => a.jobId === jobId && a.row === row);
+      logger.info('🚛 getResourcesByAssignment:', {
+        jobId,
+        row,
+        totalAssignments: assignments.length,
+        filteredAssignments: result.length,
+        result: result.map(a => ({ id: a.id, resourceId: a.resourceId, row: a.row }))
+      });
+      return result;
     }
     return assignments;
   };
 
   const getAvailableResources = () => {
+    // Get assignments for the current view's date range
+    const getCurrentViewAssignments = () => {
+      if (currentView === 'month') {
+        // For month view, show all assignments (global availability)
+        return assignments;
+      }
+      
+      if (currentView === 'day') {
+        // For day view, only show assignments for the selected date
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        return assignments.filter(assignment => {
+          const job = getJobById(assignment.jobId);
+          if (!job || !job.schedule_date) return false;
+          return job.schedule_date === dateStr;
+        });
+      }
+      
+      if (currentView === 'week') {
+        // For week view, show assignments for the current week
+        const weekStart = new Date(selectedDate);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start from Sunday
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // End on Saturday
+        
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+        const weekEndStr = weekEnd.toISOString().split('T')[0];
+        
+        return assignments.filter(assignment => {
+          const job = getJobById(assignment.jobId);
+          if (!job || !job.schedule_date) return false;
+          return job.schedule_date >= weekStartStr && job.schedule_date <= weekEndStr;
+        });
+      }
+      
+      return assignments;
+    };
+
+    // Get assigned resource IDs for the current view (EXCLUDING attached resources)
+    const relevantAssignments = getCurrentViewAssignments();
+    const assignedResourceIds = new Set(
+      relevantAssignments
+        .filter(a => !a.attachedTo) // Only count primary assignments, not attached ones
+        .map(a => a.resourceId)
+    );
+    
     return resources.filter(r => {
+      // Filter out assigned resources for the current view
+      if (assignedResourceIds.has(r.id)) {
+        return false;
+      }
+      
       if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
           !r.identifier?.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
@@ -1342,7 +1495,11 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const getResourceById = (id: string) => {
-    return resources.find(r => r.id === id);
+    const resource = resources.find(r => r.id === id);
+    if (!resource) {
+      logger.debug(`Resource ${id} not found in ${resources.length} resources`);
+    }
+    return resource;
   };
 
   const getJobById = (id: string) => {
@@ -1361,8 +1518,17 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return assignments.filter(a => a.attachedTo === assignmentId);
   };
 
-  const hasMultipleJobAssignments = (resourceId: string) => {
-    const resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
+  const hasMultipleJobAssignments = (resourceId: string, forDate?: string) => {
+    let resourceAssignments = assignments.filter(a => a.resourceId === resourceId);
+    
+    // If a specific date is provided, filter assignments to only that date
+    if (forDate) {
+      resourceAssignments = resourceAssignments.filter(assignment => {
+        const job = getJobById(assignment.jobId);
+        return job && job.schedule_date === forDate;
+      });
+    }
+    
     const uniqueJobIds = new Set(resourceAssignments.map(a => a.jobId));
     return uniqueJobIds.size > 1;
   };

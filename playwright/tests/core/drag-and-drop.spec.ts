@@ -10,7 +10,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     await schedulerPage.goto();
   });
 
-  test('can drag operator to job', async ({ page }) => {
+  test('can drag operator to job', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operator = TestDataFactory.createOperator();
     
     await schedulerPage.dragResourceToJob(
@@ -23,7 +24,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     expect(isAssigned).toBe(true);
   });
 
-  test('can drag equipment to job', async ({ page }) => {
+  test('can drag equipment to job', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const excavator = TestDataFactory.createExcavator();
     
     await schedulerPage.dragResourceToJob(
@@ -36,7 +38,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     expect(isAssigned).toBe(true);
   });
 
-  test('can move assignment between jobs', async ({ page }) => {
+  test('can move assignment between jobs', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operator = TestDataFactory.createOperator();
     
     // First assign to job 1
@@ -61,7 +64,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     expect(isInJob2).toBe(true);
   });
 
-  test('can remove assignment by dragging off job', async ({ page }) => {
+  test('can remove assignment by dragging off job', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operator = TestDataFactory.createOperator();
     
     // Assign to job
@@ -78,7 +82,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     expect(isAssigned).toBe(false);
   });
 
-  test('can create second shift with Ctrl+drag', async ({ page }) => {
+  test('can create second shift with Ctrl+drag', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operator = TestDataFactory.createOperator();
     
     // Assign to day job
@@ -120,7 +125,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     }
   });
 
-  test('respects drop zones', async ({ page }) => {
+  test('respects drop zones', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const foreman = TestDataFactory.createOperator({ type: 'foreman' });
     
     // Try to drop foreman in Equipment row (should fail)
@@ -144,7 +150,8 @@ test.describe('Core Drag and Drop Functionality', () => {
     expect(isInForemanRow).toBe(true);
   });
 
-  test('handles rapid consecutive drags', async ({ page }) => {
+  test('handles rapid consecutive drags', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operators = [
       TestDataFactory.createOperator({ name: 'Op1' }),
       TestDataFactory.createOperator({ name: 'Op2' }),

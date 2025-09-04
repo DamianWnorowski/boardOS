@@ -34,7 +34,22 @@
       "Bash(git stash:*)",
       "Bash(sed:*)",
       "Bash(git push:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs\\00-getting-started/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs\\01-architecture/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs\\04-features/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs\\04-features/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS\\docs/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS/**)",
+      "Read(/C:\\Users\\ai\\Desktop\\boardOS/**)",
+      "Bash(grep:*)",
+      "Bash(npx bmad-method install:*)",
+      "Bash(npx bmad-method:*)",
+      "Bash(for:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

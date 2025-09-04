@@ -163,7 +163,7 @@ test.describe('Custom Business Rules', () => {
     return code;
   }
 
-  private generateTestCase(_scenario: TestScenario, type: string): string {
+  private generateTestCase(scenario: TestScenario, type: string): string {
     let code = `
   test('${scenario.name}', async ({ page }) => {
     // Setup test data
@@ -201,6 +201,8 @@ test.describe('Custom Business Rules', () => {
   }
 
   private generateMagnetActions(_scenario: TestScenario): string {
+    // Generate magnet actions for scenario: ${_scenario?.name || 'unknown'}
+    void _scenario; // Acknowledge parameter for ESLint
     return `
     // Perform magnet attachment
     if (testData.parent && testData.child) {
@@ -218,6 +220,8 @@ test.describe('Custom Business Rules', () => {
   }
 
   private generateDropActions(_scenario: TestScenario): string {
+    // Generate drop actions for scenario: ${_scenario?.name || 'unknown'}
+    void _scenario; // Acknowledge parameter for ESLint
     return `
     // Perform drop operation
     if (testData.resource && testData.target) {
@@ -233,6 +237,8 @@ test.describe('Custom Business Rules', () => {
   }
 
   private generateJobRowActions(_scenario: TestScenario): string {
+    // Generate job row actions for scenario: ${_scenario?.name || 'unknown'}
+    void _scenario; // Acknowledge parameter for ESLint
     return `
     // Test job row configuration
     if (testData.resource && testData.job && testData.row) {
@@ -248,7 +254,7 @@ test.describe('Custom Business Rules', () => {
 
   private generateCustomActions(_scenario: TestScenario): string {
     // Custom actions based on the scenario name
-    if (scenario.name.includes('double shift')) {
+    if (_scenario.name.includes('double shift')) {
       return `
     // Test double shift prevention
     if (testData.resource && testData.dayJob && testData.nightJob) {
@@ -269,7 +275,7 @@ test.describe('Custom Business Rules', () => {
       await page.waitForTimeout(500);
     }
 `;
-    } else if (scenario.name.includes('finalize')) {
+    } else if (_scenario.name.includes('finalize')) {
       return `
     // Test job finalization
     if (testData.job && testData.equipment) {
@@ -293,7 +299,7 @@ test.describe('Custom Business Rules', () => {
     
     return `
     // Custom test action
-    console.log('Executing custom test: ${scenario.name}');
+    console.log('Executing custom test: ${_scenario.name}');
 `;
   }
 

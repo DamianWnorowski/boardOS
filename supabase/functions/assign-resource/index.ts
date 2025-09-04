@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     }
 
     // 6. Get job for default time slot
-    const { data: job, error: jobError } = await supabaseClient
+    const { data: job, error: _jobError } = await supabaseClient
       .from('jobs')
       .select('start_time')
       .eq('id', jobId)

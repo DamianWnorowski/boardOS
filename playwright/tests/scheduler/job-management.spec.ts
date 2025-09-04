@@ -195,7 +195,8 @@ test.describe('Job Management', () => {
     }
   });
 
-  test('job rows maintain correct order', async ({ page }) => {
+  test('job rows maintain correct order', async ({ page: _page }) => {
+    void _page;
     const job = await schedulerPage.getJob('Test Job');
     const rows = await job.locator('[data-row-type]').all();
 
@@ -208,7 +209,8 @@ test.describe('Job Management', () => {
     }
   });
 
-  test('shift indicator shows correctly', async ({ page }) => {
+  test('shift indicator shows correctly', async ({ page: _page }) => {
+    void _page;
     // Check day shift job
     await schedulerPage.selectShift('day');
     const dayJob = await schedulerPage.getJob('Day Job');
@@ -222,8 +224,10 @@ test.describe('Job Management', () => {
     expect(await nightShiftIcon.isVisible()).toBe(true);
   });
 
-  test('job capacity limits are enforced', async ({ page }) => {
-    const job = await schedulerPage.getJob('Limited Capacity Job');
+  test('job capacity limits are enforced', async ({ page: _page }) => {
+    void _page;
+    const _job = await schedulerPage.getJob('Limited Capacity Job');
+    void _job; // Job reference for future assertions
     const crewRow = await schedulerPage.getJobRow('Limited Capacity Job', 'Crew');
 
     // Add resources up to capacity

@@ -3,7 +3,7 @@ title: MonthViewJobBar
 category: components
 tags: [board, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # MonthViewJobBar
@@ -16,7 +16,7 @@ MonthViewJobBar is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `MonthViewJobBar.tsx`
-- **Line**: 191
+- **Line**: 194
 - **Category**: Board
 - **Has JSDoc**: ❌
 

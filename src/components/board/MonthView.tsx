@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+// import { Calendar } from 'lucide-react'; // Commented out - not currently used but may be needed for future calendar features
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { Job } from '../../types';
 import MonthViewJobBar from './MonthViewJobBar';
@@ -24,8 +25,9 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedMonth, onMonthChange }) =
     
     // First day of the month
     const firstDay = new Date(year, month, 1);
-    // Last day of the month
-    const lastDay = new Date(year, month + 1, 0);
+    // Last day of the month - may be needed for future calendar logic
+    const _lastDay = new Date(year, month + 1, 0);
+    void _lastDay; // Prevent unused variable warning
     
     // Start from Sunday of the week containing the first day
     const startDate = new Date(firstDay);

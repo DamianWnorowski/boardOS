@@ -79,11 +79,26 @@ export class TestDataFactory {
   }
 
   static createTruck(classType: string = '10W', overrides?: Partial<TestResource>): TestResource {
+    // Generate valid identifiers based on classType that will show up in the UI
+    let identifier: string;
+    if (classType === '10W') {
+      // Use 10W truck identifiers (389-399)
+      const validIds = ['389', '390', '391', '392', '393', '394', '395', '396', '397', '398', '399'];
+      identifier = validIds[Math.floor(Math.random() * validIds.length)];
+    } else if (classType === 'Trac') {
+      // Use Trac truck identifiers (43-44, 49-76)  
+      const validIds = ['43', '44', ...Array.from({length: 28}, (_, i) => (49 + i).toString())];
+      identifier = validIds[Math.floor(Math.random() * validIds.length)];
+    } else {
+      // For other trucks, use a non-standard identifier that goes to "Other" category
+      identifier = `TEST-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    }
+    
     return {
       id: uuidv4(),
       type: 'truck',
-      name: `Truck ${Math.floor(Math.random() * 100)}`,
-      identifier: `T-${Math.floor(Math.random() * 100)}`,
+      name: `Truck #${identifier}`,
+      identifier: identifier,
       model: classType,
       onSite: false,
       ...overrides
@@ -252,6 +267,19 @@ export class TestDataFactory {
     };
   }
 
+  // Specialized truck creation methods
+  static createTenWheelTruck(overrides?: Partial<TestResource>): TestResource {
+    return this.createTruck('10W', overrides);
+  }
+
+  static createTracTruck(overrides?: Partial<TestResource>): TestResource {
+    return this.createTruck('Trac', overrides);
+  }
+
+  static createOtherTruck(overrides?: Partial<TestResource>): TestResource {
+    return this.createTruck('Other', overrides);
+  }
+
   // Job creation methods
   static createDayJob(overrides?: Partial<TestJob>): TestJob {
     return {
@@ -358,7 +386,7 @@ export class TestDataFactory {
   }
 
   static createTruckDriverScenario() {
-    const truck = this.createTruck('10W', { name: 'Test Truck' });
+    const truck = this.createTruck('10W', { name: 'Test Truck #390', identifier: '390' });
     const driver = this.createDriver({ name: 'Test Driver' });
     const job = this.createDayJob({ name: 'Truck Test Job' });
     

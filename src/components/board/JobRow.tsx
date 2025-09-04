@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDrop, DropTargetMonitor } from 'react-dnd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RowType, ItemTypes, DragItem, ResourceType, Assignment } from '../../types';
@@ -6,15 +6,15 @@ import { useScheduler } from '../../context/SchedulerContext';
 import { useMobile } from '../../context/MobileContext';
 import { useDragContext } from '../../context/DragContext';
 import { useModal } from '../../context/ModalContext';
-import { getMobileDropTargetOptions } from '../../utils/dndBackend';
+// import { getMobileDropTargetOptions } from '../../utils/dndBackend'; // For future use
 import AssignmentCard from '../resources/AssignmentCard';
 import { isRowNeededForJobType, isRowTogglable } from '../../utils/jobUtils';
-import { X, Check, ChevronRight, ChevronDown, Lock, Info, Settings, Split } from 'lucide-react';
+import { X, Check, Lock, Info } from 'lucide-react';
 import TemplateCard from '../resources/TemplateCard';
 import EquipmentSelectorModal from '../modals/EquipmentSelectorModal';
 import TruckConfigModal from '../modals/TruckConfigModal';
 import PersonModal from '../modals/PersonModal';
-import logger from '../../utils/logger';
+import { logger } from '../../utils/logger';
 
 // Define equipment types constant
 const equipmentTypes = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
@@ -32,7 +32,6 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     assignResourceWithTruckConfig,
     moveAssignmentGroup,
     getJobById,
-    getAssignmentById,
     getResourceById,
     isRowEnabled,
     toggleRowEnabled,
@@ -42,7 +41,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     getJobRowConfig
   } = useScheduler();
   
-  const { isMobile, touchEnabled } = useMobile();
+  const { isMobile } = useMobile();
   
   // Get job object
   const job = getJobById(jobId);
@@ -50,11 +49,11 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   // Get assignments for this job and row type
   const assignments = getResourcesByAssignment(jobId, rowType);
   
-  const { dragState } = useDragContext();
-  const { openModal, closeModal, getZIndex } = useModal();
+  const { } = useDragContext(); // For future drag state handling
+  const { } = useModal(); // For future modal operations
   
   // Test drop target
-  const [{ isTestOver }, testDrop] = useDrop({
+  const [{ isTestOver }] = useDrop({
     accept: [ItemTypes.RESOURCE],
     drop: (item) => {
       logger.debug('🟢 TEST DROP TARGET WORKED!', item);
@@ -107,7 +106,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   const isEmpty = assignments.length === 0;
   
   // Determine if we should show row in condensed mode - condense if not needed, not enabled, and empty
-  const shouldCondense = !isNeeded && !isEnabled && isEmpty;
+  const _shouldCondense = !isNeeded && !isEnabled && isEmpty;
+  void _shouldCondense; // For future condensed row display
   
   // Filter out assignments that are attached to other assignments
   const filteredAssignments = assignments.filter(assignment => {
@@ -471,8 +471,18 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   };
   
   // Helper function to categorize trucks
-  const categorizeTruck = (resource: any) => {
-    if (!resource || resource.type !== 'truck') return null;
+  const categorizeTruck = (resource: any, assignmentId?: string) => {
+    if (!resource) {
+      logger.error('🚛 Resource not found for truck assignment:', assignmentId);
+      return 'uncategorized'; // New category for missing resources
+    }
+    
+    if (resource.type !== 'truck') {
+      logger.debug('🚛 Resource is not a truck, type:', resource.type);
+      return null;
+    }
+    
+    logger.debug('🚛 Categorizing truck:', resource.name, 'identifier:', resource.identifier, 'id:', resource.id);
     
     // Specific list of 10W truck unit numbers
     const tenWheelUnits = ['389', '390', '391', '392', '393', '394', '395', '396', '397', '398', '399'];
@@ -481,39 +491,83 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     
     // Check if this truck is a 10W based on the specific unit number list
     if (tenWheelUnits.includes(unitNumber)) {
+      logger.debug('🚛 Truck categorized as 10W:', resource.name);
       return '10w';
     }
     
-    // All other trucks can be used as either dump trailers or flowboys (they're interchangeable)
+    // All other trucks are considered regular trucks (can be used as flowboy/dump trailer)
+    // This includes newly added trucks that may not have specific identifiers yet
+    logger.debug('🚛 Truck categorized as regular-truck:', resource.name, 'unitNumber:', unitNumber);
     return 'regular-truck';
   };
   
   // Special handling for trucks row
   if (rowType === 'trucks') {
+    // Log all assignments for this trucks row
+    logger.info(`🚛 JobRow trucks filtering - Total assignments: ${sortedAssignments.length}`, {
+      jobId,
+      rowType,
+      assignments: sortedAssignments.map(a => ({ id: a.id, resourceId: a.resourceId }))
+    });
+
     // Categorize truck assignments
     const trailerAssignments = sortedAssignments.filter(assignment => {
       const resource = getResourceById(assignment.resourceId);
-      const category = categorizeTruck(resource);
+      if (!resource) {
+        logger.warn(`🚛 Missing resource for assignment ${assignment.id}, resourceId: ${assignment.resourceId}`);
+        return false;
+      }
+      const category = categorizeTruck(resource, assignment.id);
+      logger.debug(`🚛 Assignment ${assignment.id} categorized as: ${category}`, { resource: resource.name, identifier: resource.identifier });
       return category === 'regular-truck';
     });
     
     const tenWheelAssignments = sortedAssignments.filter(assignment => {
       const resource = getResourceById(assignment.resourceId);
-      const category = categorizeTruck(resource);
+      if (!resource) {
+        logger.warn(`🚛 Missing resource for 10W assignment ${assignment.id}, resourceId: ${assignment.resourceId}`);
+        return false;
+      }
+      const category = categorizeTruck(resource, assignment.id);
       return category === '10w';
     });
     
+    // Catch any uncategorized trucks (missing resources)
+    const uncategorizedAssignments = sortedAssignments.filter(assignment => {
+      const resource = getResourceById(assignment.resourceId);
+      const category = categorizeTruck(resource, assignment.id);
+      return category === 'uncategorized';
+    });
+
+    logger.info(`🚛 Truck categorization results:`, {
+      total: sortedAssignments.length,
+      trailer: trailerAssignments.length,
+      tenWheel: tenWheelAssignments.length,
+      uncategorized: uncategorizedAssignments.length
+    });
+    
     // Separate trailer assignments by configuration
+    const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
+    logger.info('🚛 Truck configurations from localStorage:', truckConfigs);
+    
     const flowboyAssignments = trailerAssignments.filter(assignment => {
-      const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
-      const config = truckConfigs[assignment.id];
+      const config = truckConfigs[assignment.resourceId];
+      const resource = getResourceById(assignment.resourceId);
+      logger.debug(`🚛 Checking flowboy config for ${assignment.resourceId} (${resource?.name}): ${config}`);
       return config === 'flowboy';
     });
     
     const dumpTrailerAssignments = trailerAssignments.filter(assignment => {
-      const truckConfigs = JSON.parse(localStorage.getItem('truck-configurations') || '{}');
-      const config = truckConfigs[assignment.id];
+      const config = truckConfigs[assignment.resourceId];
+      const resource = getResourceById(assignment.resourceId);
+      logger.debug(`🚛 Checking dump-trailer config for ${assignment.resourceId} (${resource?.name}): ${config}`);
       return config === 'dump-trailer';
+    });
+
+    logger.info(`🚛 Configuration filtering results:`, {
+      totalTrailerAssignments: trailerAssignments.length,
+      flowboyAssignments: flowboyAssignments.length,
+      dumpTrailerAssignments: dumpTrailerAssignments.length
     });
     
     // Determine what sections to show based on job type and assignments
@@ -776,6 +830,35 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             </div>
           </div>
         </div>
+        
+        {/* Uncategorized trucks section (for debugging missing resources) */}
+        {uncategorizedAssignments.length > 0 && (
+          <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-xs font-medium text-red-700">Uncategorized Trucks (Missing Resources)</span>
+              <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded">{uncategorizedAssignments.length}</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <AnimatePresence>
+                {uncategorizedAssignments.map(assignment => (
+                  <motion.div
+                    key={assignment.id}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  >
+                    <div className="bg-red-100 border border-red-300 rounded p-2 text-xs">
+                      <div className="text-red-700 font-medium">Assignment ID: {assignment.id}</div>
+                      <div className="text-red-600">Resource ID: {assignment.resourceId}</div>
+                      <div className="text-red-500 text-[10px]">Resource not found in system</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
         
         {/* Equipment selector modal */}
         {selectedEquipmentType && (

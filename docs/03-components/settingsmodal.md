@@ -3,7 +3,7 @@ title: SettingsModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # SettingsModal
@@ -16,7 +16,7 @@ SettingsModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `SettingsModal.tsx`
-- **Line**: 253
+- **Line**: 255
 - **Category**: Modals
 - **Has JSDoc**: ❌
 
@@ -41,6 +41,7 @@ function ExampleUsage() {
 
 - `react`
 - `lucide-react`
+- `../../context/ModalContext`
 - `./JobTypeManagerModal`
 - `./MagnetInteractionRulesModal`
 - `./DropRulesModal`

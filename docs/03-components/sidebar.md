@@ -3,7 +3,7 @@ title: Sidebar
 category: components
 tags: [layout, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # Sidebar
@@ -16,7 +16,7 @@ Sidebar is a exported React component in the Layout category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `Sidebar.tsx`
-- **Line**: 355
+- **Line**: 332
 - **Category**: Layout
 - **Has JSDoc**: ❌
 
@@ -46,10 +46,6 @@ function ExampleUsage() {
 - `../resources/ResourceCard`
 - `../resources/TruckDriverSection`
 - `../modals/PersonModal`
-- `../modals/MagnetInteractionRulesModal`
-- `../modals/DropRulesModal`
-- `../modals/DemoJobModal`
-- `../modals/RuleTemplateModal`
 - `../../types`
 - `../../types`
 - `../common/ErrorBoundary`

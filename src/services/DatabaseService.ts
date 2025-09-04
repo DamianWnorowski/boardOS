@@ -818,7 +818,56 @@ export class DatabaseService {
     }
   }
 
-  // Real-time subscriptions
+  // Helper method for subscription retry logic
+  static async subscribeWithRetry(
+    channelName: string,
+    setupFn: () => any,
+    maxRetries = 3,
+    retryDelay = 1000
+  ): Promise<any> {
+    let retryCount = 0;
+    
+    const attemptSubscribe = async (): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        try {
+          logger.info(`📻 Attempting ${channelName} subscription (attempt ${retryCount + 1})`);
+          const channel = setupFn();
+          
+          const timeout = setTimeout(() => {
+            reject(new Error(`${channelName} subscription timeout`));
+          }, 15000);
+          
+          channel.subscribe((status: string) => {
+            clearTimeout(timeout);
+            logger.info(`📻 ${channelName} channel status:`, status);
+            
+            if (status === 'SUBSCRIBED') {
+              logger.info(`✅ ${channelName} channel connected successfully`);
+              resolve(channel);
+            } else if (status === 'TIMED_OUT' || status === 'CLOSED') {
+              reject(new Error(`${channelName} channel ${status}`));
+            }
+          });
+        } catch (error) {
+          reject(error);
+        }
+      }).catch(async (error) => {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          logger.warn(`⚠️ ${channelName} subscription failed, retrying in ${retryDelay * retryCount}ms (attempt ${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay * retryCount));
+          return attemptSubscribe();
+        } else {
+          logger.error(`❌ ${channelName} subscription failed after ${maxRetries} attempts:`, error);
+          throw error;
+        }
+      });
+    };
+    
+    return attemptSubscribe();
+  }
+
+  // Real-time subscriptions with retry logic
   static subscribeToScheduleChanges(callbacks: {
     onResourceChange?: (payload: any) => void;
     onJobChange?: (payload: any) => void;

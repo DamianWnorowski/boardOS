@@ -105,11 +105,12 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
       return 'trac';
     }
     
-    return null; // Don't show other trucks
+    return 'other'; // Show all other trucks in "Other" category
   };
   
   const tenWheelTrucks = filteredTrucks.filter(truck => categorizeTruck(truck) === '10w');
   const tracTrucks = filteredTrucks.filter(truck => categorizeTruck(truck) === 'trac');
+  const otherTrucks = filteredTrucks.filter(truck => categorizeTruck(truck) === 'other');
   
   // Calculate assigned vs total trucks
   const getAssignedCount = (trucks: any[]) => {
@@ -118,10 +119,12 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
   
   const tenWheelAssigned = getAssignedCount(tenWheelTrucks);
   const tracAssigned = getAssignedCount(tracTrucks);
+  const otherAssigned = getAssignedCount(otherTrucks);
   
   // Calculate available counts
   const tenWheelAvailable = tenWheelTrucks.length - tenWheelAssigned;
   const tracAvailable = tracTrucks.length - tracAssigned;
+  const otherAvailable = otherTrucks.length - otherAssigned;
   
   // Get available drivers (not assigned to jobs and not assigned to trucks)
   const availableDrivers = filteredDrivers.map(driver => {
@@ -164,15 +167,15 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
   };
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="truck-driver-section">
       {/* Trucks Section - Side by side layout */}
-      <div className="flex space-x-4">
+      <div className="flex space-x-4" data-testid="trucks-section">
         {/* 10W Trucks - Single Column */}
-        <div className="flex-1">
+        <div className="flex-1" data-testid="10w-trucks-section">
           <h3 className="text-sm font-medium text-gray-700 mb-2">
             10W Trucks ({tenWheelAvailable}/{tenWheelTrucks.length})
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="10w-trucks-container">
             {tenWheelTrucks.map(truck => (
               <TruckCard 
                 key={truck.id}
@@ -193,11 +196,11 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
         </div>
       
         {/* Trac Trucks - Two Columns */}
-        <div className="flex-1 flex-grow-2" style={{ flex: '2' }}>
+        <div className="flex-1 flex-grow-2" style={{ flex: '2' }} data-testid="trac-trucks-section">
           <h3 className="text-sm font-medium text-gray-700 mb-2">
             Trac Trucks ({tracAvailable}/{tracTrucks.length})
           </h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" data-testid="trac-trucks-container">
             {tracTrucks.map(truck => (
               <TruckCard 
                 key={truck.id}
@@ -217,6 +220,28 @@ const TruckDriverSection: React.FC<TruckDriverSectionProps> = ({ searchTerm }) =
           )}
         </div>
       </div>
+      
+      {/* Other Trucks Section - Only show if there are any */}
+      {otherTrucks.length > 0 && (
+        <div data-testid="other-trucks-section">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            Other Trucks ({otherAvailable}/{otherTrucks.length})
+          </h3>
+          <div className="grid grid-cols-2 gap-2" data-testid="other-trucks-container">
+            {otherTrucks.map(truck => (
+              <TruckCard 
+                key={truck.id}
+                truck={truck}
+                driver={getTruckDriver(truck.id)}
+                isAssigned={assignedResourceIds.has(truck.id)}
+                onAssignDriver={assignDriverToTruck}
+                onUnassignDriver={unassignDriverFromTruck}
+                availableDrivers={availableDrivers}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Available Drivers Section */}
       <div>

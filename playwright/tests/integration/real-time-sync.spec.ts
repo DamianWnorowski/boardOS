@@ -97,10 +97,11 @@ test.describe('Real-time Synchronization', () => {
     const operator = TestDataFactory.createOperator();
 
     // Both users try to assign same resource to different jobs
-    const [result1, result2] = await Promise.all([
+    const [_result1, _result2] = await Promise.all([ // Results not inspected as we check final state
       scheduler1.dragResourceToJob(operator.id, 'Job A', 'Crew'),
       scheduler2.dragResourceToJob(operator.id, 'Job B', 'Crew')
     ]);
+    void _result1; void _result2; // Acknowledge unused results
 
     await Promise.all([
       scheduler1.waitForRealTimeUpdate(),
@@ -150,7 +151,8 @@ test.describe('Real-time Synchronization', () => {
     const { excavator, operator } = TestDataFactory.createEquipmentOperatorScenario();
 
     // User 1 creates attachment and assigns to job
-    const magnetPage1 = page1.locator('[data-testid="magnet-container"]');
+    const _magnetPage1 = page1.locator('[data-testid="magnet-container"]');
+    void _magnetPage1; // Available for future magnet operations
     
     // Simulate attachment (this would use MagnetPage in real scenario)
     await scheduler1.dragResourceToJob(excavator.id, 'Test Job', 'Equipment');

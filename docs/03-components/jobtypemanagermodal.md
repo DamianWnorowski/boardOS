@@ -3,7 +3,7 @@ title: JobTypeManagerModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # JobTypeManagerModal
@@ -16,7 +16,7 @@ JobTypeManagerModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `JobTypeManagerModal.tsx`
-- **Line**: 500
+- **Line**: 502
 - **Category**: Modals
 - **Has JSDoc**: ❌
 
@@ -42,6 +42,7 @@ function ExampleUsage() {
 - `react`
 - `lucide-react`
 - `../../context/SchedulerContext`
+- `../../context/ModalContext`
 - `../../types`
 - `../../utils/logger`
 

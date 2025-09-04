@@ -36,15 +36,22 @@ test.describe('Magnet Attachment Business Rules', () => {
   });
 
   test('truck requires driver attachment', async ({ page }) => {
-    const { truck, driver } = TestDataFactory.createTruckDriverScenario();
+    const { truck, driver, job } = TestDataFactory.createTruckDriverScenario();
 
-    // Drag truck to job
-    await schedulerPage.dragResourceToJob(truck.id, 'Test Job', 'Trucks');
+    // Navigate to trucks tab first
+    await schedulerPage.switchToTrucksTab();
+    
+    // Wait for trucks section to load
+    await page.waitForSelector('[data-testid="truck-driver-section"]');
 
-    // Attach driver
+    // Look for the truck card - use the proper truck-card selector
+    const truckCard = page.locator(`[data-testid="truck-card-${truck.id}"]`);
+    await expect(truckCard).toBeVisible({ timeout: 10000 });
+
+    // Attach driver to truck first using the UI
     await magnetPage.dragMagnetToTarget(driver.id, truck.id);
 
-    // Verify attachment
+    // Verify attachment worked
     const isAttached = await magnetPage.verifyAttachment(truck.id, driver.id);
     expect(isAttached).toBe(true);
 
@@ -53,7 +60,8 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(indicators.hasDriver).toBe(true);
   });
 
-  test('paver accepts maximum 2 screwmen', async ({ page }) => {
+  test('paver accepts maximum 2 screwmen', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const { paver, operator, screwmen } = TestDataFactory.createPaverScrewmenScenario();
 
     // Attach operator first (required)
@@ -81,7 +89,8 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(isFull).toBe(true);
   });
 
-  test('equipment cannot attach to equipment', async ({ page }) => {
+  test('equipment cannot attach to equipment', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const excavator1 = TestDataFactory.createExcavator({ name: 'Excavator 1' });
     const excavator2 = TestDataFactory.createExcavator({ name: 'Excavator 2' });
 
@@ -93,10 +102,12 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(isAttached).toBe(false);
   });
 
-  test('operator can attach to multiple equipment types', async ({ page }) => {
+  test('operator can attach to multiple equipment types', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const operator = TestDataFactory.createOperator();
     const excavator = TestDataFactory.createExcavator();
-    const paver = TestDataFactory.createPaver();
+    const _paver = TestDataFactory.createPaver();
+    void _paver; // Available for future test expansion
 
     // Check attachment capability
     const canAttachToExcavator = await magnetPage.canAttach('excavator', 'operator');
@@ -111,7 +122,8 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(isAttachedToExcavator).toBe(true);
   });
 
-  test('attached resources move together', async ({ page }) => {
+  test('attached resources move together', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const { excavator, operator } = TestDataFactory.createEquipmentOperatorScenario();
 
     // Attach operator to excavator
@@ -138,7 +150,8 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(operatorInJob2).toBe(true);
   });
 
-  test('detaching resources works correctly', async ({ page }) => {
+  test('detaching resources works correctly', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const { truck, driver } = TestDataFactory.createTruckDriverScenario();
 
     // Attach driver to truck
@@ -177,7 +190,8 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(isAttached).toBe(true);
   });
 
-  test('attachment limits are enforced visually', async ({ page }) => {
+  test('attachment limits are enforced visually', async ({ page: _page }) => {
+    void _page; // Acknowledge unused page parameter
     const paver = TestDataFactory.createPaver();
 
     // Check attachment limit
@@ -185,7 +199,7 @@ test.describe('Magnet Attachment Business Rules', () => {
     expect(limit).toBe(2); // Paver can have max 2 screwmen
 
     // Visual indicators before attachments
-    let indicators = await magnetPage.getVisualIndicator(paver.id);
+    const indicators = await magnetPage.getVisualIndicator(paver.id);
     expect(indicators.canReceiveAttachment).toBe(true);
 
     // After reaching limit, should show full indicator

@@ -16,7 +16,20 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
   realtime: {
     params: {
-      eventsPerSecond: 10
+      eventsPerSecond: 10,
+      heartbeat_interval: 30000, // 30 second heartbeat
+      reconnect_after: 5000, // Reconnect after 5 seconds
+      logger: (level: string, message: string, details?: any) => {
+        if (import.meta.env.DEV) {
+          console.log(`🔌 Supabase Real-time [${level}]:`, message, details);
+        }
+      }
+    },
+    timeout: 30000, // 30 second timeout
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'boardOS-scheduler'
     }
   }
 });

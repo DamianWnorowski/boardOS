@@ -1,12 +1,2 @@
 
-
-# Claude session management
-CLAUDE_CONTEXT.json
-CLAUDE_CONTEXT.md
-CLAUDE_HANDOFF.json
-CLAUDE_HANDOFF.md
-CLAUDE_CONTEXT_RESUMED.json
-CLAUDE_CONTEXT_RESUMED.md
-.claude/current/
-.claude/last-status.json
 node_modules

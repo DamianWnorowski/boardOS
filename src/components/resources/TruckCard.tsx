@@ -115,6 +115,11 @@ const TruckCard: React.FC<TruckCardProps> = ({
     <div 
       ref={(node) => drag(drop(node))}
       style={{ opacity }}
+      data-testid={`truck-card-${truck.id}`}
+      data-truck-id={truck.id}
+      data-truck-type={getTruckType(truck.identifier || '')}
+      data-has-driver={!!driver}
+      data-assigned={isAssigned}
       className={`relative transition-all duration-200 ${
         isAssigned ? 'opacity-60' : 'cursor-move'
       } bg-black text-white border border-gray-300 rounded-md shadow-sm ${

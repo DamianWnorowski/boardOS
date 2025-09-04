@@ -94,8 +94,28 @@ const EquipmentSelectorModal: React.FC<EquipmentSelectorModalProps> = ({
   
   logger.debug('EquipmentSelectorModal - Filtered equipment count', { count: allEquipment.length });
   
-  // Get assigned resource IDs directly from assignments (ignore sidebar filters)
-  const assignedResourceIds = new Set(assignments.map(a => a.resourceId));
+  // Get assigned resource IDs for the current job's date only
+  const getCurrentDateAssignments = () => {
+    const currentJob = getJobById(jobId);
+    if (!currentJob || !currentJob.schedule_date) {
+      return []; // If no job or no date, no conflicts
+    }
+    
+    const jobDateStr = currentJob.schedule_date;
+    return assignments.filter(assignment => {
+      const job = getJobById(assignment.jobId);
+      if (!job) return false;
+      
+      // Only include assignments that have a schedule_date matching the current job's date
+      // Don't include assignments from old jobs without dates
+      if (!job.schedule_date) return false;
+      
+      return job.schedule_date === jobDateStr;
+    });
+  };
+  
+  const currentDateAssignments = getCurrentDateAssignments();
+  const assignedResourceIds = new Set(currentDateAssignments.map(a => a.resourceId));
   const assignedEquipmentIds = new Set(
     allEquipment
       .filter(r => assignedResourceIds.has(r.id))
@@ -129,6 +149,16 @@ const EquipmentSelectorModal: React.FC<EquipmentSelectorModalProps> = ({
     }
     
     // Create the assignment first
+    logger.debug('🚛 EquipmentSelectorModal - Creating assignment:', {
+      resourceId,
+      jobId,
+      rowType,
+      equipmentType,
+      truckCategory,
+      truckConfig,
+      willSetConfig: (equipmentType === 'truck' && (truckCategory === 'flowboy' || truckCategory === 'dump-trailer'))
+    });
+    
     const assignmentId = assignResourceWithTruckConfig(
       resourceId, 
       jobId, 
@@ -138,7 +168,7 @@ const EquipmentSelectorModal: React.FC<EquipmentSelectorModalProps> = ({
         : undefined
     );
     
-    logger.debug('EquipmentSelectorModal - Equipment assignment created', { assignmentId, resourceId, truckConfig });
+    logger.debug('🚛 EquipmentSelectorModal - Assignment created:', { assignmentId, resourceId, truckConfig });
     
     onClose();
   };

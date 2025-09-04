@@ -11,10 +11,10 @@ export class SchedulerPage {
   constructor(page: Page) {
     this.page = page;
     this.jobBoard = page.locator('[data-testid="job-board"]');
-    this.resourcePanel = page.locator('[data-testid="resource-panel"]');
+    this.resourcePanel = page.locator('aside'); // Sidebar contains resources
     this.dateSelector = page.locator('[data-testid="date-selector"]');
     this.shiftToggle = page.locator('[data-testid="shift-toggle"]');
-    this.searchInput = page.locator('[data-testid="search-input"]');
+    this.searchInput = page.locator('input[placeholder*="Search"]');
   }
 
   async goto() {
@@ -54,9 +54,21 @@ export class SchedulerPage {
     jobName: string,
     rowType: string
   ) {
-    const resource = this.resourcePanel.locator(`[data-resource-id="${resourceId}"]`);
-    const targetRow = await this.getJobRow(jobName, rowType);
+    // Try to find resource card or truck card
+    const resourceCard = this.page.locator(`[data-testid="resource-card-${resourceId}"]`);
+    const truckCard = this.page.locator(`[data-testid="truck-card-${resourceId}"]`);
     
+    let resource;
+    if (await resourceCard.count() > 0) {
+      resource = resourceCard;
+    } else if (await truckCard.count() > 0) {
+      resource = truckCard;
+    } else {
+      // Fallback to data-resource-id
+      resource = this.page.locator(`[data-resource-id="${resourceId}"]`);
+    }
+    
+    const targetRow = await this.getJobRow(jobName, rowType);
     await resource.dragTo(targetRow);
   }
 
@@ -128,5 +140,31 @@ export class SchedulerPage {
 
   async getAssignedResources(type: string) {
     return this.jobBoard.locator(`[data-resource-type="${type}"]`);
+  }
+
+  // Truck-specific operations
+  async switchToTrucksTab() {
+    const trucksTab = this.page.locator('button:has-text("Trucks & Drivers")');
+    await trucksTab.click();
+  }
+
+  async getTruckDriverSection() {
+    return this.page.locator('[data-testid="truck-driver-section"]');
+  }
+
+  async getTruckCard(truckId: string) {
+    return this.page.locator(`[data-testid="truck-card-${truckId}"]`);
+  }
+
+  async switchView(view: 'day' | 'week' | 'month') {
+    const viewButton = this.page.locator(`button:has-text("${view.charAt(0).toUpperCase() + view.slice(1)}")`);
+    await viewButton.click();
+  }
+
+  async openQuickAddModal() {
+    const addButton = this.page.locator('button:has-text("Add Resource")').or(
+      this.page.locator('button[aria-label*="Add"]')
+    );
+    await addButton.click();
   }
 }

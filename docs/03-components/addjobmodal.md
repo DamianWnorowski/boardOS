@@ -3,7 +3,7 @@ title: AddJobModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # AddJobModal
@@ -16,7 +16,7 @@ AddJobModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `AddJobModal.tsx`
-- **Line**: 306
+- **Line**: 373
 - **Category**: Modals
 - **Has JSDoc**: ❌
 
@@ -43,6 +43,7 @@ function ExampleUsage() {
 - `lucide-react`
 - `../../context/SchedulerContext`
 - `../../types`
+- `../../utils/jobRulesConfiguration`
 - `./LocationSelector`
 
 

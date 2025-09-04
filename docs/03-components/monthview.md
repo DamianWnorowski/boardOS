@@ -3,7 +3,7 @@ title: MonthView
 category: components
 tags: [board, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # MonthView
@@ -16,7 +16,7 @@ MonthView is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `MonthView.tsx`
-- **Line**: 316
+- **Line**: 319
 - **Category**: Board
 - **Has JSDoc**: ❌
 

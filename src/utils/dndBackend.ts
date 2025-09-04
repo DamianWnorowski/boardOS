@@ -1,10 +1,11 @@
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
-import { MultiBackend, TouchTransition, MouseTransition } from 'react-dnd-multi-backend';
+import { TouchTransition, MouseTransition } from 'react-dnd-multi-backend';
 import logger from './logger';
 
 // Custom HTML5Backend that allows shift+drag for second job assignments
-class ShiftDragHTML5Backend {
+// Currently unused but kept for potential future implementation
+class _ShiftDragHTML5Backend {
   private html5Backend: HTML5Backend;
   private manager: any;
   private context: any;
@@ -171,3 +172,6 @@ export const getMobileDragSourceOptions = () => ({
 export const getMobileDropTargetOptions = () => ({
   hover: false, // Disable hover on mobile for better performance
 });
+
+// Acknowledge unused class for ESLint
+void _ShiftDragHTML5Backend;

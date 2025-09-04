@@ -3,7 +3,7 @@ title: JobEstimateCard
 category: components
 tags: [jobs, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # JobEstimateCard
@@ -16,7 +16,7 @@ JobEstimateCard is a exported React component in the Jobs category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `JobEstimateCard.tsx`
-- **Line**: 51
+- **Line**: 81
 - **Category**: Jobs
 - **Has JSDoc**: ❌
 

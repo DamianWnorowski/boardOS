@@ -32,6 +32,7 @@ test.describe('Quick Select Equipment Types', () => {
       'paver', 'roller', 'excavator', 'sweeper', 'millingMachine',
       'grader', 'dozer', 'payloader', 'skidsteer', 'equipment'
     ];
+    void expectedSubcategories; // List available for future detailed subcategory validation
     
     // Check that subcategory grid is visible
     expect(await quickSelect.subcategoryGrid.isVisible()).toBe(true);

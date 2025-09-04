@@ -3,7 +3,7 @@ title: TruckDriverSection
 category: components
 tags: [resources, component, exported]
 related: []
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # TruckDriverSection
@@ -16,7 +16,7 @@ TruckDriverSection is a exported React component in the Resources category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `TruckDriverSection.tsx`
-- **Line**: 209
+- **Line**: 258
 - **Category**: Resources
 - **Has JSDoc**: ❌
 

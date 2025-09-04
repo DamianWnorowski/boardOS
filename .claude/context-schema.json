@@ -1,0 +1,443 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://boardOS.com/claude-context-schema.json",
+  "title": "Claude Context Schema",
+  "description": "Schema for Claude session context data",
+  "type": "object",
+  "required": ["session", "activeWork", "memory", "environment"],
+  "properties": {
+    "session": {
+      "type": "object",
+      "required": ["id", "startTime", "lastUpdate"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^claude-[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]{8}$",
+          "description": "Unique session identifier"
+        },
+        "startTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Session start timestamp"
+        },
+        "lastUpdate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last context update timestamp"
+        },
+        "tokenEstimate": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500000,
+          "description": "Estimated token usage"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["NEW_SESSION", "RESUME_SESSION", "HANDOFF_SESSION"],
+          "description": "Session type"
+        }
+      },
+      "additionalProperties": false
+    },
+    "activeWork": {
+      "type": "object",
+      "properties": {
+        "currentTask": {
+          "type": ["string", "null"],
+          "maxLength": 200,
+          "description": "Current active task description"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^/].*\\.(ts|tsx|js|jsx|json|md|sql)$",
+            "description": "File path relative to project root"
+          },
+          "maxItems": 20,
+          "description": "Currently modified files"
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["decision", "timestamp"],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "maxLength": 500,
+                "description": "Decision made"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["low", "normal", "high", "critical"],
+                "default": "normal"
+              }
+            }
+          },
+          "maxItems": 20,
+          "description": "Recent decisions made during session"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["issue", "timestamp"],
+            "properties": {
+              "issue": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "Blocking issue description"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["low", "medium", "high", "critical"],
+                "default": "medium"
+              },
+              "resolved": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          "maxItems": 10,
+          "description": "Current blockers and issues"
+        },
+        "progress": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "timestamp"],
+            "properties": {
+              "item": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "Progress item description"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["fix", "feature", "refactor", "test", "docs", "config"],
+                "default": "fix"
+              }
+            }
+          },
+          "maxItems": 15,
+          "description": "Recent progress items"
+        }
+      },
+      "additionalProperties": false
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "keyDecisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["decision", "timestamp"],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "maxLength": 500,
+                "description": "Key decision made"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["low", "normal", "high", "critical"],
+                "default": "normal"
+              },
+              "context": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "Decision context"
+              }
+            }
+          },
+          "maxItems": 20,
+          "description": "Important decisions to remember"
+        },
+        "userPreferences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "User preference or pattern"
+          },
+          "maxItems": 10,
+          "uniqueItems": true,
+          "description": "Observed user preferences"
+        },
+        "codePatterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pattern", "description"],
+            "properties": {
+              "pattern": {
+                "type": "string",
+                "maxLength": 100,
+                "description": "Code pattern name"
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "Pattern description"
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "description": "Files where pattern is used"
+              }
+            }
+          },
+          "maxItems": 15,
+          "description": "Learned code patterns"
+        },
+        "fixedIssues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "description", "timestamp"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "File path"
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Line number"
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "What was fixed"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "maxItems": 15,
+          "description": "Recently fixed issues"
+        }
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "filesModified": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of files modified this session"
+        },
+        "testsFixed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tests fixed this session"
+        },
+        "lintErrorsResolved": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of lint errors resolved"
+        },
+        "commitsCreated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of commits created"
+        }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "required": ["gitBranch", "testStatus", "lintStatus"],
+      "properties": {
+        "gitBranch": {
+          "type": ["string", "null"],
+          "maxLength": 100,
+          "description": "Current git branch"
+        },
+        "devServerStatus": {
+          "type": "boolean",
+          "description": "Whether dev server is running"
+        },
+        "testStatus": {
+          "type": "object",
+          "required": ["passing", "failing"],
+          "properties": {
+            "passing": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failing": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "lastRun": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "additionalProperties": false
+        },
+        "lintStatus": {
+          "type": "object",
+          "required": ["errors", "warnings"],
+          "properties": {
+            "errors": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warnings": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "lastRun": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "additionalProperties": false
+        },
+        "databaseStatus": {
+          "type": "object",
+          "properties": {
+            "migrationApplied": {
+              "type": "boolean",
+              "description": "Whether database migration is applied"
+            },
+            "connectionStatus": {
+              "type": "string",
+              "enum": ["connected", "disconnected", "unknown"],
+              "default": "unknown"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "bridgeData": {
+      "type": "object",
+      "description": "Data for session bridging",
+      "properties": {
+        "previousSessionId": {
+          "type": "string",
+          "description": "Previous session ID"
+        },
+        "continuityScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Context continuity score"
+        },
+        "sourceQuality": {
+          "type": "object",
+          "properties": {
+            "realTime": {
+              "type": "string",
+              "enum": ["high", "medium", "low", "none"]
+            },
+            "handoff": {
+              "type": "string", 
+              "enum": ["high", "medium", "low", "none"]
+            },
+            "memory": {
+              "type": "string",
+              "enum": ["high", "medium", "low", "none"]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "session": {
+        "id": "claude-2025-01-20-abc12345",
+        "startTime": "2025-01-20T10:30:00Z",
+        "lastUpdate": "2025-01-20T11:15:00Z",
+        "tokenEstimate": 45000,
+        "mode": "NEW_SESSION"
+      },
+      "activeWork": {
+        "currentTask": "Fixing test failures in ResourceCard component",
+        "files": [
+          "src/components/resources/ResourceCard.tsx",
+          "src/components/resources/__tests__/ResourceCard.test.tsx"
+        ],
+        "decisions": [
+          {
+            "decision": "Added null check for assignments filter to prevent crash",
+            "timestamp": "2025-01-20T11:00:00Z",
+            "priority": "high"
+          }
+        ],
+        "progress": [
+          {
+            "item": "Fixed ResourceCard null reference error",
+            "timestamp": "2025-01-20T11:10:00Z", 
+            "type": "fix"
+          }
+        ]
+      },
+      "memory": {
+        "keyDecisions": [
+          {
+            "decision": "Don't remove 'unused' variables - they're used in JSX conditionally",
+            "timestamp": "2025-01-20T10:45:00Z",
+            "priority": "high"
+          }
+        ],
+        "userPreferences": [
+          "User wants comprehensive analysis and context",
+          "User prefers to see line numbers when referencing code"
+        ]
+      },
+      "environment": {
+        "gitBranch": "main",
+        "devServerStatus": true,
+        "testStatus": {
+          "passing": 42,
+          "failing": 3,
+          "total": 45,
+          "lastRun": "2025-01-20T11:05:00Z"
+        },
+        "lintStatus": {
+          "errors": 127,
+          "warnings": 45,
+          "lastRun": "2025-01-20T11:08:00Z"
+        }
+      }
+    }
+  ]
+}

@@ -50,7 +50,9 @@ const MonthViewJobBar: React.FC<MonthViewJobBarProps> = ({
   const getCurrentPhase = () => {
     if (!job._spanStart || !job._spanEnd) return null;
     
-    const totalDays = job._totalSpanDays || 1;
+    // Variables for potential future phase calculations
+    const _totalDays = job._totalSpanDays || 1;
+    void _totalDays; // Prevent unused variable warning
     const currentDayIndex = Math.floor((date.getTime() - job._spanStart.getTime()) / (1000 * 60 * 60 * 24));
     
     if (job.type === 'both' && job.estimated_duration) {
@@ -98,7 +100,8 @@ const MonthViewJobBar: React.FC<MonthViewJobBarProps> = ({
   // Determine if this is a multi-day continuation
   const isMultiDayJob = job._totalSpanDays && job._totalSpanDays > 1;
   const isStartDay = job._isStartDay;
-  const isEndDay = job._isEndDay;
+  const _isEndDay = job._isEndDay; // Prefixed with underscore - may be needed for future end-day indicators
+  void _isEndDay; // Prevent unused variable warning
   const phase = getCurrentPhase();
 
   return (

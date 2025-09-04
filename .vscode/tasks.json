@@ -1,0 +1,147 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Claude: Start Context Manager",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "claude:context:watch"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Claude: Update Context",
+      "type": "shell", 
+      "command": "npm",
+      "args": ["run", "claude:context:update"],
+      "group": "build",
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Claude: Check Token Usage",
+      "type": "shell",
+      "command": "npm", 
+      "args": ["run", "claude:monitor"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Claude: Bridge Context",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "claude:bridge"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", 
+        "focus": true,
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Claude: Full Context Analysis",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "claude:analyze"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new"
+      },
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Claude: Update Context",
+        "Claude: Check Token Usage", 
+        "Claude: Bridge Context"
+      ]
+    },
+    {
+      "label": "Claude: Emergency Handoff",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "claude:handoff"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Claude: Session Status",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "claude:status"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Development: Start with Claude Context",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Claude: Start Context Manager",
+        "Dev: Start Server"
+      ]
+    },
+    {
+      "label": "Dev: Start Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Local:.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      }
+    }
+  ],
+  "inputs": []
+}

@@ -5,8 +5,8 @@ import { DatabaseService } from '../../services/DatabaseService';
 import { Job } from '../../types';
 import JobColumn from './JobColumn';
 import AddJobModal from '../modals/AddJobModal';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+// import { DndProvider } from 'react-dnd'; // Not currently used but may be needed for future drag-and-drop functionality
+// import { HTML5Backend } from 'react-dnd-html5-backend';
 
 interface WeekViewProps {
   startDate: Date;
@@ -14,7 +14,8 @@ interface WeekViewProps {
 }
 
 const WeekView: React.FC<WeekViewProps> = ({ startDate, onDateChange }) => {
-  const { jobs, resources, assignments, addJob } = useScheduler();
+  const { jobs, assignments, addJob } = useScheduler();
+  // const { resources } = useScheduler(); // Not currently used but available for resource-related functionality
   const [weekJobs, setWeekJobs] = useState<Map<string, Job[]>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -212,7 +213,8 @@ const WeekView: React.FC<WeekViewProps> = ({ startDate, onDateChange }) => {
       {/* Week Days Grid */}
       <div className="flex-1 overflow-x-auto">
         <div className="flex h-full min-w-max">
-          {weekDates.map((date, index) => {
+          {weekDates.map((date, _index) => {
+            void _index; // Prevent unused variable warning
             const dateStr = date.toISOString().split('T')[0];
             const dayJobs = weekJobs.get(dateStr) || [];
             const jobCount = getJobCount(date);

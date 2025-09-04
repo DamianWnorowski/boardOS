@@ -37,7 +37,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   hasNote = false,
   showDoubleShift = false
 }) => {
-  const { getTruckDriver, assignments, getJobById } = useScheduler();
+  const { getTruckDriver, assignments, getJobById, selectedDate, currentView } = useScheduler();
   const { isMobile, touchEnabled } = useMobile();
   const { getIsCtrlHeld } = useDragContext();
   
@@ -217,12 +217,34 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     return isDisabled ? 'bg-gray-300 text-gray-500' : getResourceStyle(resource.type);
   };
   
-  // Get border styling with shift status
+  // Get border styling with shift status - only consider assignments for current date
   const getBorderStyling = () => {
     if (isDisabled) return 'border border-gray-400';
     
-    // Check if this resource is working shifts
-    const resourceAssignments = assignments?.filter(a => a.resourceId === resource.id) || [];
+    // Get current date string for filtering
+    const getCurrentDateString = () => {
+      if (currentView === 'month' || !selectedDate) {
+        // For month view or if selectedDate is undefined, don't filter by date
+        return null;
+      }
+      return selectedDate.toISOString().split('T')[0];
+    };
+    
+    const currentDateStr = getCurrentDateString();
+    
+    // Filter assignments to only include those for the current date (or all for month view)
+    const resourceAssignments = assignments?.filter(a => {
+      if (a.resourceId !== resource.id) return false;
+      
+      // For month view, include all assignments
+      if (!currentDateStr) return true;
+      
+      const job = getJobById(a.jobId);
+      if (!job || !job.schedule_date) return false;
+      
+      return job.schedule_date === currentDateStr;
+    }) || [];
+    
     const assignedJobs = resourceAssignments.map(a => getJobById(a.jobId)).filter(Boolean);
     const hasNightJob = assignedJobs.some(job => job.shift === 'night');
     const hasDayJob = assignedJobs.some(job => job.shift === 'day');
@@ -306,6 +328,13 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       <div 
         ref={drag}
         style={{ opacity }}
+        data-testid={`resource-card-${resource.id}`}
+        data-resource-id={resource.id}
+        data-resource-type={resource.type}
+        data-resource-name={resource.name}
+        data-disabled={isDisabled}
+        data-attached={isAttached}
+        data-main={isMain}
         className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyling()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
           isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-move'
         } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${
@@ -405,6 +434,13 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     <div 
       ref={isMain || isAttached ? null : drag}
       style={{ opacity }}
+      data-testid={`resource-card-${resource.id}`}
+      data-resource-id={resource.id}
+      data-resource-type={resource.type}
+      data-resource-name={resource.name}
+      data-disabled={isDisabled}
+      data-attached={isAttached}
+      data-main={isMain}
       className={`relative px-1 py-0.5 transition-all duration-200 ${getCardStyle()} ${getBorderStyling()} ${resource.type === 'foreman' ? 'font-semibold' : ''} ${attachmentStyle()} ${isMobile ? 'h-12' : 'h-10'} flex flex-col justify-center ${widthStyle} ${compactStyle} ${
         isDisabled ? 'cursor-not-allowed opacity-60' : (isMain || isAttached ? 'cursor-default' : 'cursor-move')
       } ${!isDisabled && onPersonClick && !isMobile ? 'hover:ring-2 hover:ring-blue-400' : ''} ${isMobile ? 'touch-manipulation active:scale-95' : ''} ${

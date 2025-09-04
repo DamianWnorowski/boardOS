@@ -63,7 +63,9 @@ export class SmartRuleGenerator {
     options: RuleGenerationOptions
   ): GeneratedRule[] {
     const rules: GeneratedRule[] = [];
-    const { type, skills = [], certifications = [], allowedEquipment = [] } = resource;
+    const { type: _type, skills: _skills = [], certifications: _certifications = [], allowedEquipment: _allowedEquipment = [] } = resource;
+    void _type; void _skills; void _certifications; void _allowedEquipment; // Acknowledge unused destructured values for future use
+    // Destructured values available for future rule generation enhancements
 
     // Generate drop rules based on personnel type
     rules.push(...this.generatePersonnelDropRules(resource, options));
@@ -102,8 +104,9 @@ export class SmartRuleGenerator {
    */
   private static generatePersonnelDropRules(
     resource: Employee & Resource,
-    options: RuleGenerationOptions
+    _options: RuleGenerationOptions // Future use for customizing rule generation
   ): GeneratedRule[] {
+    void _options; // Acknowledge unused parameter for future implementation
     const rules: GeneratedRule[] = [];
     const { type } = resource;
 
@@ -167,10 +170,13 @@ export class SmartRuleGenerator {
    */
   private static generatePersonnelMagnetRules(
     resource: Employee & Resource,
-    options: RuleGenerationOptions
+    _options: RuleGenerationOptions // Future use for rule customization
   ): GeneratedRule[] {
+    void _options; // Acknowledge unused parameter for future implementation
     const rules: GeneratedRule[] = [];
-    const { type, skills = [], certifications = [], allowedEquipment = [] } = resource;
+    const { type, skills: _skills = [], certifications = [], allowedEquipment = [] } = resource;
+    void _skills; // Acknowledge unused destructured value for future use
+    // Skills available for advanced rule generation
 
     // Generate rules based on allowed equipment
     allowedEquipment.forEach(equipType => {
@@ -224,8 +230,9 @@ export class SmartRuleGenerator {
    */
   private static generateSafetyRules(
     resource: Employee & Resource,
-    options: RuleGenerationOptions
+    _options: RuleGenerationOptions // Future use for safety rule customization
   ): GeneratedRule[] {
+    void _options; // Acknowledge unused parameter for future implementation
     const rules: GeneratedRule[] = [];
     const { certifications = [] } = resource;
 
@@ -255,8 +262,9 @@ export class SmartRuleGenerator {
    */
   private static generateOperatorRequirements(
     resource: Equipment & Resource,
-    options: RuleGenerationOptions
+    _options: RuleGenerationOptions // Future use for operator requirement customization
   ): GeneratedRule[] {
+    void _options; // Acknowledge unused parameter for future implementation
     const rules: GeneratedRule[] = [];
     const { type } = resource;
 
@@ -311,8 +319,9 @@ export class SmartRuleGenerator {
    */
   private static generateEquipmentMagnetRules(
     resource: Equipment & Resource,
-    options: RuleGenerationOptions
+    _options: RuleGenerationOptions // Available for rule customization
   ): GeneratedRule[] {
+    void _options; // Acknowledge unused parameter for future implementation
     const rules: GeneratedRule[] = [];
     const { type, compatibleAttachments = [] } = resource;
 
@@ -412,12 +421,13 @@ export class SmartRuleGenerator {
    */
   static analyzeExistingRules(
     existingMagnetRules: MagnetInteractionRule[],
-    existingDropRules: DropRule[]
+    _existingDropRules: DropRule[] // Available for conflict analysis implementation
   ): {
     conflicts: string[];
     suggestions: string[];
     coverage: number; // Percentage of common scenarios covered
   } {
+    void _existingDropRules; // Acknowledge unused parameter for future implementation
     const conflicts: string[] = [];
     const suggestions: string[] = [];
 

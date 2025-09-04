@@ -2,13 +2,13 @@
 title: Component Library
 category: components
 tags: [components, react, typescript]
-last-updated: 2025-08-29
+last-updated: 2025-09-04
 ---
 
 # Component Library
 
 ## Quick Answer
-BoardOS contains 56 React components organized into 10 categories. All components are TypeScript-enabled with comprehensive prop interfaces.
+BoardOS contains 66 React components organized into 10 categories. All components are TypeScript-enabled with comprehensive prop interfaces.
 
 ## Component Categories
 
@@ -29,6 +29,8 @@ BoardOS contains 56 React components organized into 10 categories. All component
 
 - **[DatabaseStatus](databasestatus.md)** - Component description
 - **[DebugPanel](debugpanel.md)** - Component description
+- **[JobRulesManager](jobrulesmanager.md)** - Component description
+- **[UnifiedRulesTable](unifiedrulestable.md)** - Component description
 - **[DatabaseTester](databasetester.md)** - Component description
 
 ### Jobs Components
@@ -62,23 +64,31 @@ BoardOS contains 56 React components organized into 10 categories. All component
 
 ### Modals Components
 
+- **[AddAttachmentRuleModal](addattachmentrulemodal.md)** - Component description
 - **[AddJobModal](addjobmodal.md)** - Component description
+- **[AddJobTypeModal](addjobtypemodal.md)** - Component description
 - **[AddResourceModal](addresourcemodal.md)** - Component description
 - **[JobTypeConfigModal](jobtypeconfigmodal.md)** - Component description
 - **[DropRulesModal](droprulesmodal.md)** - Component description
 - **[EditJobModal](editjobmodal.md)** - Component description
+- **[EnhancedAddResourceModal](enhancedaddresourcemodal.md)** - Component description
 - **[EquipmentSelectorModal](equipmentselectormodal.md)** - Component description
 - **[JobTypeManagerModal](jobtypemanagermodal.md)** - Component description
 - **[LocationSelector](locationselector.md)** - Component description
 - **[MagnetInteractionRulesModal](magnetinteractionrulesmodal.md)** - Component description
+- **[MasterSettingsModal](mastersettingsmodal.md)** - Component description
 - **[OperatorSelectorModal](operatorselectormodal.md)** - Component description
 - **[PersonModal](personmodal.md)** - Component description
+- **[QuickAddResourceModal](quickaddresourcemodal.md)** - Component description
+- **[ResourceDeleteConfirmModal](resourcedeleteconfirmmodal.md)** - Component description
+- **[ResourceTypeSelectorModal](resourcetypeselectormodal.md)** - Component description
 - **[RuleTemplateModal](ruletemplatemodal.md)** - Component description
 - **[ScrewmanSelectorModal](screwmanselectormodal.md)** - Component description
 - **[SendSMSModal](sendsmsmodal.md)** - Component description
 - **[SettingsModal](settingsmodal.md)** - Component description
 - **[TimeSlotModal](timeslotmodal.md)** - Component description
 - **[TruckConfigModal](truckconfigmodal.md)** - Component description
+- **[UnifiedSettingsModal](unifiedsettingsmodal.md)** - Component description
 
 ### Resources Components
 
@@ -104,11 +114,11 @@ BoardOS contains 56 React components organized into 10 categories. All component
 |----------|-------|----------|
 | Board | 5 | 0% |
 | Common | 2 | 0% |
-| Other | 3 | 0% |
+| Other | 5 | 0% |
 | Jobs | 4 | 0% |
 | Layout | 4 | 0% |
 | Magnets | 5 | 0% |
 | Mobile | 4 | 0% |
-| Modals | 17 | 0% |
+| Modals | 25 | 0% |
 | Resources | 4 | 0% |
 | UI | 8 | 0% |

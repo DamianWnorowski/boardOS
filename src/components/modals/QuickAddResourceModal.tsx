@@ -20,6 +20,7 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
   const { addResource } = useScheduler();
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
+  const [truckCategory, setTruckCategory] = useState<'10w' | 'trac' | 'other'>('other');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const personnelTypes: ResourceType[] = ['operator', 'driver', 'striper', 'foreman', 'laborer', 'privateDriver'];
@@ -48,6 +49,22 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
   };
 
   const generateDefaultIdentifier = () => {
+    if (requiredResourceType === 'truck') {
+      // Generate identifiers based on truck category
+      if (truckCategory === '10w') {
+        const validIds = ['389', '390', '391', '392', '393', '394', '395', '396', '397', '398', '399'];
+        const availableIds = validIds; // In real implementation, check which are not in use
+        return availableIds[Math.floor(Math.random() * availableIds.length)];
+      } else if (truckCategory === 'trac') {
+        const validIds = ['43', '44', ...Array.from({length: 28}, (_, i) => (49 + i).toString())]; // 49-76
+        const availableIds = validIds; // In real implementation, check which are not in use
+        return availableIds[Math.floor(Math.random() * availableIds.length)];
+      } else {
+        // For other trucks, generate a test identifier that goes to "Other" category
+        return `T${Math.floor(Math.random() * 999) + 1}`;
+      }
+    }
+    
     const prefix = requiredResourceType.substring(0, 3).toUpperCase();
     const number = Math.floor(Math.random() * 999) + 1;
     return `${prefix}${number.toString().padStart(3, '0')}`;
@@ -64,13 +81,18 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      let model = '';
+      if (requiredResourceType === 'truck') {
+        model = truckCategory === '10w' ? '10W' : truckCategory === 'trac' ? 'Trac' : 'Other';
+      }
+
       await addResource({
         type: requiredResourceType,
         classType: isPersonnel ? 'employee' : 'equipment',
         name,
         identifier: identifier || generateDefaultIdentifier(),
         location: 'Yard',
-        model: '',
+        model,
         onSite: false
       });
       onClose();
@@ -139,6 +161,27 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
                 />
               </div>
 
+              {/* Truck Category Selection (only for trucks) */}
+              {requiredResourceType === 'truck' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Truck Category *
+                  </label>
+                  <select
+                    value={truckCategory}
+                    onChange={(e) => setTruckCategory(e.target.value as '10w' | 'trac' | 'other')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="10w">10W Trucks (389-399)</option>
+                    <option value="trac">Trac Trucks (43-44, 49-76)</option>
+                    <option value="other">Other Trucks</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose the truck category to generate appropriate identifiers
+                  </p>
+                </div>
+              )}
+
               {/* Identifier */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -149,10 +192,16 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Auto-generated if empty"
+                  placeholder={requiredResourceType === 'truck' ? 
+                    `Auto-generated for ${truckCategory.toUpperCase()} trucks` : 
+                    "Auto-generated if empty"
+                  }
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Unique identifier (e.g., license plate, equipment number)
+                  {requiredResourceType === 'truck' 
+                    ? `Truck number/identifier for ${truckCategory.toUpperCase()} category`
+                    : "Unique identifier (e.g., license plate, equipment number)"
+                  }
                 </p>
               </div>
 
@@ -179,6 +228,9 @@ const QuickAddResourceModal: React.FC<QuickAddResourceModalProps> = ({
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>• Type: {getResourceTypeDisplay(requiredResourceType)}</p>
                   <p>• Category: {isPersonnel ? 'Personnel' : 'Equipment/Vehicle'}</p>
+                  {requiredResourceType === 'truck' && (
+                    <p>• Truck Category: {truckCategory.toUpperCase()}</p>
+                  )}
                   <p>• Location: Yard (default)</p>
                   <p>• Status: Off Site (can be changed later)</p>
                 </div>

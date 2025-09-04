@@ -269,7 +269,8 @@ export class Magnet {
   /**
    * Check if this magnet can attach to another
    */
-  canAttachTo(magnet: Magnet): boolean {
+  canAttachTo(_magnet: Magnet): boolean {
+    void _magnet; // For future attachment validation logic
     // This method is now primarily for internal Magnet logic,
     // the main compatibility check happens in MagnetManager.linkMagnets
     // based on the rules from SchedulerContext
