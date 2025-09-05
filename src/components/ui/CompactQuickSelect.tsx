@@ -1,5 +1,6 @@
 import React from 'react';
 import { useKeyboardShortcuts } from '../../context/KeyboardShortcutsContext';
+import { useScheduler } from '../../context/SchedulerContext';
 import { useMagnets } from '../../hooks/useMagnet';
 import DraggableQuickSelectCard from './DraggableQuickSelectCard';
 import { ResourceCategory, EquipmentSubcategory, getCategoryStyle, getSubcategoryStyle } from '../../types/quickSelect';
