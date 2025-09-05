@@ -59,6 +59,9 @@
     "claude:bridge": "node scripts/claude-bridge.js",
     "claude:bridge:load": "node scripts/claude-bridge.js load --verbose",
     "claude:analyze": "concurrently \"npm run claude:context:update\" \"npm run claude:monitor\" \"npm run claude:bridge\"",
+    "parallel": "concurrently \"npm:dev\" \"npm:claude:start\"",
+    "parallel:docs": "concurrently \"npm:dev\" \"npm:claude:start\" \"npm run docs:watch\"",
+    "bg:parallel": "node scripts/start-parallel.js",
     "prepare": "husky"
   },
   "dependencies": {

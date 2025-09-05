@@ -109,7 +109,12 @@ describe('JobRow', () => {
     assignments: [mockAssignment],
     resources: [mockResource],
     jobs: [mockJob],
-    getResourcesByAssignment: vi.fn(() => [mockAssignment]),
+    getResourcesByAssignment: vi.fn((jobId: string, rowType: string) => {
+      // Return assignments that match the jobId and rowType
+      return [mockAssignment].filter(assignment => 
+        assignment.jobId === jobId && assignment.row === rowType
+      );
+    }),
     assignResource: vi.fn(),
     assignResourceWithTruckConfig: vi.fn(),
     moveAssignmentGroup: vi.fn(),
@@ -121,7 +126,19 @@ describe('JobRow', () => {
     getTruckDriver: vi.fn(),
     canDropOnRow: vi.fn(() => true),
     getDropRule: vi.fn(() => ['paver', 'roller']),
-    getJobRowConfig: vi.fn(() => ({ isSplit: false })),
+    getJobRowConfig: vi.fn(() => ({ 
+      isSplit: true,
+      boxes: [
+        {
+          name: 'Equipment',
+          allowedTypes: ['paver', 'roller', 'excavator', 'skidsteer', 'millingMachine', 'sweeper', 'grader', 'dozer', 'payloader', 'equipment']
+        },
+        {
+          name: 'Personnel',
+          allowedTypes: ['operator', 'driver', 'foreman', 'laborer', 'striper']
+        }
+      ]
+    })),
     getAttachedAssignments: vi.fn(() => []),
     removeAssignment: vi.fn(),
     assignResourceWithAttachment: vi.fn(),
@@ -208,7 +225,7 @@ describe('JobRow', () => {
   describe('Basic Rendering', () => {
     it('should render row with label', () => {
       renderJobRow();
-      expect(screen.getByText('Equipment')).toBeInTheDocument();
+      expect(screen.getAllByText('Equipment')).toHaveLength(2); // Header + split box
     });
 
     it('should display assignment count when assignments exist', () => {
