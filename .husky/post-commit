@@ -1,12 +1,25 @@
 #!/bin/sh
+
+# Allow skipping this hook to prevent infinite recursion
+if [ -n "$SKIP_POST_COMMIT" ]; then
+  exit 0
+fi
+
 . "$(dirname "$0")/_/husky.sh"
 
-echo "📊 Post-commit: Updating project memory..."
+echo "Post-commit: Updating project memory and docs..."
 
-# Update CLAUDE.md with latest changes
-node scripts/update-claude-memory.cjs
+# Update CLAUDE.md with latest changes (do not fail commit if this step fails)
+node scripts/update-claude-memory.cjs || true
 
-# Generate AI context files
-npm run docs:generate
+# Generate documentation and AI context (non-fatal)
+npm run docs:generate || true
 
-echo "✅ Project memory and AI context updated"
+echo "Post-commit: Update complete."
+
+# Auto-commit any generated changes and avoid re-running this hook
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  git add -A
+  SKIP_POST_COMMIT=1 git commit -m "chore(docs): auto-sync generated docs [skip ci]" || true
+fi
+
