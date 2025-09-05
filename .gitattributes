@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+# Scripts and sh files
+*.sh text eol=lf
+
+# Reduce noise from generated artifacts
+docs/02-api/generated/** -diff linguist-generated
+docs/ai-context/**       -diff linguist-generated
+.claude/**               -diff linguist-generated
+dist/**                  -diff linguist-generated
+
+# Common binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
