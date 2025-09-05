@@ -1,0 +1,16 @@
+# Default owner(s)
+* @DamianWnorowski
+
+# Core source and tests
+src/** @DamianWnorowski
+tests/** @DamianWnorowski
+supabase/** @DamianWnorowski
+
+# Docs and AI context
+docs/** @DamianWnorowski
+.claude/** @DamianWnorowski
+
+# Generated/build outputs (if kept in repo)
+dist/** @DamianWnorowski
+
+# Note: adjust owners as your team grows.
