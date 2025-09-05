@@ -3,7 +3,7 @@ title: EquipmentSelectorModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # EquipmentSelectorModal
@@ -16,7 +16,7 @@ EquipmentSelectorModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `EquipmentSelectorModal.tsx`
-- **Line**: 276
+- **Line**: 306
 - **Category**: Modals
 - **Has JSDoc**: ❌
 

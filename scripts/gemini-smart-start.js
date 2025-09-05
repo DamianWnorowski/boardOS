@@ -78,7 +78,7 @@ class GeminiSmartStart {
     return diffHours < 24; // Less than 24 hours is "recent"
   }
 
-  getAIProvider(): IAIProvider {
+  getAIProvider() {
     const activeProvider = process.env.ACTIVE_AI_PROVIDER || 'gemini';
     switch (activeProvider.toLowerCase()) {
       case 'gemini':

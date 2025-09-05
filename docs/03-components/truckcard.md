@@ -3,7 +3,7 @@ title: TruckCard
 category: components
 tags: [resources, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # TruckCard
@@ -16,7 +16,7 @@ TruckCard is a exported React component in the Resources category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `TruckCard.tsx`
-- **Line**: 188
+- **Line**: 193
 - **Category**: Resources
 - **Has JSDoc**: ❌
 

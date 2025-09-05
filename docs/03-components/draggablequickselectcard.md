@@ -3,7 +3,7 @@ title: DraggableQuickSelectCard
 category: components
 tags: [ui, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # DraggableQuickSelectCard
@@ -16,7 +16,7 @@ DraggableQuickSelectCard is a exported React component in the UI category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `DraggableQuickSelectCard.tsx`
-- **Line**: 145
+- **Line**: 146
 - **Category**: UI
 - **Has JSDoc**: ❌
 

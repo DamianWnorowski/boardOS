@@ -3,7 +3,7 @@ title: MagnetGroup
 category: components
 tags: [magnets, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # MagnetGroup

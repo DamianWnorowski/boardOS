@@ -20,7 +20,7 @@ const JobColumn: React.FC<JobColumnProps> = ({ job }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSendSMSModalOpen, setIsSendSMSModalOpen] = useState(false);
-  // Removed unused isProcessing state
+  const [_isProcessing, setIsProcessing] = useState(false);
   
   // Get all notes for this job
   const jobNotes = getJobNotes(job.id);

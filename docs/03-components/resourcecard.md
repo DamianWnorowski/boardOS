@@ -3,7 +3,7 @@ title: ResourceCard
 category: components
 tags: [resources, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # ResourceCard
@@ -16,7 +16,7 @@ ResourceCard is a exported React component in the Resources category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `ResourceCard.tsx`
-- **Line**: 488
+- **Line**: 524
 - **Category**: Resources
 - **Has JSDoc**: ❌
 

@@ -3,7 +3,7 @@ title: QuickAddResourceModal
 category: components
 tags: [modals, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # QuickAddResourceModal
@@ -16,7 +16,7 @@ QuickAddResourceModal is a exported React component in the Modals category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `QuickAddResourceModal.tsx`
-- **Line**: 223
+- **Line**: 275
 - **Category**: Modals
 - **Has JSDoc**: ❌
 

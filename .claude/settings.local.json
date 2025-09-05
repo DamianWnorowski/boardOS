@@ -50,7 +50,9 @@
       "Bash(npx bmad-method:*)",
       "Bash(for:*)",
       "Bash(done)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

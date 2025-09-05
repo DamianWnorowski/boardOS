@@ -1,6 +1,27 @@
 ## Recent Fixes (2025-09-05)
 
 ### Latest Changes
+- 621b031 - chore: clean up temporary and obsolete files (2 seconds ago)
+- a02863c - chore: update project configuration, tests, and tooling scripts (3 minutes ago)
+- 6795609 - fix: resolve JobRow test failures and improve ESLint configuration (28 minutes ago)
+- 88d70d0 - fix: equipment availability now date-aware in quick select buttons (3 hours ago)
+- df57f2a - .claude (16 hours ago)
+
+### Project Statistics
+- **Total Files**: 138
+- **Components**: 86
+- **Hooks**: 3
+- **Contexts**: 11
+- **Services**: 5
+- **Lines of Code**: 40,870
+
+### Critical File Updates
+- **src/context/SchedulerContext.tsx**: Updated 3 hours ago
+- **src/services/DatabaseService.ts**: Updated 16 hours ago
+- **src/components/resources/AssignmentCard.tsx**: Updated 16 hours ago
+- **src/utils/colorSystem.ts**: Updated 3 days ago
+
+### Latest Changes
 - a02863c - chore: update project configuration, tests, and tooling scripts (4 seconds ago)
 - 6795609 - fix: resolve JobRow test failures and improve ESLint configuration (25 minutes ago)
 - 88d70d0 - fix: equipment availability now date-aware in quick select buttons (3 hours ago)

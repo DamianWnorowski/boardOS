@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Plus, Users, Briefcase, Clock } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
-import { DatabaseService } from '../../services/DatabaseService';
 import { Job, Assignment, Resource } from '../../types';
 import AddJobModal from '../modals/AddJobModal';
 

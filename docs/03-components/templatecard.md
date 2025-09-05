@@ -3,7 +3,7 @@ title: TemplateCard
 category: components
 tags: [resources, component, exported]
 related: []
-last-updated: 2025-09-04
+last-updated: 2025-09-05
 ---
 
 # TemplateCard
