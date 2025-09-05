@@ -133,8 +133,8 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
         } else {
           // Navigate directly to magnets for non-equipment categories
           const categoryMagnets = category.resourceTypes.flatMap(type => 
-            filterMagnetsByType(type)
-          ).filter(magnet => magnet.status === MagnetStatus.Available);
+            filterMagnetsByType(type, selectedDate)
+          ).filter(magnet => magnet.isAvailableOnDate(selectedDate, jobs));
           setQuickSelectMagnets(categoryMagnets);
           setQuickSelectState(prev => ({
             ...prev,
@@ -148,7 +148,7 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
 
       case 'subcategory':
         const subcategory = selected as EquipmentSubcategory;
-        const subcategoryMagnets = filterMagnetsByType(subcategory.resourceType).filter(magnet => magnet.status === MagnetStatus.Available);
+        const subcategoryMagnets = filterMagnetsByType(subcategory.resourceType, selectedDate).filter(magnet => magnet.isAvailableOnDate(selectedDate, jobs));
         setQuickSelectMagnets(subcategoryMagnets);
         setQuickSelectState(prev => ({
           ...prev,
@@ -315,8 +315,11 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
     } else {
       // Navigate directly to magnets for non-equipment categories
       const categoryMagnets = category.resourceTypes.flatMap(type => 
-        filterMagnetsByType(type)
-      ).filter(magnet => magnet.status === MagnetStatus.Available);
+        filterMagnetsByType(type, selectedDate)
+      ).filter(magnet => {
+        // Use date-aware availability check instead of global status
+        return magnet.isAvailableOnDate(selectedDate, jobs);
+      });
       setQuickSelectMagnets(categoryMagnets);
       setQuickSelectState(prev => ({
         ...prev,
@@ -329,7 +332,10 @@ export const KeyboardShortcutsProvider: React.FC<KeyboardShortcutsProviderProps>
   };
 
   const executeSubcategory = (subcategory: EquipmentSubcategory) => {
-    const subcategoryMagnets = filterMagnetsByType(subcategory.resourceType).filter(magnet => magnet.status === MagnetStatus.Available);
+    const subcategoryMagnets = filterMagnetsByType(subcategory.resourceType, selectedDate).filter(magnet => {
+      // Use date-aware availability check instead of global status
+      return magnet.isAvailableOnDate(selectedDate, jobs);
+    });
     setQuickSelectMagnets(subcategoryMagnets);
     setQuickSelectState(prev => ({
       ...prev,

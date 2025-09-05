@@ -55,7 +55,8 @@ const DraggableQuickSelectCard: React.FC<DraggableQuickSelectCardProps> = ({
       };
     },
     canDrag: () => {
-      const canDrag = magnet.status === MagnetStatus.Available;
+      // Use date-aware availability check instead of global status
+      const canDrag = magnet.isAvailableOnDate(selectedDate, jobs);
       return canDrag;
     }
   }), [magnet, onDragStart, isShiftPressed, isAssigned]);

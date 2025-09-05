@@ -29,14 +29,14 @@ const CompactQuickSelect: React.FC = () => {
 
   const getAvailableCountForCategory = (category: ResourceCategory) => {
     return category.resourceTypes
-      .flatMap(type => filterMagnetsByType(type))
-      .filter(magnet => magnet.status === MagnetStatus.Available)
+      .flatMap(type => filterMagnetsByType(type, selectedDate))
+      .filter(magnet => magnet.isAvailableOnDate(selectedDate, jobs))
       .length;
   };
 
   const getAvailableCountForSubcategory = (subcategory: EquipmentSubcategory) => {
-    return filterMagnetsByType(subcategory.resourceType)
-      .filter(magnet => magnet.status === MagnetStatus.Available)
+    return filterMagnetsByType(subcategory.resourceType, selectedDate)
+      .filter(magnet => magnet.isAvailableOnDate(selectedDate, jobs))
       .length;
   };
 

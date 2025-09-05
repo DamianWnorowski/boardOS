@@ -195,13 +195,24 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Initialize magnets from loaded resources
       magnetManager.clear(); // Clear existing magnets
       scheduleData.resources.forEach(resource => {
-        magnetManager.createMagnet(
+        const magnet = magnetManager.createMagnet(
           resource.id,
           resource.type,
           resource.name,
           resource.identifier,
           resource.model
         );
+        
+        // Sync magnet assignments with database assignments
+        const resourceAssignments = scheduleData.assignments.filter(a => a.resourceId === resource.id);
+        resourceAssignments.forEach(assignment => {
+          magnet.assignToJob(
+            assignment.jobId,
+            assignment.row,
+            0, // position not stored in database
+            assignment.timeSlot
+          );
+        });
       });
 
       logger.info('Schedule data loaded from database', {
@@ -273,13 +284,25 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Initialize magnets from fallback resources
       magnetManager.clear();
       fallbackResources.forEach(resource => {
-        magnetManager.createMagnet(
+        const magnet = magnetManager.createMagnet(
           resource.id,
           resource.type,
           resource.name,
           resource.identifier,
           resource.model
         );
+        
+        // Note: Fallback mode typically has no assignments
+        // but check just in case
+        const resourceAssignments = assignments.filter(a => a.resourceId === resource.id);
+        resourceAssignments.forEach(assignment => {
+          magnet.assignToJob(
+            assignment.jobId,
+            assignment.row,
+            0, // position not stored in database
+            assignment.timeSlot
+          );
+        });
       });
     } finally {
       if (showLoading) {
