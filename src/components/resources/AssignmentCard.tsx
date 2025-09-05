@@ -504,7 +504,11 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
   
   if (!resource) {
     logger.warn(`Resource not found for assignment ${assignment.id}, resourceId: ${assignment.resourceId}`);
-    return null;
+    return (
+      <div className="p-1 bg-red-100 border border-red-300 rounded text-xs text-red-600 max-w-24">
+        Missing Resource: {assignment.resourceId.slice(0, 8)}...
+      </div>
+    );
   }
 
   // Equipment types definition
@@ -1117,6 +1121,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onOpenPerso
             ) : (
               <span 
                 className="text-[10px] font-medium cursor-pointer px-2 py-0.5 rounded-full"
+                title={`Click to edit ${(resource.type === 'truck' || resource.type === 'sweeper') && resource.onSite !== true ? 'time out of yard' : 'time on job'}`}
               >
                 {customTime}
               </span>

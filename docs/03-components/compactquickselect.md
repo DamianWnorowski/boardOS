@@ -16,7 +16,7 @@ CompactQuickSelect is a exported React component in the UI category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `CompactQuickSelect.tsx`
-- **Line**: 245
+- **Line**: 244
 - **Category**: UI
 - **Has JSDoc**: ❌
 
@@ -41,7 +41,6 @@ function ExampleUsage() {
 
 - `react`
 - `../../context/KeyboardShortcutsContext`
-- `../../context/SchedulerContext`
 - `../../hooks/useMagnet`
 - `./DraggableQuickSelectCard`
 - `../../types/quickSelect`

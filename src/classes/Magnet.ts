@@ -49,21 +49,6 @@ export interface MagnetAssignment {
 }
 
 /**
- * Serialized magnet data structure for JSON persistence
- */
-export interface SerializedMagnet {
-  resourceId: string;
-  type: ResourceType;
-  name: string;
-  identifier?: string;
-  model?: string;
-  color?: string;
-  borderColor?: string;
-  requiredAttachments?: ResourceType[];
-  maxAttachments?: number;
-}
-
-/**
  * CompatibilityRule defines which magnets can attach to one another
  */
 export interface CompatibilityRule {
@@ -657,7 +642,7 @@ export class MagnetManager {
       const parsedData = JSON.parse(data);
       this.magnets.clear();
       
-      parsedData.forEach((item: SerializedMagnet) => {
+      parsedData.forEach((item: any) => {
         const magnet = new Magnet(
           item.resourceId,
           item.type,

@@ -16,7 +16,7 @@ WeekViewCompact is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `WeekViewCompact.tsx`
-- **Line**: 425
+- **Line**: 426
 - **Category**: Board
 - **Has JSDoc**: ❌
 

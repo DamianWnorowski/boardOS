@@ -16,7 +16,7 @@ DebugPanel is a exported React component in the Other category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `DebugPanel.tsx`
-- **Line**: 294
+- **Line**: 295
 - **Category**: Other
 - **Has JSDoc**: ❌
 
@@ -40,6 +40,7 @@ function ExampleUsage() {
 
 
 - `react`
+- `../../utils/zIndexLayers`
 - `lucide-react`
 - `../../context/SchedulerContext`
 - `../../lib/supabase`

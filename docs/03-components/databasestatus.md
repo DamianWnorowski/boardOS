@@ -42,7 +42,6 @@ function ExampleUsage() {
 - `react`
 - `lucide-react`
 - `../../lib/supabase`
-- `../../services/DatabaseService`
 
 
 ## File Location

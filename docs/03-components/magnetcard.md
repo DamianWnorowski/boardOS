@@ -16,7 +16,7 @@ MagnetCard is a exported React component in the Magnets category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `MagnetCard.tsx`
-- **Line**: 263
+- **Line**: 260
 - **Category**: Magnets
 - **Has JSDoc**: ❌
 

@@ -55,7 +55,9 @@
       "Bash(gemini:*)",
       "Read(/c:\\Users\\ai\\Downloads/**)",
       "Bash(taskkill:*)",
-      "Bash(set VITE_PORT=5180)"
+      "Bash(set VITE_PORT=5180)",
+      "Bash(curl:*)",
+      "Bash(where npx)"
     ],
     "deny": [],
     "ask": []

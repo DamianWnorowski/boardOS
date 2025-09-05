@@ -91,12 +91,9 @@ const MagnetCard: React.FC<MagnetCardProps> = ({
   // Determine which magnet's schedule to reference
   const parentMagnet = magnet.attachedToId
     ? magnetManager.getMagnet(magnet.attachedToId)
+
     : undefined; // when attached, this is the vehicle magnet
-  
-  // Attached crew members should always use parent's schedule if parent exists and has assignments
-  const timeSourceMagnet = (isAttached && parentMagnet && parentMagnet.assignments.length > 0) 
-    ? parentMagnet 
-    : magnet;
+  const timeSourceMagnet = parentMagnet || magnet; // attached crew inherit parent's schedule
 
   // Get time slot info if assigned to multiple jobs
   // Attached crew members display the parent vehicle's time slot when available

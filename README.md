@@ -68,45 +68,22 @@ The app will be available at `http://localhost:5173`
 
 ### Testing
 
-Execute unit tests (single run):
-
-```bash
-npm test -- --run
-```
-
-Run tests in watch mode:
+Execute all unit tests:
 
 ```bash
 npm test
 ```
 
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
 Check test coverage:
 
 ```bash
-npm test -- --coverage
-```
-
-Optional reporters (examples):
-
-```bash
-# compact dot reporter
-npm test -- --run --reporter=dot
-
-# verbose output
-npm test -- --run --reporter=verbose
-```
-
-End-to-end tests (Playwright):
-
-```bash
-npm run test:e2e           # run all browsers per config
-npm run test:e2e:chrome    # run Chromium only
-```
-
-CI-friendly sequence:
-
-```bash
-npm run lint:check && npm run typecheck && npm test -- --run
+npm run test:coverage
 ```
 
 ## Key Features
