@@ -1,6 +1,27 @@
 ## Recent Fixes (2025-09-05)
 
 ### Latest Changes
+- eb04912 - chore(husky): auto-commit generated docs in post-commit (26 seconds ago)
+- 7f7c746 - chore(docs): finalize generated docs without re-running hooks (30 minutes ago)
+- f0ce9a1 - chore(docs): sync post-commit updates (31 minutes ago)
+- fee8aa6 - chore(docs): post-commit generated updates (34 minutes ago)
+- 0dd68d7 - chore(docs): commit regenerated API docs and metadata (39 minutes ago)
+
+### Project Statistics
+- **Total Files**: 140
+- **Components**: 86
+- **Hooks**: 3
+- **Contexts**: 11
+- **Services**: 5
+- **Lines of Code**: 41,571
+
+### Critical File Updates
+- **src/context/SchedulerContext.tsx**: Updated 6 hours ago
+- **src/services/DatabaseService.ts**: Updated 19 hours ago
+- **src/components/resources/AssignmentCard.tsx**: Updated 43 minutes ago
+- **src/utils/colorSystem.ts**: Updated 3 days ago
+
+### Latest Changes
 - 7f7c746 - chore(docs): finalize generated docs without re-running hooks (3 seconds ago)
 - f0ce9a1 - chore(docs): sync post-commit updates (70 seconds ago)
 - fee8aa6 - chore(docs): post-commit generated updates (4 minutes ago)
