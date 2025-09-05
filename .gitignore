@@ -89,3 +89,4 @@ playwright/.cache/
 
 # Docker
 docker-compose.override.yml
+/nul
