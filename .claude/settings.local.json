@@ -51,8 +51,11 @@
       "Bash(for:*)",
       "Bash(done)",
       "Bash(git reset:*)",
-      "Bash(git rm:*)",
-      "Bash(rm:*)"
+      "Bash(gemini)",
+      "Bash(gemini:*)",
+      "Read(/c:\\Users\\ai\\Downloads/**)",
+      "Bash(taskkill:*)",
+      "Bash(set VITE_PORT=5180)"
     ],
     "deny": [],
     "ask": []

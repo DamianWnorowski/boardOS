@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Get port from environment variable
+const PORT = process.env.VITE_PORT || '5173';
+const BASE_URL = `http://localhost:${PORT}`;
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -22,7 +26,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:5174',
+    baseURL: BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -81,7 +85,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5174',
+    url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

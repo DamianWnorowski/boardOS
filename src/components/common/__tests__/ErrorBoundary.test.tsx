@@ -374,17 +374,17 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-
-      // Re-render the ErrorBoundary with same erroring child
+      const errorMessage = screen.getByText('Something went wrong');
+      
+      // Re-render with same props
       rerender(
         <ErrorBoundary>
           <ThrowError shouldThrow={true} />
         </ErrorBoundary>
       );
 
-      // Should still show error state
-      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+      // Should still show the same error message
+      expect(errorMessage).toBeInTheDocument();
     });
 
     it('should update state correctly when getDerivedStateFromError is called', () => {

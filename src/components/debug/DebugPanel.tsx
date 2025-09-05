@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';\nimport { getZIndexClass } from '../../utils/zIndexLayers';
+import React, { useState, useEffect } from 'react';
+import { getZIndexClass } from '../../utils/zIndexLayers';
 import { X, ChevronDown, ChevronUp, Bug, Database, Activity, AlertCircle, CheckCircle } from 'lucide-react';
 import { useScheduler } from '../../context/SchedulerContext';
 import { supabase } from '../../lib/supabase';

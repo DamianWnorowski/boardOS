@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor as _waitFor } from '@testing-library/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import JobRow from '../JobRow';
@@ -444,10 +444,7 @@ describe('JobRow', () => {
 
   describe('Drop Handling', () => {
     it('should handle resource drops', async () => {
-      const mockDragItem = {
-        type: 'RESOURCE',
-        resource: mockResource,
-      };
+      
 
       renderJobRow();
       

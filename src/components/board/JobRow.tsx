@@ -17,8 +17,7 @@ import PersonModal from '../modals/PersonModal';
 import { logger } from '../../utils/logger';
 
 // Define equipment types constant
-const equipmentTypes = ['skidsteer', 'paver', 'excavator', 'sweeper', 'millingMachine', 
-                       'roller', 'dozer', 'payloader', 'equipment'];
+
 
 interface JobRowProps {
   jobId: string;
@@ -217,7 +216,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
             return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {
             logger.debug('Moving assignment group');
-            (item as DragItem & { _handled?: boolean })._handled = true;
+            (item as any)._handled = true;
+            
             const newAssignmentId = await moveAssignmentGroup(item.assignments, jobId, rowType);
             logger.debug('Assignment group moved:', newAssignmentId);
             return { jobId, rowType, assignmentId: newAssignmentId };
@@ -271,6 +271,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
       
       // Legacy equipment type restrictions (now handled by drop rules above)  
       if (item.type === ItemTypes.RESOURCE) {
+        
         
         // Check if truck has a driver assigned before allowing drop
         if (item.resource.type === 'truck' && rowType === 'trucks') {

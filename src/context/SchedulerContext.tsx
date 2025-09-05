@@ -1452,6 +1452,46 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Helper functions (computed from state)
   const getResourcesByAssignment = (jobId: string, row: RowType) => {
     if (jobId && row) {
+      // Get date-filtered assignments based on current view and selected date
+      const getCurrentViewAssignments = () => {
+        if (currentView === 'month') {
+          // For month view, show all assignments (global availability)
+          return assignments;
+        }
+        
+        if (currentView === 'day') {
+          // For day view, only show assignments for the selected date
+          const dateStr = selectedDate.toISOString().split('T')[0];
+          return assignments.filter(assignment => {
+            const job = getJobById(assignment.jobId);
+            if (!job || !job.schedule_date) return false;
+            return job.schedule_date === dateStr;
+          });
+        }
+        
+        if (currentView === 'week') {
+          // For week view, show assignments for the current week
+          const weekStart = new Date(selectedDate);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start from Sunday
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6); // End on Saturday
+          
+          const weekStartStr = weekStart.toISOString().split('T')[0];
+          const weekEndStr = weekEnd.toISOString().split('T')[0];
+          
+          return assignments.filter(assignment => {
+            const job = getJobById(assignment.jobId);
+            if (!job || !job.schedule_date) return false;
+            return job.schedule_date >= weekStartStr && job.schedule_date <= weekEndStr;
+          });
+        }
+        
+        return assignments;
+      };
+
+      // Use filtered assignments instead of all assignments
+      const filteredAssignments = getCurrentViewAssignments();
+      
       // Handle potential case mismatch for trucks row
       const normalizeRowType = (assignmentRow: string) => {
         if (assignmentRow && assignmentRow.toLowerCase() === 'trucks') {
@@ -1460,7 +1500,7 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return assignmentRow;
       };
 
-      const result = assignments.filter(a => {
+      const result = filteredAssignments.filter(a => {
         if (a.jobId !== jobId) return false;
         
         // Normalize both the assignment row and the requested row for comparison
@@ -1470,17 +1510,20 @@ export const SchedulerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return normalizedAssignmentRow === normalizedRequestedRow;
       });
 
-      logger.info('🚛 getResourcesByAssignment:', {
+      logger.info('🚛 getResourcesByAssignment (date-filtered):', {
         jobId,
         requestedRow: row,
+        currentView,
+        selectedDate: selectedDate.toISOString().split('T')[0],
         totalAssignments: assignments.length,
-        filteredAssignments: result.length,
-        allRowsForThisJob: assignments.filter(a => a.jobId === jobId).map(a => a.row),
+        filteredAssignments: filteredAssignments.length,
+        resultCount: result.length,
+        allRowsForThisJob: filteredAssignments.filter(a => a.jobId === jobId).map(a => a.row),
         result: result.map(a => ({ id: a.id, resourceId: a.resourceId, row: a.row }))
       });
       return result;
     }
-    return assignments;
+    return [];
   };
 
   const getAvailableResources = () => {

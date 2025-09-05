@@ -195,6 +195,17 @@
 - **src/components/resources/AssignmentCard.tsx**: Updated 16 hours ago
 - **src/utils/colorSystem.ts**: Updated 3 days ago
 
+## 🐛 Known Issues
+
+### Assignment Display Bug (High Priority) - ✅ FIXED
+- **Issue**: People are still showing as assigned on a new day
+- **Impact**: Visual inconsistency in resource assignment display across days
+- **Status**: Fixed
+- **Added**: 2025-09-05
+- **Fixed**: 2025-09-05
+- **Solution**: Updated `getResourcesByAssignment` in SchedulerContext.tsx to filter assignments by selected date and current view (day/week/month)
+- **Related Components**: AssignmentCard, SchedulerContext, resource assignment logic
+
 ### Latest Changes
 - 6795609 - fix: resolve JobRow test failures and improve ESLint configuration (12 seconds ago)
 - 88d70d0 - fix: equipment availability now date-aware in quick select buttons (3 hours ago)

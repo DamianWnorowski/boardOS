@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Wifi, WifiOff, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { DatabaseService } from '../../services/DatabaseService';
+
 
 interface DatabaseStatusProps {
   onConnectionChange?: (connected: boolean) => void;

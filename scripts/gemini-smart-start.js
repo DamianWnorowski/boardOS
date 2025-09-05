@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 import GeminiHelpers from './utils/gemini-helpers.js';
 import { spawn } from 'child_process';
 import path from 'path';
@@ -156,7 +157,7 @@ class GeminiSmartStart {
     const serverRunning = await GeminiHelpers.getServerStatus();
     
     console.log('📊 Quick Status:');
-    console.log(`   📋 Git: ${git.branch} branch, ${git.uncommittedFiles.length} uncommitted files`);
+    console.log('   📋 Git: ' + git.branch + ' branch, ' + git.uncommittedFiles.length + ' uncommitted files');
     console.log(`   🌐 Dev Server: ${serverRunning.devServerRunning ? '✅ Running' : '❌ Stopped'} (port ${serverRunning.port})`);
     console.log('');
     

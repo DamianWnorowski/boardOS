@@ -167,4 +167,90 @@ export class SchedulerPage {
     );
     await addButton.click();
   }
+
+  // Date and multi-day operations
+  async setDate(date: Date) {
+    const dateInput = this.page.locator('input[type="date"]').or(this.dateSelector);
+    const dateString = date.toISOString().split('T')[0];
+    await dateInput.fill(dateString);
+    await this.page.waitForTimeout(500); // Wait for data to load
+  }
+
+  async copyJobToDate(jobName: string, targetDate: Date) {
+    const job = await this.getJob(jobName);
+    const copyButton = job.locator('button[aria-label*="Copy"]').or(
+      job.locator('button:has-text("Copy")')
+    );
+    
+    if (await copyButton.count() > 0) {
+      await copyButton.click();
+      
+      // Select target date in modal
+      const dateInput = this.page.locator('.modal input[type="date"]');
+      const dateString = targetDate.toISOString().split('T')[0];
+      await dateInput.fill(dateString);
+      
+      // Confirm copy
+      const confirmButton = this.page.locator('.modal button:has-text("Copy")');
+      await confirmButton.click();
+    }
+  }
+
+  // Advanced resource operations
+  async getResourceByName(resourceName: string): Promise<Locator> {
+    return this.page.locator(`[data-resource-name="${resourceName}"]`);
+  }
+
+  async verifyChainAssignment(parentResourceId: string, childResourceIds: string[], jobName: string): Promise<boolean> {
+    const parentAssigned = await this.isResourceAssigned(parentResourceId, jobName);
+    const childrenAssigned = await Promise.all(
+      childResourceIds.map(childId => this.isResourceAssigned(childId, jobName))
+    );
+    
+    return parentAssigned && childrenAssigned.every(assigned => assigned);
+  }
+
+  // Performance monitoring
+  async measureOperationTime<T>(operation: () => Promise<T>): Promise<{ result: T; time: number }> {
+    const startTime = performance.now();
+    const result = await operation();
+    const endTime = performance.now();
+    
+    return {
+      result,
+      time: endTime - startTime
+    };
+  }
+
+  // Error monitoring
+  async monitorConsoleErrors(): Promise<string[]> {
+    const errors: string[] = [];
+    
+    this.page.on('console', msg => {
+      if (msg.type() === 'error') {
+        errors.push(msg.text());
+      }
+    });
+
+    this.page.on('pageerror', err => {
+      errors.push(err.message);
+    });
+
+    return errors;
+  }
+
+  // Wait for specific UI updates
+  async waitForAssignmentUpdate(resourceId: string, jobName: string, timeout: number = 5000) {
+    await this.page.waitForSelector(`[data-assignment-resource="${resourceId}"]`, { timeout });
+    await this.waitForRealTimeUpdate();
+  }
+
+  async waitForChainUpdate(parentId: string, childIds: string[], timeout: number = 5000) {
+    // Wait for all chain members to be updated
+    const selectors = [parentId, ...childIds].map(id => `[data-resource-id="${id}"]`);
+    await Promise.all(selectors.map(selector => 
+      this.page.waitForSelector(selector, { timeout })
+    ));
+    await this.waitForRealTimeUpdate();
+  }
 }
