@@ -1,27 +1,27 @@
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
-class ClaudeHandoff {
+class GeminiHandoff {
   constructor() {
-    this.sessionId = ClaudeHelpers.generateSessionId();
+    this.sessionId = GeminiHelpers.generateSessionId();
     this.timestamp = new Date().toISOString();
   }
 
   async createHandoff(customNotes = '') {
-    console.log('🔄 Creating Claude session handoff...');
+    console.log('🔄 Creating Gemini session handoff...');
     
     // Get current project state
     const [git, tests, lint, server] = await Promise.all([
-      ClaudeHelpers.getGitStatus(),
-      ClaudeHelpers.getTestStatus(),
-      ClaudeHelpers.getLintStatus(),
-      ClaudeHelpers.getServerStatus()
+      GeminiHelpers.getGitStatus(),
+      GeminiHelpers.getTestStatus(),
+      GeminiHelpers.getLintStatus(),
+      GeminiHelpers.getServerStatus()
     ]);
 
     const handoff = {
       sessionId: this.sessionId,
       timestamp: this.timestamp,
       tokenWarning: true,
-      handoffReason: "Claude approaching token limit",
+      handoffReason: "Gemini approaching token limit",
       
       // Current task context
       activeTask: await this.getCurrentTask(),
@@ -35,7 +35,7 @@ class ClaudeHandoff {
         tests,
         lint,
         server,
-        critical: await ClaudeHelpers.findCriticalIssues(tests, lint, git)
+        critical: await GeminiHelpers.findCriticalIssues(tests, lint, git)
       },
       
       // Code context - what files we were working with
@@ -59,8 +59,8 @@ class ClaudeHandoff {
 
   async getCurrentTask() {
     // Detect what we were likely working on based on recent changes
-    const recentFiles = await ClaudeHelpers.execSafe('git diff --name-only HEAD~1..HEAD');
-    const uncommittedFiles = await ClaudeHelpers.execSafe('git diff --name-only');
+    const recentFiles = await GeminiHelpers.execSafe('git diff --name-only HEAD~1..HEAD');
+    const uncommittedFiles = await GeminiHelpers.execSafe('git diff --name-only');
     
     // Look for context clues
     const workingFiles = [
@@ -96,8 +96,8 @@ class ClaudeHandoff {
 
   async getSessionProgress() {
     // Load previous context to compare
-    const previousContext = await ClaudeHelpers.readJsonSafe('CLAUDE_CONTEXT.json');
-    const currentTests = await ClaudeHelpers.getTestStatus();
+    const previousContext = await GeminiHelpers.readJsonSafe('AI_HANDOFF.json');
+    const currentTests = await GeminiHelpers.getTestStatus();
     
     const completed = [];
     const inProgress = [];
@@ -123,13 +123,13 @@ class ClaudeHandoff {
     ];
 
     for (const fix of fixedFiles) {
-      if (await ClaudeHelpers.fileExists(fix.file)) {
+      if (await GeminiHelpers.fileExists(fix.file)) {
         completed.push(`✅ ${fix.fix}`);
       }
     }
 
     // Check for in-progress work
-    const uncommitted = await ClaudeHelpers.execSafe('git diff --name-only');
+    const uncommitted = await GeminiHelpers.execSafe('git diff --name-only');
     if (uncommitted.stdout) {
       inProgress.push(`Working on: ${uncommitted.stdout.split('\n').filter(f => f).join(', ')}`);
     }
@@ -139,7 +139,7 @@ class ClaudeHandoff {
       notStarted.push(`Fix remaining ${currentTests.failing} test failures`);
     }
     
-    if (!(await ClaudeHelpers.fileExists('MIGRATION_APPLIED.flag'))) {
+    if (!(await GeminiHelpers.fileExists('MIGRATION_APPLIED.flag'))) {
       notStarted.push('Apply database migration (critical blocker)');
     }
 
@@ -158,9 +158,9 @@ class ClaudeHandoff {
 
     const fileContents = {};
     for (const file of criticalFiles) {
-      if (await ClaudeHelpers.fileExists(file)) {
+      if (await GeminiHelpers.fileExists(file)) {
         try {
-          const content = await ClaudeHelpers.readJsonSafe(file);
+          const content = await GeminiHelpers.readJsonSafe(file);
           if (content) {
             fileContents[file] = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
           }
@@ -171,13 +171,13 @@ class ClaudeHandoff {
       }
     }
 
-    const patches = await ClaudeHelpers.execSafe('git diff');
+    const patches = await GeminiHelpers.execSafe('git diff');
     
     return {
-      modifiedFiles: (await ClaudeHelpers.execSafe('git diff --name-only')).stdout?.split('\n').filter(f => f) || [],
+      modifiedFiles: (await GeminiHelpers.execSafe('git diff --name-only')).stdout?.split('\n').filter(f => f) || [],
       criticalFileContents: fileContents,
       currentPatches: patches.stdout || 'No patches',
-      lastCommit: (await ClaudeHelpers.execSafe('git log -1 --oneline')).stdout || 'No commits'
+      lastCommit: (await GeminiHelpers.execSafe('git log -1 --oneline')).stdout || 'No commits'
     };
   }
 
@@ -217,7 +217,7 @@ class ClaudeHandoff {
     };
 
     // Immediate actions (next 30 minutes)
-    if (await ClaudeHelpers.fileExists('fixed_migration.sql') && !(await ClaudeHelpers.fileExists('MIGRATION_APPLIED.flag'))) {
+    if (await GeminiHelpers.fileExists('fixed_migration.sql') && !(await GeminiHelpers.fileExists('MIGRATION_APPLIED.flag'))) {
       plan.immediate.push({
         action: 'Apply database migration',
         command: 'Copy fixed_migration.sql content to Supabase SQL editor and run',
@@ -268,9 +268,9 @@ class ClaudeHandoff {
   }
 
   async getEnvironmentSnapshot() {
-    const nodeVersion = await ClaudeHelpers.execSafe('node --version');
-    const npmVersion = await ClaudeHelpers.execSafe('npm --version');
-    const gitVersion = await ClaudeHelpers.execSafe('git --version');
+    const nodeVersion = await GeminiHelpers.execSafe('node --version');
+    const npmVersion = await GeminiHelpers.execSafe('npm --version');
+    const gitVersion = await GeminiHelpers.execSafe('git --version');
     
     return {
       node: nodeVersion.stdout || 'Unknown',
@@ -287,18 +287,18 @@ class ClaudeHandoff {
 
   async saveHandoff(handoff) {
     // Save main handoff file
-    await ClaudeHelpers.writeJsonSafe('CLAUDE_HANDOFF.json', handoff);
+    await GeminiHelpers.writeJsonSafe('CLAUDE_HANDOFF.json', handoff);
     
     // Save readable markdown
     const markdown = this.formatHandoffMarkdown(handoff);
-    await ClaudeHelpers.writeJsonSafe('CLAUDE_HANDOFF.md', markdown);
+    await GeminiHelpers.writeJsonSafe('CLAUDE_HANDOFF.md', markdown);
     
     // Archive in sessions folder
-    await ClaudeHelpers.ensureDir('.claude/sessions');
-    await ClaudeHelpers.writeJsonSafe(`.claude/sessions/${handoff.sessionId}.json`, handoff);
+    await GeminiHelpers.ensureDir('.gemini/sessions');
+    await GeminiHelpers.writeJsonSafe(`.gemini/sessions/${handoff.sessionId}.json`, handoff);
     
     // Update session history
-    await ClaudeHelpers.saveSessionHistory({
+    await GeminiHelpers.saveSessionHistory({
       sessionId: handoff.sessionId,
       timestamp: handoff.timestamp,
       type: 'handoff',
@@ -313,14 +313,14 @@ class ClaudeHandoff {
 
     console.log(`📝 Handoff saved: CLAUDE_HANDOFF.json`);
     console.log(`📄 Readable format: CLAUDE_HANDOFF.md`);
-    console.log(`💾 Archived: .claude/sessions/${handoff.sessionId}.json`);
+    console.log(`💾 Archived: .gemini/sessions/${handoff.sessionId}.json`);
   }
 
   formatHandoffMarkdown(handoff) {
-    return `# 🔄 Claude Session Handoff - ${ClaudeHelpers.formatTimestamp()}
+    return `# 🔄 Gemini Session Handoff - ${GeminiHelpers.formatTimestamp()}
 
 ## 🚨 SESSION STATUS: TOKEN LIMIT REACHED
-**Previous Claude**: Approaching token limit, creating handoff for seamless continuation.
+**Previous Gemini**: Approaching token limit, creating handoff for seamless continuation.
 
 ## 🎯 ACTIVE TASK
 **Working on**: ${handoff.activeTask.description}  
@@ -405,7 +405,7 @@ ${handoff.codeContext.modifiedFiles.length > 0
 
 \`\`\`bash
 # 1. Load this context
-npm run claude:resume
+npm run gemini:resume
 
 # 2. Check current status
 npm test -- --run --reporter=min
@@ -419,10 +419,10 @@ ${handoff.continuationPlan.immediate.length > 0
 ---
 
 **Session ID**: ${handoff.sessionId}  
-**Handoff Created**: ${ClaudeHelpers.formatTimestamp()}  
+**Handoff Created**: ${GeminiHelpers.formatTimestamp()}  
 **Environment**: Node ${handoff.environment.node}, ${handoff.environment.platform}
 
-*Next Claude: Use \`npm run claude:resume\` to load complete context and continue seamlessly.*
+*Next Gemini: Use \`npm run gemini:resume\` to load complete context and continue seamlessly.*
 `;
   }
 }
@@ -432,7 +432,7 @@ async function main() {
   try {
     const customNotes = process.argv.slice(2).join(' '); // Allow custom notes as arguments
     
-    const handoff = new ClaudeHandoff();
+    const handoff = new GeminiHandoff();
     const data = await handoff.createHandoff(customNotes);
     
     console.log('\n' + '='.repeat(60));
@@ -447,7 +447,7 @@ async function main() {
     console.log('📊 JSON data saved to: CLAUDE_HANDOFF.json');
     console.log('='.repeat(60));
     console.log('\n🚀 FOR NEXT CLAUDE SESSION:');
-    console.log('Run: npm run claude:resume');
+    console.log('Run: npm run gemini:resume');
     console.log('\n🎯 CONTINUE WITH:');
     if (data.continuationPlan.immediate.length > 0) {
       data.continuationPlan.immediate.slice(0, 2).forEach((item, i) => {
@@ -462,6 +462,6 @@ async function main() {
 }
 
 // Check if this script is being run directly
-if (process.argv[1] && process.argv[1].endsWith('claude-handoff.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-handoff.js')) {
   main();
 }

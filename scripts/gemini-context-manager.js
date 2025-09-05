@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Claude Context Manager - Real-time context tracking for Claude sessions
+ * Gemini Context Manager - Real-time context tracking for Gemini sessions
  * Automatically captures and maintains context during active development
  */
 
@@ -10,11 +10,11 @@ import path from 'path';
 import chokidar from 'chokidar';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
 const execAsync = promisify(exec);
 
-class ClaudeContextManager {
+class GeminiContextManager {
   constructor(options = {}) {
     this.options = {
       watch: options.watch || false,
@@ -23,9 +23,9 @@ class ClaudeContextManager {
       ...options
     };
     
-    this.contextPath = '.claude/current-context.json';
-    this.claudeMdPath = 'CLAUDE.md';
-    this.sessionId = ClaudeHelpers.generateSessionId();
+    this.contextPath = '.gemini/current-context.json';
+    this.geminiMdPath = 'CLAUDE.md';
+    this.sessionId = GeminiHelpers.generateSessionId();
     this.startTime = new Date();
     this.autoSaveInterval = null;
     
@@ -76,10 +76,10 @@ class ClaudeContextManager {
    * Initialize the context manager
    */
   async initialize() {
-    this.log('🚀 Initializing Claude Context Manager...');
+    this.log('🚀 Initializing Gemini Context Manager...');
     
-    // Ensure .claude directory exists
-    await ClaudeHelpers.ensureDir('.claude');
+    // Ensure .gemini directory exists
+    await GeminiHelpers.ensureDir('.gemini');
     
     // Load existing context if available
     await this.loadExistingContext();
@@ -105,8 +105,8 @@ class ClaudeContextManager {
    */
   async loadExistingContext() {
     try {
-      if (await ClaudeHelpers.fileExists(this.contextPath)) {
-        const existing = await ClaudeHelpers.readJsonSafe(this.contextPath);
+      if (await GeminiHelpers.fileExists(this.contextPath)) {
+        const existing = await GeminiHelpers.readJsonSafe(this.contextPath);
         if (existing && this.isRecentContext(existing)) {
           this.log('📚 Loading existing context from previous session');
           
@@ -145,25 +145,25 @@ class ClaudeContextManager {
   async updateEnvironmentState() {
     try {
       // Git status
-      const gitBranch = await ClaudeHelpers.execSafe('git branch --show-current');
+      const gitBranch = await GeminiHelpers.execSafe('git branch --show-current');
       this.context.environment.gitBranch = gitBranch.stdout?.trim() || 'unknown';
       
       // Test status
-      const testStatus = await ClaudeHelpers.getTestStatus();
+      const testStatus = await GeminiHelpers.getTestStatus();
       this.context.environment.testStatus = {
         passing: testStatus.passing,
         failing: testStatus.failing
       };
       
       // Lint status
-      const lintStatus = await ClaudeHelpers.getLintStatus();
+      const lintStatus = await GeminiHelpers.getLintStatus();
       this.context.environment.lintStatus = {
         errors: lintStatus.errors,
         warnings: lintStatus.warnings
       };
       
       // Dev server status
-      const serverStatus = await ClaudeHelpers.getServerStatus();
+      const serverStatus = await GeminiHelpers.getServerStatus();
       this.context.environment.devServerStatus = serverStatus.devServerRunning;
       
     } catch (error) {
@@ -255,7 +255,7 @@ class ClaudeContextManager {
     }
     
     // Check for new commits
-    const lastCommit = await ClaudeHelpers.execSafe('git log -1 --oneline');
+    const lastCommit = await GeminiHelpers.execSafe('git log -1 --oneline');
     if (lastCommit.stdout) {
       this.context.metrics.commitsCreated++;
       this.addProgress(`Commit: ${lastCommit.stdout.trim()}`);
@@ -330,7 +330,7 @@ class ClaudeContextManager {
     
     // Also update CLAUDE.md if autoUpdate is enabled
     if (this.options.autoUpdate) {
-      this.updateClaudeMd('DECISION', decision);
+      this.updateGeminiMd('DECISION', decision);
     }
   }
 
@@ -357,7 +357,7 @@ class ClaudeContextManager {
       this.context.memory.userPreferences.push(preference);
       
       if (this.options.autoUpdate) {
-        this.updateClaudeMd('PREFERENCE', preference);
+        this.updateGeminiMd('PREFERENCE', preference);
       }
     }
   }
@@ -376,25 +376,25 @@ class ClaudeContextManager {
     this.context.memory.fixedIssues.push(fixed);
     
     if (this.options.autoUpdate) {
-      this.updateClaudeMd('FIXED', `${file}:${line} - ${description}`);
+      this.updateGeminiMd('FIXED', `${file}:${line} - ${description}`);
     }
   }
 
   /**
    * Update CLAUDE.md with new markers
    */
-  async updateClaudeMd(type, content) {
+  async updateGeminiMd(type, content) {
     try {
-      const exists = await ClaudeHelpers.fileExists(this.claudeMdPath);
+      const exists = await GeminiHelpers.fileExists(this.geminiMdPath);
       if (!exists) return;
       
-      const currentContent = await fs.readFile(this.claudeMdPath, 'utf-8');
+      const currentContent = await fs.readFile(this.geminiMdPath, 'utf-8');
       const timestamp = new Date().toISOString().split('T')[0];
       const marker = `\n# ${type}: [${timestamp}] ${content}`;
       
       // Add marker to appropriate section or at end
       const updatedContent = currentContent + marker;
-      await fs.writeFile(this.claudeMdPath, updatedContent);
+      await fs.writeFile(this.geminiMdPath, updatedContent);
       
     } catch (error) {
       this.log(`⚠️ Could not update CLAUDE.md: ${error.message}`, 'warn');
@@ -409,7 +409,7 @@ class ClaudeContextManager {
     this.context.session.tokenEstimate = this.estimateTokens();
     
     try {
-      await ClaudeHelpers.writeJsonSafe(this.contextPath, this.context);
+      await GeminiHelpers.writeJsonSafe(this.contextPath, this.context);
       
       // Also create a markdown summary
       await this.saveMarkdownSummary();
@@ -423,7 +423,7 @@ class ClaudeContextManager {
    * Save markdown summary for human readability
    */
   async saveMarkdownSummary() {
-    const summary = `# Claude Context - Live Session
+    const summary = `# Gemini Context - Live Session
 Last Updated: ${new Date().toLocaleString()}
 
 ## Active Work
@@ -446,7 +446,7 @@ Last Updated: ${new Date().toLocaleString()}
 ${this.context.memory.keyDecisions.slice(-5).map(d => `- ${d.decision}`).join('\n')}
 `;
 
-    await fs.writeFile('.claude/current-context.md', summary);
+    await fs.writeFile('.gemini/current-context.md', summary);
   }
 
   /**
@@ -511,13 +511,13 @@ async function main() {
     autoUpdate: !args.includes('--no-update')
   };
   
-  const manager = new ClaudeContextManager(options);
+  const manager = new GeminiContextManager(options);
   
   try {
     await manager.initialize();
     
     if (options.watch) {
-      console.log('🎯 Claude Context Manager running in watch mode');
+      this.log('🎯 AI Context Manager running in watch mode');
       console.log('   Press Ctrl+C to stop\n');
       
       // Handle graceful shutdown
@@ -545,8 +545,8 @@ async function main() {
 }
 
 // Check if running directly
-if (process.argv[1] && process.argv[1].endsWith('claude-context-manager.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-context-manager.js')) {
   main();
 }
 
-export default ClaudeContextManager;
+export default GeminiContextManager;

@@ -1,4 +1,4 @@
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
 class ClaudeSetup {
   async setup() {
@@ -133,14 +133,14 @@ class ClaudeSetup {
 
 📚 How to use:
 
-  🚀 Start any Claude session:
+  🚀 Start any AI session:
     npm run claude:start
     
   ⚡ Quick status check:
     npm run claude:status
     
   🔄 When Claude hits token limit:
-    npm run claude:handoff
+    npm run gemini:handoff
     
   📚 Show session history:
     npm run claude:history
@@ -149,12 +149,12 @@ class ClaudeSetup {
     npm run claude:reset
 
 🏗️  What was created:
-  - .claude/ directory with session storage
-  - Claude scripts in scripts/ directory  
+  - .gemini/ directory with session storage
+  - AI scripts in scripts/ directory  
   - Updated package.json with npm scripts
   - Updated .gitignore to exclude temp files
 
-✨ You're all set! Run 'npm run claude:start' to begin.
+✨ You're all set! Run 'npm run gemini:start' to begin.
 `);
   }
 }
@@ -194,4 +194,6 @@ async function main() {
 
 if (process.argv[1] && process.argv[1].endsWith('setup-claude.js')) {
   main();
+});
+});
 }

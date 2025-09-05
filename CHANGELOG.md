@@ -59,8 +59,8 @@ All notable changes to BoardOS will be documented in this file.
   - `SchedulerLayout.tsx` & `MobileSchedulerLayout.tsx`: Prevent blanking on refresh
 
 - **New SQL Scripts**
-  - `enable_realtime.sql`: Enable Supabase realtime for all tables
-  - `disable_rls_fixed.sql`: Corrected RLS disable script
+  - `scripts/sql/enable_realtime.sql`: Enable Supabase realtime for all tables
+  - `scripts/sql/disable_rls_fixed.sql`: Corrected RLS disable script
 
 ## [1.0.0] - 2025-01-24
 
@@ -95,7 +95,7 @@ All notable changes to BoardOS will be documented in this file.
 ### Migration Notes
 
 #### From 1.0.0 to 1.1.0
-1. Run `enable_realtime.sql` in Supabase dashboard
+1. Run `scripts/sql/enable_realtime.sql` in Supabase dashboard
 2. Update environment variables if needed
 3. Clear browser cache for best performance
 4. No database schema changes required

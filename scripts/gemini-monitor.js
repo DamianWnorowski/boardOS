@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Claude Monitor - Token usage monitoring and early warning system
- * Triggers handoff at 80% capacity while Claude is still coherent
+ * Gemini Monitor - Token usage monitoring and early warning system
+ * Triggers handoff at 80% capacity while Gemini is still coherent
  */
 
 import fs from 'fs/promises';
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
-class ClaudeMonitor {
+class GeminiMonitor {
   constructor(options = {}) {
     this.options = {
       tokenLimit: options.tokenLimit || 200000,
@@ -18,8 +18,8 @@ class ClaudeMonitor {
       ...options
     };
     
-    this.contextPath = '.claude/current-context.json';
-    this.monitorPath = '.claude/token-monitor.json';
+    this.contextPath = '.gemini/current-context.json';
+    this.monitorPath = '.gemini/token-monitor.json';
     
     this.state = {
       sessionStart: new Date(),
@@ -34,10 +34,10 @@ class ClaudeMonitor {
    * Initialize the monitor
    */
   async initialize() {
-    this.log('🔍 Initializing Claude Monitor...');
+    this.log('🔍 Initializing Gemini Monitor...');
     
-    // Ensure .claude directory exists
-    await ClaudeHelpers.ensureDir('.claude');
+    // Ensure .gemini directory exists
+    await GeminiHelpers.ensureDir('.gemini');
     
     // Load existing monitor state
     await this.loadMonitorState();
@@ -50,8 +50,8 @@ class ClaudeMonitor {
    */
   async loadMonitorState() {
     try {
-      if (await ClaudeHelpers.fileExists(this.monitorPath)) {
-        const existing = await ClaudeHelpers.readJsonSafe(this.monitorPath);
+      if (await GeminiHelpers.fileExists(this.monitorPath)) {
+        const existing = await GeminiHelpers.readJsonSafe(this.monitorPath);
         if (existing && this.isRecentSession(existing)) {
           this.state = { ...this.state, ...existing };
           this.log('📊 Loaded existing monitor state');
@@ -97,8 +97,8 @@ class ClaudeMonitor {
    */
   async loadContext() {
     try {
-      if (await ClaudeHelpers.fileExists(this.contextPath)) {
-        return await ClaudeHelpers.readJsonSafe(this.contextPath);
+      if (await GeminiHelpers.fileExists(this.contextPath)) {
+        return await GeminiHelpers.readJsonSafe(this.contextPath);
       }
     } catch (error) {
       // Ignore errors, fall back to other methods
@@ -172,13 +172,13 @@ class ClaudeMonitor {
       tokens,
       threshold: 'warning',
       message: `⚠️ Token usage at ${Math.round(usage * 100)}% - Consider handoff soon`,
-      recommendation: 'Run `npm run claude:handoff` to create handoff',
+      recommendation: 'Run `npm run gemini:handoff` to create handoff',
       timeRemaining: this.estimateTimeRemaining(tokens)
     };
     
     this.log(warning.message, 'warn');
     
-    // Save warning to file for Claude to see
+    // Save warning to file for Gemini to see
     await this.saveWarning(warning);
     
     return warning;
@@ -197,7 +197,7 @@ class ClaudeMonitor {
       tokens,
       threshold: 'critical',
       message: `🚨 CRITICAL: Token usage at ${Math.round(usage * 100)}% - IMMEDIATE HANDOFF REQUIRED`,
-      recommendation: 'STOP ALL WORK - Run `npm run claude:handoff` immediately',
+      recommendation: 'STOP ALL WORK - Run `npm run gemini:handoff` immediately',
       autoHandoff: true
     };
     
@@ -225,7 +225,7 @@ class ClaudeMonitor {
       const { promisify } = await import('util');
       const execAsync = promisify(exec);
       
-      await execAsync('npm run claude:handoff');
+      await execAsync('npm run gemini:handoff');
       
       this.log('✅ Handoff triggered automatically');
       
@@ -235,11 +235,11 @@ class ClaudeMonitor {
   }
 
   /**
-   * Save warning to file for Claude to see
+   * Save warning to file for Gemini to see
    */
   async saveWarning(warning) {
-    const warningFile = '.claude/token-warning.json';
-    await ClaudeHelpers.writeJsonSafe(warningFile, {
+    const warningFile = '.gemini/token-warning.json';
+    await GeminiHelpers.writeJsonSafe(warningFile, {
       ...warning,
       timestamp: new Date().toISOString(),
       sessionId: this.state.sessionId
@@ -255,10 +255,10 @@ ${warning.message}
 **Recommendation**: ${warning.recommendation}
 **Time**: ${new Date().toLocaleString()}
 
-${warning.autoHandoff ? '**AUTOMATIC HANDOFF TRIGGERED**' : 'Run `npm run claude:handoff` when ready to handoff.'}
+${warning.autoHandoff ? '**AUTOMATIC HANDOFF TRIGGERED**' : 'Run `npm run gemini:handoff` when ready to handoff.'}
 `;
 
-    await fs.writeFile('.claude/token-warning.md', readableWarning);
+    await fs.writeFile('.gemini/token-warning.md', readableWarning);
   }
 
   /**
@@ -280,7 +280,7 @@ ${warning.autoHandoff ? '**AUTOMATIC HANDOFF TRIGGERED**' : 'Run `npm run claude
    */
   async saveMonitorState() {
     try {
-      await ClaudeHelpers.writeJsonSafe(this.monitorPath, this.state);
+      await GeminiHelpers.writeJsonSafe(this.monitorPath, this.state);
     } catch (error) {
       this.log(`❌ Error saving monitor state: ${error.message}`, 'error');
     }
@@ -330,8 +330,8 @@ ${warning.autoHandoff ? '**AUTOMATIC HANDOFF TRIGGERED**' : 'Run `npm run claude
     
     // Clean up warning files
     try {
-      await fs.unlink('.claude/token-warning.json').catch(() => {});
-      await fs.unlink('.claude/token-warning.md').catch(() => {});
+      await fs.unlink('.gemini/token-warning.json').catch(() => {});
+      await fs.unlink('.gemini/token-warning.md').catch(() => {});
     } catch (error) {
       // Ignore cleanup errors
     }
@@ -361,7 +361,7 @@ async function main() {
     tokenLimit: parseInt(args.find(arg => arg.startsWith('--limit='))?.split('=')[1]) || 200000
   };
   
-  const monitor = new ClaudeMonitor(options);
+  const monitor = new GeminiMonitor(options);
   
   try {
     await monitor.initialize();
@@ -370,7 +370,7 @@ async function main() {
       case 'check':
       case undefined:
         const status = await monitor.getStatus();
-        console.log('📊 Claude Token Monitor Status');
+        console.log('📊 AI Token Monitor Status');
         console.log('=' .repeat(40));
         console.log(`Status: ${status.status}`);
         console.log(`Usage: ${Math.round(status.usage * 100)}%`);
@@ -400,10 +400,10 @@ async function main() {
         
       default:
         console.log('Usage:');
-        console.log('  npm run claude:monitor          # Check current status');
-        console.log('  npm run claude:monitor check    # Check current status');
-        console.log('  npm run claude:monitor reset    # Reset monitor state');
-        console.log('  npm run claude:monitor watch    # Watch continuously');
+        console.log('  npm run gemini:monitor          # Check current status');
+        console.log('  npm run gemini:monitor check    # Check current status');
+        console.log('  npm run gemini:monitor reset    # Reset monitor state');
+        console.log('  npm run gemini:monitor watch    # Watch continuously');
         console.log('');
         console.log('Options:');
         console.log('  --verbose                       # Verbose output');
@@ -418,8 +418,8 @@ async function main() {
 }
 
 // Check if running directly
-if (process.argv[1] && process.argv[1].endsWith('claude-monitor.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-monitor.js')) {
   main();
 }
 
-export default ClaudeMonitor;
+export default GeminiMonitor;

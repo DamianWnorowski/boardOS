@@ -36,7 +36,7 @@ test.describe('Magnet Attachment Business Rules', () => {
   });
 
   test('truck requires driver attachment', async ({ page }) => {
-    const { truck, driver, job } = TestDataFactory.createTruckDriverScenario();
+    const { truck, driver } = TestDataFactory.createTruckDriverScenario();
 
     // Navigate to trucks tab first
     await schedulerPage.switchToTrucksTab();

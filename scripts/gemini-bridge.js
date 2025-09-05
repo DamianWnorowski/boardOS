@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Claude Bridge - Session continuity and context verification
- * Creates seamless transitions between Claude sessions with real context
+ * Gemini Bridge - Session continuity and context verification
+ * Creates seamless transitions between Gemini sessions with real context
  */
 
 import fs from 'fs/promises';
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
-class ClaudeBridge {
+class GeminiBridge {
   constructor(options = {}) {
     this.options = {
       verbose: options.verbose || false,
@@ -17,9 +17,9 @@ class ClaudeBridge {
       ...options
     };
     
-    this.contextPath = '.claude/current-context.json';
-    this.bridgePath = '.claude/bridge-data.json';
-    this.sessionId = ClaudeHelpers.generateSessionId();
+    this.contextPath = '.gemini/current-context.json';
+    this.bridgePath = '.gemini/bridge-data.json';
+    this.sessionId = GeminiHelpers.generateSessionId();
     this.timestamp = new Date().toISOString();
   }
 
@@ -27,10 +27,10 @@ class ClaudeBridge {
    * Initialize the bridge for a new session
    */
   async initialize() {
-    this.log('🌉 Initializing Claude Bridge...');
+    this.log('🌉 Initializing Gemini Bridge...');
     
-    // Ensure .claude directory exists
-    await ClaudeHelpers.ensureDir('.claude');
+    // Ensure .gemini directory exists
+    await GeminiHelpers.ensureDir('.gemini');
     
     this.log('✅ Bridge initialized');
   }
@@ -75,8 +75,8 @@ class ClaudeBridge {
     
     // Real-time context from context manager
     try {
-      if (await ClaudeHelpers.fileExists(this.contextPath)) {
-        sources.realTime = await ClaudeHelpers.readJsonSafe(this.contextPath);
+      if (await GeminiHelpers.fileExists(this.contextPath)) {
+        sources.realTime = await GeminiHelpers.readJsonSafe(this.contextPath);
         this.log('✅ Loaded real-time context');
       }
     } catch (error) {
@@ -85,8 +85,8 @@ class ClaudeBridge {
     
     // Handoff context (if exists)
     try {
-      if (await ClaudeHelpers.fileExists('CLAUDE_HANDOFF.json')) {
-        sources.handoff = await ClaudeHelpers.readJsonSafe('CLAUDE_HANDOFF.json');
+      if (await GeminiHelpers.fileExists('CLAUDE_HANDOFF.json')) {
+        sources.handoff = await GeminiHelpers.readJsonSafe('CLAUDE_HANDOFF.json');
         this.log('✅ Loaded handoff context');
       }
     } catch (error) {
@@ -95,8 +95,8 @@ class ClaudeBridge {
     
     // Memory from CLAUDE.md
     try {
-      if (await ClaudeHelpers.fileExists('CLAUDE.md')) {
-        sources.memory = await this.parseClaudeMdMemory();
+      if (await GeminiHelpers.fileExists('CLAUDE.md')) {
+        sources.memory = await this.parseGeminiMdMemory();
         this.log('✅ Loaded CLAUDE.md memory');
       }
     } catch (error) {
@@ -117,7 +117,7 @@ class ClaudeBridge {
   /**
    * Parse memory markers from CLAUDE.md
    */
-  async parseClaudeMdMemory() {
+  async parseGeminiMdMemory() {
     const content = await fs.readFile('CLAUDE.md', 'utf-8');
     const lines = content.split('\n');
     
@@ -178,11 +178,11 @@ class ClaudeBridge {
    * Extract current git context
    */
   async extractGitContext() {
-    const git = await ClaudeHelpers.getGitStatus();
+    const git = await GeminiHelpers.getGitStatus();
     
     // Get recent commits for context
-    const recentCommits = await ClaudeHelpers.execSafe('git log --oneline -10');
-    const recentChanges = await ClaudeHelpers.execSafe('git diff --name-only HEAD~5..HEAD');
+    const recentCommits = await GeminiHelpers.execSafe('git log --oneline -10');
+    const recentChanges = await GeminiHelpers.execSafe('git diff --name-only HEAD~5..HEAD');
     
     return {
       ...git,
@@ -555,8 +555,8 @@ class ClaudeBridge {
     const context = verifiedContext.verified;
     
     // Get current environment state
-    const testStatus = await ClaudeHelpers.getTestStatus();
-    const lintStatus = await ClaudeHelpers.getLintStatus();
+    const testStatus = await GeminiHelpers.getTestStatus();
+    const lintStatus = await GeminiHelpers.getLintStatus();
     
     // Priority actions based on context
     if (testStatus.failing > 0) {
@@ -620,11 +620,11 @@ class ClaudeBridge {
    */
   async saveBridgeData(bridgeData) {
     // Save structured data
-    await ClaudeHelpers.writeJsonSafe(this.bridgePath, bridgeData);
+    await GeminiHelpers.writeJsonSafe(this.bridgePath, bridgeData);
     
     // Save human-readable summary
     const markdown = this.formatBridgeMarkdown(bridgeData);
-    await fs.writeFile('.claude/bridge-summary.md', markdown);
+    await fs.writeFile('.gemini/bridge-summary.md', markdown);
     
     this.log('💾 Bridge data saved');
   }
@@ -636,7 +636,7 @@ class ClaudeBridge {
     const continuity = bridgeData.continuityScore;
     const verification = bridgeData.verification;
     
-    return `# 🌉 Claude Bridge - Session Continuity Report
+    return `# 🌉 Gemini Bridge - Session Continuity Report
 
 Generated: ${new Date(bridgeData.timestamp).toLocaleString()}
 
@@ -671,7 +671,7 @@ ${bridgeData.recommendations.map(rec => `- **${rec.type}** (${rec.priority}): ${
 
 ---
 *Bridge ID: ${bridgeData.bridgeId}*
-*Use this context to maintain continuity with the previous Claude session.*
+*Use this context to maintain continuity with the previous AI session.*
 `;
   }
 
@@ -725,7 +725,7 @@ async function main() {
     update: !args.includes('--no-update')
   };
   
-  const bridge = new ClaudeBridge(options);
+  const bridge = new GeminiBridge(options);
   
   try {
     await bridge.initialize();
@@ -736,14 +736,14 @@ async function main() {
         const bridgeData = await bridge.loadPreviousContext();
         
         if (bridgeData) {
-          console.log('🌉 Claude Bridge - Context Loaded');
+          console.log('🌉 Gemini Bridge - Context Loaded');
           console.log('=' .repeat(40));
           console.log(`Continuity Score: ${bridgeData.continuityScore.score}/100 (${bridgeData.continuityScore.rating})`);
           console.log(`Sources: ${bridgeData.sourceAnalysis.available.join(', ')}`);
           console.log(`Current Task: ${bridgeData.context.activeWork.currentTask}`);
           console.log(`Next Actions: ${bridgeData.nextActions.length}`);
           console.log('=' .repeat(40));
-          console.log('📄 Full report: .claude/bridge-summary.md');
+          console.log('📄 Full report: .gemini/bridge-summary.md');
         } else {
           console.log('⚠️ No context available for bridge');
         }
@@ -751,8 +751,8 @@ async function main() {
         
       default:
         console.log('Usage:');
-        console.log('  npm run claude:bridge          # Load and verify context');
-        console.log('  npm run claude:bridge load     # Load and verify context');
+        console.log('  npm run gemini:bridge          # Load and verify context');
+        console.log('  npm run gemini:bridge load     # Load and verify context');
         console.log('');
         console.log('Options:');
         console.log('  --verbose                      # Verbose output');
@@ -767,8 +767,8 @@ async function main() {
 }
 
 // Check if running directly
-if (process.argv[1] && process.argv[1].endsWith('claude-bridge.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-bridge.js')) {
   main();
 }
 
-export default ClaudeBridge;
+export default GeminiBridge;

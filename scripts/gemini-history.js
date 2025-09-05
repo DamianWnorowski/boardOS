@@ -1,17 +1,17 @@
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
-class ClaudeHistory {
+class GeminiHistory {
   async showHistory() {
-    console.log('📚 Claude Session History\n');
+    console.log('📚 AI Session History\n');
     
-    const history = await ClaudeHelpers.loadSessionHistory();
+    const history = await GeminiHelpers.loadSessionHistory();
     
     if (history.length === 0) {
       console.log('📭 No session history found.');
       console.log('💡 History is created when you use:');
-      console.log('   - npm run claude:start');
-      console.log('   - npm run claude:handoff');
-      console.log('   - npm run claude:resume');
+      console.log('   - npm run gemini:start');
+      console.log('   - npm run gemini:handoff');
+      console.log('   - npm run gemini:resume');
       return;
     }
 
@@ -104,7 +104,7 @@ class ClaudeHistory {
     console.log(`📋 Session Details: ${sessionId}\n`);
     
     // Look for session in history
-    const history = await ClaudeHelpers.loadSessionHistory();
+    const history = await GeminiHelpers.loadSessionHistory();
     const session = history.find(s => s.sessionId === sessionId);
     
     if (!session) {
@@ -112,7 +112,7 @@ class ClaudeHistory {
       return;
     }
 
-    console.log(`🕐 Timestamp: ${ClaudeHelpers.formatTimestamp(new Date(session.timestamp))}`);
+    console.log(`🕐 Timestamp: ${GeminiHelpers.formatTimestamp(new Date(session.timestamp))}`);
     console.log(`📝 Type: ${session.type}`);
     
     if (session.summary) {
@@ -123,8 +123,8 @@ class ClaudeHistory {
     }
 
     // Look for archived session data
-    const archivePath = `.claude/sessions/${sessionId}.json`;
-    if (await ClaudeHelpers.fileExists(archivePath)) {
+    const archivePath = `.gemini/sessions/${sessionId}.json`;
+    if (await GeminiHelpers.fileExists(archivePath)) {
       console.log('\n📄 Full session data available in:');
       console.log(`   ${archivePath}`);
     }
@@ -134,7 +134,7 @@ class ClaudeHistory {
 async function main() {
   try {
     const args = process.argv.slice(2);
-    const history = new ClaudeHistory();
+    const history = new GeminiHistory();
     
     if (args.length > 0) {
       // Show specific session details
@@ -145,8 +145,8 @@ async function main() {
     }
     
     console.log('💡 Commands:');
-    console.log('   npm run claude:history <session-id>  # Show session details');
-    console.log('   npm run claude:reset --complete      # Clear all history');
+    console.log('   npm run gemini:history <session-id>  # Show session details');
+    console.log('   npm run gemini:reset --complete      # Clear all history');
     
   } catch (error) {
     console.error('❌ Error showing history:', error.message);
@@ -154,6 +154,6 @@ async function main() {
   }
 }
 
-if (process.argv[1] && process.argv[1].endsWith('claude-history.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-history.js')) {
   main();
 }

@@ -175,7 +175,7 @@ test.describe('Magnet Business Logic Integration', () => {
                   await page.mouse.move(box.x + 50, box.y + 50);
                   await page.mouse.up();
                 }
-              } catch (error) {
+              } catch {
                 // Expected some operations might fail due to rapid execution
               }
             }
@@ -339,7 +339,7 @@ test.describe('Magnet Business Logic Integration', () => {
           try {
             await operation();
             await page.waitForTimeout(100);
-          } catch (error) {
+          } catch {
             // Some operations expected to fail in this stress test
           }
           
@@ -374,7 +374,7 @@ test.describe('Magnet Business Logic Integration', () => {
           try {
             await draggables[i].hover();
             await page.waitForTimeout(50); // Rapid operation
-          } catch (error) {
+          } catch {
             // Expected some might fail
           }
         }
@@ -397,7 +397,7 @@ test.describe('Magnet Business Logic Integration', () => {
               await page.mouse.up();
               await page.waitForTimeout(100);
             }
-          } catch (error) {
+          } catch {
             // Expected some operations might conflict
           }
         }
@@ -472,7 +472,7 @@ test.describe('Magnet Business Logic Integration', () => {
         async () => {
           try {
             await page.locator('.non-existent-class').click({ timeout: 100 });
-          } catch (error) {
+          } catch {
             // Expected to fail
           }
         }
@@ -484,7 +484,7 @@ test.describe('Magnet Business Logic Integration', () => {
           await operation();
           stateSnapshots.push(await captureState());
           await page.waitForTimeout(200);
-        } catch (error) {
+        } catch {
           // Capture state even after errors
           stateSnapshots.push(await captureState());
         }

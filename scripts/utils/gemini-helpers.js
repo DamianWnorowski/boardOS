@@ -5,7 +5,7 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
-export class ClaudeHelpers {
+export class GeminiHelpers {
   static async execSafe(command, options = {}) {
     try {
       const result = await execAsync(command, { 
@@ -165,7 +165,7 @@ export class ClaudeHelpers {
   static async getDatabaseStatus() {
     // Check if migration was applied
     const migrationExists = await this.fileExists('MIGRATION_STATUS.md');
-    const handoffExists = await this.fileExists('CLAUDE_HANDOFF.json');
+    const handoffExists = await this.fileExists('AI_CONTEXT.json');
     
     return {
       migrationApplied: false, // Would need database connection to verify
@@ -249,7 +249,7 @@ export class ClaudeHelpers {
   }
 
   static generateSessionId() {
-    return `claude-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `gemini-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   static formatTimestamp(date = new Date()) {
@@ -257,13 +257,13 @@ export class ClaudeHelpers {
   }
 
   static async loadSessionHistory() {
-    const historyPath = '.claude/history.json';
+    const historyPath = '.gemini/history.json';
     const history = await this.readJsonSafe(historyPath) || { sessions: [] };
     return history.sessions || [];
   }
 
   static async saveSessionHistory(sessionData) {
-    const historyPath = '.claude/history.json';
+    const historyPath = '.gemini/history.json';
     const history = await this.readJsonSafe(historyPath) || { sessions: [] };
     history.sessions = history.sessions || [];
     history.sessions.unshift(sessionData);
@@ -301,4 +301,4 @@ ${data.notes || 'No additional notes'}
   }
 }
 
-export default ClaudeHelpers;
+export default GeminiHelpers;

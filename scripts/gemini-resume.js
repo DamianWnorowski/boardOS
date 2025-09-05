@@ -1,29 +1,29 @@
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
-class ClaudeResume {
+class GeminiResume {
   constructor() {
     this.timestamp = new Date().toISOString();
   }
 
   async resumeSession() {
-    console.log('📚 Resuming Claude session from handoff...');
+    console.log('📚 Resuming Gemini session from handoff...');
     
     // Load handoff data
-    const handoff = await ClaudeHelpers.readJsonSafe('CLAUDE_HANDOFF.json');
+    const handoff = await GeminiHelpers.readJsonSafe('CLAUDE_HANDOFF.json');
     if (!handoff) {
-      throw new Error('No handoff file found. Use `npm run claude:start` for new session.');
+      throw new Error('No handoff file found. Use `npm run gemini:start` for new session.');
     }
 
     // Get current project state
     const [git, tests, lint, server] = await Promise.all([
-      ClaudeHelpers.getGitStatus(),
-      ClaudeHelpers.getTestStatus(), 
-      ClaudeHelpers.getLintStatus(),
-      ClaudeHelpers.getServerStatus()
+      GeminiHelpers.getGitStatus(),
+      GeminiHelpers.getTestStatus(), 
+      GeminiHelpers.getLintStatus(),
+      GeminiHelpers.getServerStatus()
     ]);
 
     const resumeData = {
-      sessionId: ClaudeHelpers.generateSessionId(),
+      sessionId: GeminiHelpers.generateSessionId(),
       timestamp: this.timestamp,
       mode: 'RESUME_SESSION',
       
@@ -66,9 +66,9 @@ class ClaudeResume {
 
   async analyzeChangesSinceHandoff(handoff) {
     const previousState = handoff.currentState;
-    const currentGit = await ClaudeHelpers.getGitStatus();
-    const currentTests = await ClaudeHelpers.getTestStatus();
-    const currentLint = await ClaudeHelpers.getLintStatus();
+    const currentGit = await GeminiHelpers.getGitStatus();
+    const currentTests = await GeminiHelpers.getTestStatus();
+    const currentLint = await GeminiHelpers.getLintStatus();
 
     const changes = {
       git: this.compareGitChanges(previousState.git, currentGit),
@@ -110,7 +110,7 @@ class ClaudeResume {
   }
 
   async getFileChanges(previousModified) {
-    const currentModified = (await ClaudeHelpers.execSafe('git diff --name-only')).stdout?.split('\n').filter(f => f) || [];
+    const currentModified = (await GeminiHelpers.execSafe('git diff --name-only')).stdout?.split('\n').filter(f => f) || [];
     
     return {
       stillModified: previousModified.filter(f => currentModified.includes(f)),
@@ -131,7 +131,7 @@ class ClaudeResume {
     for (const task of originalPlan.immediate) {
       if (task.action.includes('database migration')) {
         // Check if migration was applied
-        const migrationApplied = await ClaudeHelpers.fileExists('MIGRATION_APPLIED.flag');
+        const migrationApplied = await GeminiHelpers.fileExists('MIGRATION_APPLIED.flag');
         if (!migrationApplied) {
           updatedPlan.immediate.push({
             ...task,
@@ -194,7 +194,7 @@ class ClaudeResume {
       // Session continuity
       sessionHistory: {
         original: handoff.sessionId,
-        resumed: ClaudeHelpers.generateSessionId(),
+        resumed: GeminiHelpers.generateSessionId(),
         timeBetween: this.calculateTimeDifference(handoff.timestamp)
       },
       
@@ -224,14 +224,14 @@ class ClaudeResume {
 
   async saveResumedSession(resumeData) {
     // Save resume data
-    await ClaudeHelpers.writeJsonSafe('CLAUDE_CONTEXT_RESUMED.json', resumeData);
+    await GeminiHelpers.writeJsonSafe('CLAUDE_CONTEXT_RESUMED.json', resumeData);
     
     // Create comprehensive context markdown
     const markdown = this.formatResumedContext(resumeData);
-    await ClaudeHelpers.writeJsonSafe('CLAUDE_CONTEXT_RESUMED.md', markdown);
+    await GeminiHelpers.writeJsonSafe('CLAUDE_CONTEXT_RESUMED.md', markdown);
     
     // Update session history
-    await ClaudeHelpers.saveSessionHistory({
+    await GeminiHelpers.saveSessionHistory({
       sessionId: resumeData.sessionId,
       timestamp: resumeData.timestamp,
       type: 'resume',
@@ -249,12 +249,12 @@ class ClaudeResume {
     const handoff = resumeData.handoffData;
     const changes = resumeData.changesSinceHandoff;
     
-    return `# 🔄 Claude Session RESUMED - ${ClaudeHelpers.formatTimestamp()}
+    return `# 🔄 Gemini Session RESUMED - ${GeminiHelpers.formatTimestamp()}
 
 ## 📚 SESSION CONTINUITY
 **Resuming from**: ${handoff.sessionId}  
 **Original handoff**: ${this.calculateTimeDifference(handoff.timestamp)}  
-**Previous Claude was working on**: ${handoff.activeTask.description} (${handoff.activeTask.priority})
+**Previous Gemini was working on**: ${handoff.activeTask.description} (${handoff.activeTask.priority})
 
 ## ✅ PREVIOUS SESSION PROGRESS
 ${handoff.sessionProgress.completed.map(item => `- ${item}`).join('\n')}
@@ -332,7 +332,7 @@ git status                        # See what's changed
 
 ## 🧠 MY UNDERSTANDING
 
-I'm now fully caught up on where we left off. The previous Claude was working on **${handoff.activeTask.description}** with **${handoff.activeTask.priority}** priority. 
+I'm now fully caught up on where we left off. The previous Gemini was working on **${handoff.activeTask.description}** with **${handoff.activeTask.priority}** priority. 
 
 ${changes.tests.improvement ? '🎉 Great news: Tests improved since the handoff! ' : ''}
 ${changes.tests.regression ? '⚠️ Heads up: Some tests broke since the handoff. ' : ''}
@@ -344,7 +344,7 @@ Key things I need to remember:
 Ready to pick up where we left off and continue making progress! 
 
 ---
-**Session Resumed**: ${ClaudeHelpers.formatTimestamp()}  
+**Session Resumed**: ${GeminiHelpers.formatTimestamp()}  
 **Original Session**: ${handoff.sessionId}  
 **Resumed Session**: ${resumeData.sessionId}
 `;
@@ -354,11 +354,11 @@ Ready to pick up where we left off and continue making progress!
 // Main execution
 async function main() {
   try {
-    const resume = new ClaudeResume();
+    const resume = new GeminiResume();
     const data = await resume.resumeSession();
     
     console.log('\n' + '='.repeat(60));
-    console.log('📚 CLAUDE SESSION RESUMED');
+    console.log('📚 AI SESSION RESUMED');
     console.log('='.repeat(60));
     console.log(`🔄 From: ${data.handoffData.sessionId}`);
     console.log(`⏰ Time since handoff: ${data.timeSinceHandoff}`);
@@ -393,13 +393,13 @@ async function main() {
   } catch (error) {
     console.error('❌ Error resuming session:', error.message);
     if (error.message.includes('No handoff file')) {
-      console.log('\n💡 Try: npm run claude:start (for new session)');
+      console.log('\n💡 Try: npm run gemini:start (for new session)');
     }
     process.exit(1);
   }
 }
 
 // Check if this script is being run directly
-if (process.argv[1] && process.argv[1].endsWith('claude-resume.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-resume.js')) {
   main();
 }

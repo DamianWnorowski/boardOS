@@ -213,7 +213,7 @@ test.describe('Magnet UI Integration Tests', () => {
             try {
               await clickables[i].click();
               await page.waitForTimeout(200);
-            } catch (error) {
+            } catch {
               // Non-critical if element not clickable
             }
           }
@@ -226,7 +226,7 @@ test.describe('Magnet UI Integration Tests', () => {
             try {
               await focusableElements[i].focus();
               await page.waitForTimeout(200);
-            } catch (error) {
+            } catch {
               // Non-critical if element not focusable
             }
           }
@@ -270,7 +270,6 @@ test.describe('Magnet UI Integration Tests', () => {
       
       // Page should still be responsive
       await page.keyboard.press('Tab');
-      const overlay = page.locator('[data-testid*="select"], [data-testid*="overlay"]');
       
       // Don't fail if overlay doesn't appear, just check page is still alive
       await page.waitForTimeout(1000);

@@ -14,7 +14,7 @@ test.describe('Multichain Magnet Interactions', () => {
   });
 
   test.describe('Sequential Attachment Operations', () => {
-    test('build complete equipment chain without errors', async ({ page }) => {
+    test('build complete equipment chain without errors', async ({ page: _ }) => {
       // Create resources
       const excavator = TestDataFactory.createExcavator({ name: 'Chain Excavator' });
       const operator = TestDataFactory.createOperator({ name: 'Chain Operator' });
@@ -76,7 +76,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(consoleErrors).toHaveLength(0);
     });
 
-    test('handle paver with multiple attachments in sequence', async ({ page }) => {
+    test('handle paver with multiple attachments in sequence', async ({ page: _ }) => {
       const paver = TestDataFactory.createPaver({ name: 'Multi-attach Paver' });
       const operator = TestDataFactory.createOperator({ name: 'Paver Operator' });
       const screwman1 = TestDataFactory.createScrewman({ name: 'Screwman Alpha' });
@@ -126,7 +126,7 @@ test.describe('Multichain Magnet Interactions', () => {
   });
 
   test.describe('Concurrent Operations', () => {
-    test('handle rapid successive attachments without race conditions', async ({ page }) => {
+    test('handle rapid successive attachments without race conditions', async ({ page: _ }) => {
       const resources = {
         trucks: Array.from({ length: 5 }, (_, i) => 
           TestDataFactory.createTruck('10W', { name: `Rapid Truck ${i + 1}` })
@@ -160,7 +160,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(errors).toHaveLength(0);
     });
 
-    test('handle simultaneous detach and reattach operations', async ({ page }) => {
+    test('handle simultaneous detach and reattach operations', async ({ page: _ }) => {
       const truck1 = TestDataFactory.createTruck('10W', { name: 'Swap Truck 1' });
       const truck2 = TestDataFactory.createTruck('10W', { name: 'Swap Truck 2' });
       const driver = TestDataFactory.createDriver({ name: 'Swap Driver' });
@@ -186,7 +186,7 @@ test.describe('Multichain Magnet Interactions', () => {
   });
 
   test.describe('Chain Reactions', () => {
-    test('cascade attachment updates through multiple levels', async ({ page }) => {
+    test('cascade attachment updates through multiple levels', async ({ page: _ }) => {
       // Create a complex hierarchy
       const mainPaver = TestDataFactory.createPaver({ name: 'Main Paver' });
       const operator = TestDataFactory.createOperator({ name: 'Lead Operator' });
@@ -227,7 +227,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(await schedulerPage.isResourceAssigned(operator.id, job1.name)).toBe(false);
     });
 
-    test('maintain attachment integrity during bulk operations', async ({ page }) => {
+    test('maintain attachment integrity during bulk operations', async ({ page: _ }) => {
       // Create multiple equipment groups
       const groups = Array.from({ length: 3 }, (_, i) => ({
         excavator: TestDataFactory.createExcavator({ name: `Bulk Excavator ${i + 1}` }),
@@ -257,7 +257,7 @@ test.describe('Multichain Magnet Interactions', () => {
   });
 
   test.describe('Complex Reassignment Scenarios', () => {
-    test('swap attached resources between equipment without errors', async ({ page }) => {
+    test('swap attached resources between equipment without errors', async ({ page: _ }) => {
       const excavator1 = TestDataFactory.createExcavator({ name: 'Swap Excavator 1' });
       const excavator2 = TestDataFactory.createExcavator({ name: 'Swap Excavator 2' });
       const operator1 = TestDataFactory.createOperator({ name: 'Swap Operator 1' });
@@ -282,7 +282,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(await magnetPage.verifyAttachment(excavator2.id, operator2.id)).toBe(false);
     });
 
-    test('reorganize multiple attachment groups across jobs', async ({ page }) => {
+    test('reorganize multiple attachment groups across jobs', async ({ page: _ }) => {
       // Create 3 jobs
       const jobs = [
         TestDataFactory.createDayJob({ name: 'Reorg Job A' }),
@@ -328,7 +328,7 @@ test.describe('Multichain Magnet Interactions', () => {
   });
 
   test.describe('Edge Cases and Error Prevention', () => {
-    test('handle circular attachment attempts gracefully', async ({ page }) => {
+    test('handle circular attachment attempts gracefully', async ({ page: _ }) => {
       const operator1 = TestDataFactory.createOperator({ name: 'Circular Op 1' });
       const operator2 = TestDataFactory.createOperator({ name: 'Circular Op 2' });
       
@@ -345,7 +345,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(errors).toHaveLength(0);
     });
 
-    test('maintain state consistency during failed operations', async ({ page }) => {
+    test('maintain state consistency during failed operations', async ({ page: _ }) => {
       const paver = TestDataFactory.createPaver({ name: 'State Test Paver' });
       const operator = TestDataFactory.createOperator({ name: 'State Test Op' });
       const screwmen = Array.from({ length: 4 }, (_, i) => 
@@ -376,7 +376,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(await magnetPage.isAttachmentFull(paver.id)).toBe(true);
     });
 
-    test('handle resource deletion while attached', async ({ page }) => {
+    test('handle resource deletion while attached', async ({ page: _ }) => {
       const truck = TestDataFactory.createTruck('10W', { name: 'Delete Test Truck' });
       const driver = TestDataFactory.createDriver({ name: 'Delete Test Driver' });
       
@@ -398,7 +398,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(await magnetPage.verifyAttachment(truck.id, newDriver.id)).toBe(true);
     });
 
-    test('preserve attachments during view changes', async ({ page }) => {
+    test('preserve attachments during view changes', async ({ page: _ }) => {
       const excavator = TestDataFactory.createExcavator({ name: 'View Test Excavator' });
       const operator = TestDataFactory.createOperator({ name: 'View Test Operator' });
       const job = TestDataFactory.createDayJob({ name: 'View Test Job' });
@@ -420,7 +420,7 @@ test.describe('Multichain Magnet Interactions', () => {
       expect(await schedulerPage.isResourceAssigned(operator.id, job.name)).toBe(true);
     });
 
-    test('handle maximum attachment chains without performance degradation', async ({ page }) => {
+    test('handle maximum attachment chains without performance degradation', async ({ page: _ }) => {
       const startTime = Date.now();
       
       // Create large chain of resources

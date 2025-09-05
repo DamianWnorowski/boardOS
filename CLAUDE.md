@@ -1,5 +1,26 @@
 ## Recent Fixes (2025-09-05)
 
+### Latest Changes
+- 6795609 - fix: resolve JobRow test failures and improve ESLint configuration (12 seconds ago)
+- 88d70d0 - fix: equipment availability now date-aware in quick select buttons (3 hours ago)
+- df57f2a - .claude (15 hours ago)
+- 58770e1 - Fix: Resolve truck magnet display issues and improve resource assignment handling (15 hours ago)
+- 50eaca6 - feat: Add comprehensive development toolchain and framework (15 hours ago)
+
+### Project Statistics
+- **Total Files**: 138
+- **Components**: 86
+- **Hooks**: 3
+- **Contexts**: 11
+- **Services**: 5
+- **Lines of Code**: 40,870
+
+### Critical File Updates
+- **src/context/SchedulerContext.tsx**: Updated 3 hours ago
+- **src/services/DatabaseService.ts**: Updated 15 hours ago
+- **src/components/resources/AssignmentCard.tsx**: Updated 15 hours ago
+- **src/utils/colorSystem.ts**: Updated 3 days ago
+
 ### 2025-09-05 - Code update
 - Modified: `src/components/board/__tests__/JobRow.test.tsx`
 

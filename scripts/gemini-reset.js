@@ -1,50 +1,50 @@
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 import fs from 'fs/promises';
 
-class ClaudeReset {
+class GeminiReset {
   async reset(options = {}) {
-    console.log('🔄 Resetting Claude session data...\n');
+    console.log('🔄 Resetting Gemini session data...\n');
     
     const filesToRemove = [];
     const filesToArchive = [];
     
     // Check what exists
-    if (await ClaudeHelpers.fileExists('CLAUDE_HANDOFF.json')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_HANDOFF.json')) {
       filesToArchive.push('CLAUDE_HANDOFF.json');
     }
     
-    if (await ClaudeHelpers.fileExists('CLAUDE_CONTEXT.json')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_CONTEXT.json')) {
       filesToArchive.push('CLAUDE_CONTEXT.json');
     }
     
-    if (await ClaudeHelpers.fileExists('CLAUDE_CONTEXT.md')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_CONTEXT.md')) {
       filesToRemove.push('CLAUDE_CONTEXT.md');
     }
     
-    if (await ClaudeHelpers.fileExists('CLAUDE_CONTEXT_RESUMED.json')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_CONTEXT_RESUMED.json')) {
       filesToArchive.push('CLAUDE_CONTEXT_RESUMED.json');
     }
     
-    if (await ClaudeHelpers.fileExists('CLAUDE_CONTEXT_RESUMED.md')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_CONTEXT_RESUMED.md')) {
       filesToRemove.push('CLAUDE_CONTEXT_RESUMED.md');
     }
     
-    if (await ClaudeHelpers.fileExists('CLAUDE_HANDOFF.md')) {
+    if (await GeminiHelpers.fileExists('CLAUDE_HANDOFF.md')) {
       filesToRemove.push('CLAUDE_HANDOFF.md');
     }
 
     // Archive important files before removing
     if (filesToArchive.length > 0 && !options.skipArchive) {
       console.log('📦 Archiving session data...');
-      await ClaudeHelpers.ensureDir('.claude/archive');
+      await GeminiHelpers.ensureDir('.gemini/archive');
       
       for (const file of filesToArchive) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const archiveName = `.claude/archive/${timestamp}-${file}`;
+        const archiveName = `.gemini/archive/${timestamp}-${file}`;
         
         try {
-          const content = await ClaudeHelpers.readJsonSafe(file);
-          await ClaudeHelpers.writeJsonSafe(archiveName, content);
+          const content = await GeminiHelpers.readJsonSafe(file);
+          await GeminiHelpers.writeJsonSafe(archiveName, content);
           console.log(`   ✅ Archived: ${file} → ${archiveName}`);
         } catch (error) {
           console.log(`   ⚠️  Failed to archive: ${file}`);
@@ -72,7 +72,7 @@ class ClaudeReset {
       console.log('\n🗂️  Clearing session history...');
       try {
         const emptyHistory = { sessions: [] };
-        await ClaudeHelpers.writeJsonSafe('.claude/history.json', emptyHistory);
+        await GeminiHelpers.writeJsonSafe('.gemini/history.json', emptyHistory);
         console.log('   ✅ Session history cleared');
       } catch (error) {
         console.log('   ⚠️  Failed to clear history');
@@ -81,14 +81,14 @@ class ClaudeReset {
 
     // Clean up temporary files
     const tempFiles = [
-      '.claude/last-status.json',
-      '.claude/current/context.json'
+      '.gemini/last-status.json',
+      '.gemini/current/context.json'
     ];
 
     console.log('\n🧹 Cleaning temporary files...');
     for (const file of tempFiles) {
       try {
-        if (await ClaudeHelpers.fileExists(file)) {
+        if (await GeminiHelpers.fileExists(file)) {
           await fs.unlink(file);
           console.log(`   ✅ Removed: ${file}`);
         }
@@ -106,13 +106,13 @@ class ClaudeReset {
 
   async showResetOptions() {
     console.log(`
-🔄 Claude Reset Options:
+🔄 Gemini Reset Options:
 
 Basic reset (recommended):
-  npm run claude:reset
+  npm run gemini:reset
 
 Complete reset (clears everything):
-  npm run claude:reset -- --complete
+  npm run gemini:reset -- --complete
 
 What gets reset:
   ✅ CLAUDE_HANDOFF.json (archived first)
@@ -139,23 +139,23 @@ async function main() {
     };
 
     if (options.help) {
-      const reset = new ClaudeReset();
+      const reset = new GeminiReset();
       await reset.showResetOptions();
       return;
     }
 
-    const reset = new ClaudeReset();
+    const reset = new GeminiReset();
     const result = await reset.reset(options);
     
     console.log('\n' + '='.repeat(50));
-    console.log('🎉 CLAUDE RESET COMPLETE');
+    console.log('🎉 AI RESET COMPLETE');
     console.log('='.repeat(50));
     console.log(`📦 Files archived: ${result.filesArchived}`);
     console.log(`🗑️  Files removed: ${result.filesRemoved}`);
     console.log(`🗂️  History cleared: ${result.historyCleared ? 'Yes' : 'No'}`);
     console.log('='.repeat(50));
-    console.log('\n✨ Ready for fresh Claude session!');
-    console.log('💡 Run: npm run claude:start');
+    console.log('\n✨ Ready for fresh Gemini session!');
+    console.log('💡 Run: npm run gemini:start');
     
   } catch (error) {
     console.error('❌ Error during reset:', error.message);
@@ -163,6 +163,6 @@ async function main() {
   }
 }
 
-if (process.argv[1] && process.argv[1].endsWith('claude-reset.js')) {
+if (process.argv[1] && process.argv[1].endsWith('gemini-reset.js')) {
   main();
 }
