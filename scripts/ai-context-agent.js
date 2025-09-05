@@ -8,7 +8,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ClaudeHelpers from './utils/claude-helpers.js';
+import GeminiHelpers from './utils/gemini-helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,7 +115,7 @@ class AIContextAgent {
           case 'git':
             this.collectors.git = { 
               collect: async () => {
-                const data = await ClaudeHelpers.getGitStatus();
+                                const data = await GeminiHelpers.getGitStatus();
                 return { ...data, fallback: true };
               }
             };
@@ -123,7 +123,7 @@ class AIContextAgent {
           case 'test':
             this.collectors.test = { 
               collect: async () => {
-                const data = await ClaudeHelpers.getTestStatus();
+                const data = await GeminiHelpers.getTestStatus();
                 return { ...data, fallback: true };
               }
             };
@@ -131,7 +131,7 @@ class AIContextAgent {
           case 'lint':
             this.collectors.lint = { 
               collect: async () => {
-                const data = await ClaudeHelpers.getLintStatus();
+                const data = await GeminiHelpers.getLintStatus();
                 return { ...data, fallback: true };
               }
             };
@@ -147,7 +147,7 @@ class AIContextAgent {
           case 'database':
             this.collectors.database = { 
               collect: async () => {
-                const data = await ClaudeHelpers.getDatabaseStatus();
+                const data = await GeminiHelpers.getDatabaseStatus();
                 return { ...data, fallback: true };
               }
             };
@@ -618,7 +618,7 @@ class AIContextAgent {
    * Get project-level context
    */
   async getProjectContext() {
-    const packageJson = await ClaudeHelpers.readJsonSafe('package.json');
+    const packageJson = await GeminiHelpers.readJsonSafe('package.json');
     return {
       name: 'BoardOS Construction Scheduler',
       type: 'React + TypeScript + Supabase',
@@ -726,7 +726,7 @@ class AIContextAgent {
    * Get relevant memory from previous sessions
    */
   async getRelevantMemory() {
-    const memory = await ClaudeHelpers.readJsonSafe('AI_CONTEXT_MEMORY.json');
+    const memory = await GeminiHelpers.readJsonSafe('AI_CONTEXT_MEMORY.json');
     return memory || { sessions: [], patterns: [], decisions: [] };
   }
 
@@ -738,10 +738,10 @@ class AIContextAgent {
     const memoryPath = 'AI_CONTEXT_MEMORY.json';
     
     // Save current context
-    await ClaudeHelpers.writeJsonSafe(contextPath, context);
+    await GeminiHelpers.writeJsonSafe(contextPath, context);
     
     // Update memory
-    let memory = await ClaudeHelpers.readJsonSafe(memoryPath) || { sessions: [] };
+    let memory = await GeminiHelpers.readJsonSafe(memoryPath) || { sessions: [] };
     memory.sessions = memory.sessions || [];
     memory.sessions.unshift({
       timestamp: this.timestamp,
@@ -753,7 +753,7 @@ class AIContextAgent {
     // Keep only last 10 sessions in memory
     memory.sessions = memory.sessions.slice(0, 10);
     
-    await ClaudeHelpers.writeJsonSafe(memoryPath, memory);
+    await GeminiHelpers.writeJsonSafe(memoryPath, memory);
   }
 
   /**
@@ -796,8 +796,8 @@ class AIContextAgent {
    * Basic code analysis fallback
    */
   async basicCodeAnalysis() {
-    const recentFiles = await ClaudeHelpers.execSafe('git diff --name-only HEAD~1..HEAD');
-    const uncommittedFiles = await ClaudeHelpers.execSafe('git diff --name-only');
+    const recentFiles = await GeminiHelpers.execSafe('git diff --name-only HEAD~1..HEAD');
+    const uncommittedFiles = await GeminiHelpers.execSafe('git diff --name-only');
     
     return {
       recentFiles: recentFiles.stdout ? recentFiles.stdout.split('\n').filter(f => f) : [],

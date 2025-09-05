@@ -61,14 +61,14 @@ class AutomatedContextTester {
     // Test 1: Initialization
     await this.test('contextManager', 'initialization', async () => {
       await manager.initialize();
-      const exists = await ClaudeHelpers.fileExists('.claude/current-context.json');
+      const exists = await GeminiHelpers.fileExists('.claude/current-context.json');
       return exists;
     });
 
     // Test 2: Context creation
     await this.test('contextManager', 'context creation', async () => {
       await manager.saveContext();
-      const context = await ClaudeHelpers.readJsonSafe('.claude/current-context.json');
+      const context = await GeminiHelpers.readJsonSafe('.claude/current-context.json');
       return context && context.session && context.activeWork;
     });
 
@@ -76,7 +76,7 @@ class AutomatedContextTester {
     await this.test('contextManager', 'decision tracking', async () => {
       manager.addDecision('Test decision for automated testing');
       await manager.saveContext();
-      const context = await ClaudeHelpers.readJsonSafe('.claude/current-context.json');
+      const context = await GeminiHelpers.readJsonSafe('.claude/current-context.json');
       return context.memory.keyDecisions.some(d => d.decision.includes('Test decision'));
     });
 
@@ -84,14 +84,14 @@ class AutomatedContextTester {
     await this.test('contextManager', 'progress tracking', async () => {
       manager.addProgress('Test progress item');
       await manager.saveContext();
-      const context = await ClaudeHelpers.readJsonSafe('.claude/current-context.json');
+      const context = await GeminiHelpers.readJsonSafe('.claude/current-context.json');
       return context.activeWork.progress.some(p => p.item.includes('Test progress'));
     });
 
     // Test 5: Markdown summary
     await this.test('contextManager', 'markdown summary', async () => {
       await manager.saveContext();
-      const exists = await ClaudeHelpers.fileExists('.claude/current-context.md');
+      const exists = await GeminiHelpers.fileExists('.claude/current-context.md');
       return exists;
     });
   }
@@ -134,7 +134,7 @@ class AutomatedContextTester {
     // Test 5: Monitor state persistence
     await this.test('monitor', 'state persistence', async () => {
       await monitor.saveMonitorState();
-      const exists = await ClaudeHelpers.fileExists('.claude/token-monitor.json');
+      const exists = await GeminiHelpers.fileExists('.claude/token-monitor.json');
       return exists;
     });
   }
@@ -214,7 +214,7 @@ class AutomatedContextTester {
 
     // Test 3: Schema validation
     await this.test('integration', 'schema validation', async () => {
-      const context = await ClaudeHelpers.readJsonSafe('.claude/current-context.json');
+      const context = await GeminiHelpers.readJsonSafe('.claude/current-context.json');
       if (!context) return false;
 
       // Basic schema validation
@@ -298,7 +298,7 @@ class AutomatedContextTester {
       }
     };
 
-    await ClaudeHelpers.writeJsonSafe('.claude/current-context.json', mockContext);
+    await GeminiHelpers.writeJsonSafe('.claude/current-context.json', mockContext);
     this.tempFiles.push('.claude/current-context.json');
   }
 

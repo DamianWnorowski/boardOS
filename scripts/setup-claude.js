@@ -112,7 +112,7 @@ class ClaudeSetup {
 
     for (const check of checks) {
       if (check.command) {
-        const result = await ClaudeHelpers.execSafe(check.command);
+        const result = await GeminiHelpers.execSafe(check.command);
         const status = result.success ? '✅' : '❌';
         console.log(`   ${status} ${check.name}: ${result.success ? result.stdout : 'Not found'}`);
         if (!result.success) allGood = false;

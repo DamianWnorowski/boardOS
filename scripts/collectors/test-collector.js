@@ -3,7 +3,7 @@
  * Analyzes test results, coverage, and testing patterns
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 
 export class TestCollector {
   constructor() {
@@ -122,7 +122,7 @@ export class TestCollector {
    * Run E2E tests
    */
   async runE2ETests() {
-    const result = await ClaudeHelpers.execSafe('npx playwright test --reporter=json 2>/dev/null || echo "E2E not available"', {
+    const result = await GeminiHelpers.execSafe('npx playwright test --reporter=json 2>/dev/null || echo "E2E not available"', {
       timeout: 120000
     });
     
@@ -224,7 +224,7 @@ export class TestCollector {
     const result = await ClaudeHelpers.execSafe('git log --oneline --since="1 week ago" -- "*.test.*" "*.spec.*"');
     const commits = result.stdout ? result.stdout.split('\n').filter(c => c) : [];
     
-    const uncommitted = await ClaudeHelpers.execSafe('git diff --name-only | grep -E "\\.(test|spec)\\."');
+    const uncommitted = await GeminiHelpers.execSafe('git diff --name-only | grep -E "\\.(test|spec)\\."');
     const uncommittedTests = uncommitted.stdout ? uncommitted.stdout.split('\n').filter(f => f) : [];
     
     return {

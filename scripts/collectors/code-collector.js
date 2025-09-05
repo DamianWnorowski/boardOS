@@ -3,7 +3,7 @@
  * Analyzes codebase structure, complexity, and architectural patterns
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -241,10 +241,10 @@ export class CodeCollector {
    * Analyze dependencies
    */
   async analyzeDependencies() {
-    const packageJson = await ClaudeHelpers.readJsonSafe('package.json');
-    const lockfileExists = await ClaudeHelpers.fileExists('package-lock.json') || 
-                          await ClaudeHelpers.fileExists('yarn.lock') || 
-                          await ClaudeHelpers.fileExists('pnpm-lock.yaml');
+    const packageJson = await GeminiHelpers.readJsonSafe('package.json');
+    const lockfileExists = await GeminiHelpers.fileExists('package-lock.json') || 
+                          await GeminiHelpers.fileExists('yarn.lock') || 
+                          await GeminiHelpers.fileExists('pnpm-lock.yaml');
 
     if (!packageJson) {
       return {
@@ -258,7 +258,7 @@ export class CodeCollector {
     const devDeps = packageJson.devDependencies || {};
     
     // Get outdated packages
-    const outdatedResult = await ClaudeHelpers.execSafe('npm outdated --json');
+    const outdatedResult = await GeminiHelpers.execSafe('npm outdated --json');
     let outdatedPackages = [];
     try {
       if (outdatedResult.stdout) {
@@ -276,7 +276,7 @@ export class CodeCollector {
     }
 
     // Security audit
-    const auditResult = await ClaudeHelpers.execSafe('npm audit --json');
+    const auditResult = await GeminiHelpers.execSafe('npm audit --json');
     let securityIssues = [];
     try {
       if (auditResult.stdout) {
@@ -366,9 +366,9 @@ export class CodeCollector {
       },
       files: {
         documentation: docFiles.length,
-        readme: await ClaudeHelpers.fileExists('README.md'),
-        changelog: await ClaudeHelpers.fileExists('CHANGELOG.md'),
-        contributing: await ClaudeHelpers.fileExists('CONTRIBUTING.md')
+        readme: await GeminiHelpers.fileExists('README.md'),
+        changelog: await GeminiHelpers.fileExists('CHANGELOG.md'),
+        contributing: await GeminiHelpers.fileExists('CONTRIBUTING.md')
       },
       quality: {
         hasExamples: docFiles.some(f => f.includes('example')),
@@ -381,7 +381,7 @@ export class CodeCollector {
   // Helper methods
 
   async getAllCodeFiles() {
-    const result = await ClaudeHelpers.execSafe(`find . -type f \\( ${this.supportedExtensions.map(ext => `-name "*${ext}"`).join(' -o ')} \\) | grep -v -E "(${this.excludePaths.join('|')})" | head -300`);
+        const result = await GeminiHelpers.execSafe(`find . -type f \( ${this.supportedExtensions.map(ext => `-name "*${ext}"`).join(' -o ')} \) | grep -v -E "(${this.excludePaths.join('|')})" | head -300`);
     
     if (!result.stdout) return [];
     
@@ -389,7 +389,7 @@ export class CodeCollector {
   }
 
   async getDocumentationFiles() {
-    const result = await ClaudeHelpers.execSafe('find . -type f \\( -name "*.md" -o -name "*.txt" -o -name "*.rst" \\) | grep -v node_modules | head -50');
+        const result = await GeminiHelpers.execSafe('find . -type f \( -name "*.md" -o -name "*.txt" -o -name "*.rst" \) | grep -v node_modules | head -50');
     
     if (!result.stdout) return [];
     
@@ -563,7 +563,7 @@ export class CodeCollector {
   }
 
   async detectFrameworks() {
-    const packageJson = await ClaudeHelpers.readJsonSafe('package.json');
+    const packageJson = await GeminiHelpers.readJsonSafe('package.json');
     if (!packageJson) return [];
     
     const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };

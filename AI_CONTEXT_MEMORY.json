@@ -1,6 +1,61 @@
 {
   "sessions": [
     {
+      "timestamp": "2025-09-05T19:04:55.720Z",
+      "sessionId": "ai-1757099095721-ikurmg4et",
+      "task": {
+        "description": "General development work",
+        "confidence": 0.3,
+        "evidence": [],
+        "priority": "medium"
+      },
+      "status": "CRITICAL_ISSUES"
+    },
+    {
+      "timestamp": "2025-09-05T19:04:23.769Z",
+      "sessionId": "ai-1757099063769-fw7q5rc65",
+      "task": {
+        "description": "General development work",
+        "confidence": 0.3,
+        "evidence": [],
+        "priority": "medium"
+      },
+      "status": "CRITICAL_ISSUES"
+    },
+    {
+      "timestamp": "2025-09-05T19:03:41.571Z",
+      "sessionId": "ai-1757099021572-pu5bidvvz",
+      "task": {
+        "description": "General development work",
+        "confidence": 0.3,
+        "evidence": [],
+        "priority": "medium"
+      },
+      "status": "CRITICAL_ISSUES"
+    },
+    {
+      "timestamp": "2025-09-05T19:02:43.590Z",
+      "sessionId": "ai-1757098963590-n98tg3ucq",
+      "task": {
+        "description": "General development work",
+        "confidence": 0.3,
+        "evidence": [],
+        "priority": "medium"
+      },
+      "status": "CRITICAL_ISSUES"
+    },
+    {
+      "timestamp": "2025-09-05T19:00:17.938Z",
+      "sessionId": "ai-1757098817939-4kldwxvni",
+      "task": {
+        "description": "General development work",
+        "confidence": 0.3,
+        "evidence": [],
+        "priority": "medium"
+      },
+      "status": "CRITICAL_ISSUES"
+    },
+    {
       "timestamp": "2025-08-29T16:45:15.641Z",
       "sessionId": "ai-1756485915641-bkjh8gm8z",
       "task": {
@@ -47,28 +102,6 @@
     {
       "timestamp": "2025-08-29T16:26:50.766Z",
       "sessionId": "ai-1756484810767-xc7rs4qi3",
-      "task": {
-        "description": "General development work",
-        "confidence": 0.3,
-        "evidence": [],
-        "priority": "medium"
-      },
-      "status": "CRITICAL_ISSUES"
-    },
-    {
-      "timestamp": "2025-08-29T14:12:05.429Z",
-      "sessionId": "ai-1756476725429-m6z1lilfh",
-      "task": {
-        "description": "General development work",
-        "confidence": 0.3,
-        "evidence": [],
-        "priority": "medium"
-      },
-      "status": "CRITICAL_ISSUES"
-    },
-    {
-      "timestamp": "2025-08-29T14:11:28.257Z",
-      "sessionId": "ai-1756476688257-0e5yppzqe",
       "task": {
         "description": "General development work",
         "confidence": 0.3,

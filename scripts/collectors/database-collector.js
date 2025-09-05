@@ -3,7 +3,7 @@
  * Analyzes database state, migrations, and Supabase configuration
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { config } from 'dotenv';
@@ -93,7 +93,7 @@ export class DatabaseCollector {
 
     // Check config.toml
     const configPath = 'supabase/config.toml';
-    if (await ClaudeHelpers.fileExists(configPath)) {
+    if (await GeminiHelpers.fileExists(configPath)) {
       config.configFiles.configToml = true;
       config.projectExists = true;
       
@@ -114,7 +114,7 @@ export class DatabaseCollector {
     // Check environment variables
     const envFiles = ['.env', '.env.local', '.env.production'];
     for (const envFile of envFiles) {
-      if (await ClaudeHelpers.fileExists(envFile)) {
+      if (await GeminiHelpers.fileExists(envFile)) {
         try {
           const envContent = await fs.readFile(envFile, 'utf-8');
           if (envContent.includes('SUPABASE_URL') || envContent.includes('VITE_SUPABASE_URL')) {
@@ -155,7 +155,7 @@ export class DatabaseCollector {
     };
 
     const migrationDir = 'supabase/migrations';
-    if (await ClaudeHelpers.fileExists(migrationDir)) {
+    if (await GeminiHelpers.fileExists(migrationDir)) {
       try {
         const files = await fs.readdir(migrationDir);
         const migrationFiles = files
@@ -179,7 +179,7 @@ export class DatabaseCollector {
 
         // Check for migration status tracking
         const statusFile = 'MIGRATION_STATUS.md';
-        if (await ClaudeHelpers.fileExists(statusFile)) {
+        if (await GeminiHelpers.fileExists(statusFile)) {
           try {
             const statusContent = await fs.readFile(statusFile, 'utf-8');
             migrations.statusTracking = this.parseMigrationStatus(statusContent);
@@ -291,7 +291,7 @@ export class DatabaseCollector {
     const envFiles = ['.env', '.env.local', '.env.development', '.env.production', '.env.example'];
     
     for (const envFile of envFiles) {
-      if (await ClaudeHelpers.fileExists(envFile)) {
+      if (await GeminiHelpers.fileExists(envFile)) {
         env.files.push(envFile);
         
         try {
@@ -353,7 +353,7 @@ export class DatabaseCollector {
   // Helper methods
 
   async findSupabaseClientFiles() {
-    const result = await ClaudeHelpers.execSafe('grep -r "createClient\\|supabase" --include="*.ts" --include="*.js" --include="*.tsx" --include="*.jsx" . | grep -v node_modules | head -10');
+    const result = await GeminiHelpers.execSafe('grep -r "createClient\|supabase" --include="*.ts" --include="*.js" --include="*.tsx" --include="*.jsx" . | grep -v node_modules | head -10');
     
     if (!result.stdout) return [];
     
@@ -371,7 +371,7 @@ export class DatabaseCollector {
     
     // Migration files
     const migrationDir = 'supabase/migrations';
-    if (await ClaudeHelpers.fileExists(migrationDir)) {
+    if (await GeminiHelpers.fileExists(migrationDir)) {
       try {
         const migrationFiles = await fs.readdir(migrationDir);
         files.push(...migrationFiles
@@ -386,7 +386,7 @@ export class DatabaseCollector {
     // Schema files
     const schemaPaths = ['schema.sql', 'database.sql', 'supabase/schema.sql'];
     for (const schemaPath of schemaPaths) {
-      if (await ClaudeHelpers.fileExists(schemaPath)) {
+      if (await GeminiHelpers.fileExists(schemaPath)) {
         files.push(schemaPath);
       }
     }
@@ -530,7 +530,7 @@ export class DatabaseCollector {
   }
 
   async checkForConnectionLogic() {
-    const result = await ClaudeHelpers.execSafe('grep -r "createClient\\|supabase\\|database" --include="*.ts" --include="*.js" . | grep -v node_modules | head -5');
+    const result = await GeminiHelpers.execSafe('grep -r "createClient\|supabase\|database" --include="*.ts" --include="*.js" . | grep -v node_modules | head -5');
     return result.stdout && result.stdout.length > 0;
   }
 

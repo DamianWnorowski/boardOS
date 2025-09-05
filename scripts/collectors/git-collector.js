@@ -3,7 +3,7 @@
  * Analyzes git repository state and recent development activity
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 
 export class GitCollector {
   constructor() {
@@ -158,7 +158,7 @@ export class GitCollector {
    * Get staged changes
    */
   async getStagedChanges() {
-    const result = await ClaudeHelpers.execSafe('git diff --cached --name-only');
+    const result = await GeminiHelpers.execSafe('git diff --cached --name-only');
     return result.stdout ? result.stdout.split('\n').filter(f => f) : [];
   }
 
@@ -183,7 +183,7 @@ export class GitCollector {
    */
   async getBranchInfo() {
     const ahead = await ClaudeHelpers.execSafe('git rev-list --count @{u}..HEAD 2>/dev/null || echo "0"');
-    const behind = await ClaudeHelpers.execSafe('git rev-list --count HEAD..@{u} 2>/dev/null || echo "0"');
+    const behind = await GeminiHelpers.execSafe('git rev-list --count HEAD..@{u} 2>/dev/null || echo "0"');
     
     return {
       ahead: parseInt(ahead.stdout) || 0,

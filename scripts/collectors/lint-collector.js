@@ -3,7 +3,7 @@
  * Analyzes ESLint results and code quality metrics
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 
 export class LintCollector {
   constructor() {
@@ -66,7 +66,7 @@ export class LintCollector {
    * Get ESLint results
    */
   async getESLintResults() {
-    const result = await ClaudeHelpers.execSafe('npx eslint . --format json --ext .ts,.tsx,.js,.jsx');
+    const result = await GeminiHelpers.execSafe('npx eslint . --format json --ext .ts,.tsx,.js,.jsx');
     
     if (!result.stdout) {
       return {
@@ -180,7 +180,7 @@ export class LintCollector {
    * Check Prettier formatting
    */
   async getPrettierCheck() {
-    const result = await ClaudeHelpers.execSafe('npx prettier --check . --ignore-path .gitignore');
+    const result = await GeminiHelpers.execSafe('npx prettier --check . --ignore-path .gitignore');
     
     if (result.success) {
       return {

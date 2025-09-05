@@ -3,7 +3,7 @@
  * Analyzes business logic, domain rules, and application-specific patterns
  */
 
-import ClaudeHelpers from '../utils/claude-helpers.js';
+import GeminiHelpers from '../utils/gemini-helpers.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -390,7 +390,7 @@ export class BusinessCollector {
   }
 
   async findServiceFiles() {
-    const result = await ClaudeHelpers.execSafe('find . -name "*service*" -o -name "*Service*" -o -path "*/services/*" | grep -E "\\.(ts|js)$" | grep -v node_modules | head -15');
+    const result = await GeminiHelpers.execSafe('find . -name "*service*" -o -name "*Service*" -o -path "*/services/*" | grep -E "\\.(ts|js)$" | grep -v node_modules | head -15');
     if (!result.stdout) return [];
     return result.stdout.split('\n').filter(f => f);
   }
