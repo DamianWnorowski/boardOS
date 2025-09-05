@@ -1,0 +1,227 @@
+version: '3.8'
+
+# ==============================
+# BoardOS Production Docker Compose
+# ==============================
+
+services:
+  # Main BoardOS application
+  boardos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: boardos-app
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+    
+    # Security
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    
+    # Networking
+    networks:
+      - boardos-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/health-check.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Volumes for temporary files (read-only container)
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    
+    # Labels
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.boardos.rule=Host(`boardos.localhost`)"
+      - "traefik.http.routers.boardos.tls=true"
+      - "traefik.http.services.boardos.loadbalancer.server.port=8080"
+      - "com.docker.compose.project=boardos"
+      - "com.docker.compose.service=boardos"
+
+  # Reverse proxy with SSL termination
+  traefik:
+    image: traefik:v3.0
+    container_name: boardos-proxy
+    restart: unless-stopped
+    
+    # Command configuration
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@boardos.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+    
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Dashboard (restrict in production)
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/letsencrypt:/letsencrypt
+      - ./data/traefik-logs:/var/log/traefik
+    
+    networks:
+      - boardos-network
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Labels
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$..."  # Generate with htpasswd
+
+  # Log aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: boardos-loki
+    restart: unless-stopped
+    
+    ports:
+      - "3100:3100"
+    
+    volumes:
+      - ./config/loki.yml:/etc/loki/local-config.yaml
+      - ./data/loki:/loki
+    
+    networks:
+      - boardos-network
+    
+    command: -config.file=/etc/loki/local-config.yaml
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: boardos-prometheus
+    restart: unless-stopped
+    
+    ports:
+      - "9090:9090"
+    
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    
+    networks:
+      - boardos-network
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Backup service
+  backup:
+    image: alpine:latest
+    container_name: boardos-backup
+    restart: "no"
+    
+    volumes:
+      - ./data:/backup-source:ro
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    
+    networks:
+      - boardos-network
+    
+    # Run daily at 2 AM
+    deploy:
+      replicas: 0
+    
+    command: sh -c "while true; do sleep 86400; /backup.sh; done"
+
+# Networks
+networks:
+  boardos-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    labels:
+      - "com.docker.compose.project=boardos"
+
+# Named volumes for persistent data
+volumes:
+  letsencrypt-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  loki-data:
+    driver: local

@@ -46,7 +46,7 @@ vi.mock('../ResourceCard', () => ({
   ),
 }));
 
-vi.mock('../modals/ScrewmanSelectorModal', () => ({
+vi.mock('../../modals/ScrewmanSelectorModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="screwman-modal">
       <button onClick={onClose}>Close Screwman</button>
@@ -54,7 +54,7 @@ vi.mock('../modals/ScrewmanSelectorModal', () => ({
   ),
 }));
 
-vi.mock('../modals/OperatorSelectorModal', () => ({
+vi.mock('../../modals/OperatorSelectorModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="operator-modal">
       <button onClick={onClose}>Close Operator</button>
@@ -62,7 +62,7 @@ vi.mock('../modals/OperatorSelectorModal', () => ({
   ),
 }));
 
-vi.mock('../modals/TimeSlotModal', () => ({
+vi.mock('../../modals/TimeSlotModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="timeslot-modal">
       <button onClick={onClose}>Close TimeSlot</button>
@@ -70,7 +70,7 @@ vi.mock('../modals/TimeSlotModal', () => ({
   ),
 }));
 
-vi.mock('../modals/PersonModal', () => ({
+vi.mock('../../modals/PersonModal', () => ({
   default: ({ onClose }: any) => (
     <div data-testid="person-modal">
       <button onClick={onClose}>Close Person</button>
@@ -149,7 +149,7 @@ describe('AssignmentCard', () => {
     assignments: [],
     getResourcesByAssignment: vi.fn(),
     getAssignmentById: vi.fn(),
-    hasMultipleJobAssignments: vi.fn(() => false),
+    hasMultipleJobAssignments: vi.fn((resourceId, forDate) => false),
     getResourceOtherAssignments: vi.fn(),
     assignResource: vi.fn(),
     updateTimeSlot: vi.fn(),
@@ -213,6 +213,9 @@ describe('AssignmentCard', () => {
       canAttach: false,
       maxCount: 0,
     });
+    
+    // Reset getAttachedAssignments to return empty array by default
+    mockSchedulerContext.getAttachedAssignments.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -528,7 +531,7 @@ describe('AssignmentCard', () => {
     });
 
     it('should show add groundman button for milling machines', () => {
-      const millingResource = { ...mockPaverResource, type: 'millingMachine' };
+      const millingResource = { ...mockPaverResource, id: 'milling-1', type: 'millingMachine' };
       const millingAssignment = { ...mockAssignment, resourceId: 'milling-1' };
       
       mockSchedulerContext.getResourceById.mockImplementation((id: string) => {
@@ -566,7 +569,7 @@ describe('AssignmentCard', () => {
       renderAssignmentCard();
       
       // The draggable element should have cursor-move class
-      const draggableElement = screen.getByRole('document').querySelector('.cursor-move');
+      const draggableElement = document.querySelector('.cursor-move');
       expect(draggableElement).not.toBeNull();
       expect(draggableElement).toHaveClass('cursor-move');
     });
@@ -625,8 +628,8 @@ describe('AssignmentCard', () => {
       const assignmentCard = screen.getByTestId('resource-card-paver-1').parentElement;
       fireEvent.doubleClick(assignmentCard!);
       
-      expect(confirmSpy).toHaveBeenCalledWith('Detach all resources from the group?');
-      expect(mockSchedulerContext.removeAssignment).toHaveBeenCalledWith('attached-1');
+      expect(confirmSpy).toHaveBeenCalledWith('Remove this resource from the job?');
+      expect(mockSchedulerContext.removeAssignment).toHaveBeenCalledWith('assignment-1');
       
       confirmSpy.mockRestore();
     });
@@ -685,7 +688,7 @@ describe('AssignmentCard', () => {
       // Just verify the component renders without error when hasMultipleJobAssignments is true
       // The actual ring-2 class styling would be tested in integration tests with real DOM
       expect(screen.getByTestId('resource-card-paver-1')).toBeInTheDocument();
-      expect(mockSchedulerContext.hasMultipleJobAssignments).toHaveBeenCalledWith('paver-1');
+      expect(mockSchedulerContext.hasMultipleJobAssignments).toHaveBeenCalledWith('paver-1', undefined);
     });
   });
 

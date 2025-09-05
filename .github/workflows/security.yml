@@ -1,0 +1,297 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run security scans daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+jobs:
+  dependency-security:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level critical --production
+          npm audit --audit-level high --json > audit-results.json
+        continue-on-error: true
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: audit-results.json
+          retention-days: 30
+
+      # Snyk security scanning
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json > snyk-results.json
+        continue-on-error: true
+
+      - name: Upload Snyk results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-results
+          path: snyk-results.json
+          retention-days: 30
+
+      # Check for security policy files
+      - name: Verify security files exist
+        run: |
+          test -f "public/.well-known/security.txt" || (echo "security.txt missing" && exit 1)
+          test -f ".gitignore" || (echo ".gitignore missing" && exit 1)
+          echo "✅ Security files verified"
+
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Run TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t boardos-security-test .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'boardos-security-test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+  codeql-security:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  security-headers:
+    name: Security Headers Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start preview server
+        run: |
+          npm run preview &
+          sleep 5
+        
+      - name: Test security headers
+        run: |
+          # Test for security headers using curl
+          echo "Testing security headers..."
+          
+          # Test CSP header
+          curl -I http://localhost:5174 | grep -i "content-security-policy" || (echo "❌ CSP header missing" && exit 1)
+          
+          # Test other security headers
+          curl -I http://localhost:5174 | grep -i "x-content-type-options: nosniff" || (echo "❌ X-Content-Type-Options missing" && exit 1)
+          curl -I http://localhost:5174 | grep -i "x-frame-options" || (echo "❌ X-Frame-Options missing" && exit 1)
+          curl -I http://localhost:5174 | grep -i "x-xss-protection" || (echo "❌ X-XSS-Protection missing" && exit 1)
+          
+          echo "✅ Security headers verified"
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: |
+          license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense;CC0-1.0' \
+            --excludePrivatePackages \
+            --json > license-report.json
+          
+          echo "✅ License compliance check passed"
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: license-report.json
+          retention-days: 30
+
+  notify-security-results:
+    name: Notify Security Results  
+    needs: [dependency-security, secret-scanning, docker-security, codeql-security]
+    runs-on: ubuntu-latest
+    if: always() && (failure() || github.event_name == 'schedule')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: security-results/
+
+      - name: Create security summary
+        run: |
+          echo "# BoardOS Security Scan Summary" > security-summary.md
+          echo "**Date:** $(date)" >> security-summary.md
+          echo "**Commit:** ${{ github.sha }}" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # Check job results
+          if [[ "${{ needs.dependency-security.result }}" == "failure" ]]; then
+            echo "❌ **Dependency Security:** FAILED" >> security-summary.md
+          else
+            echo "✅ **Dependency Security:** PASSED" >> security-summary.md
+          fi
+          
+          if [[ "${{ needs.secret-scanning.result }}" == "failure" ]]; then
+            echo "❌ **Secret Scanning:** FAILED" >> security-summary.md
+          else
+            echo "✅ **Secret Scanning:** PASSED" >> security-summary.md
+          fi
+          
+          if [[ "${{ needs.docker-security.result }}" == "failure" ]]; then
+            echo "❌ **Docker Security:** FAILED" >> security-summary.md
+          else
+            echo "✅ **Docker Security:** PASSED" >> security-summary.md
+          fi
+          
+          if [[ "${{ needs.codeql-security.result }}" == "failure" ]]; then
+            echo "❌ **CodeQL Analysis:** FAILED" >> security-summary.md
+          else
+            echo "✅ **CodeQL Analysis:** PASSED" >> security-summary.md
+          fi
+          
+          cat security-summary.md
+
+      # In a real implementation, you would send this to Slack, email, etc.
+      - name: Comment PR with security results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('security-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

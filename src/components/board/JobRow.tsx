@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDrop, DropTargetMonitor } from 'react-dnd';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RowType, ItemTypes, DragItem, ResourceType, Assignment } from '../../types';
+import { RowType, ItemTypes, DragItem, ResourceType, Assignment, Resource } from '../../types';
 import { useScheduler } from '../../context/SchedulerContext';
 import { useMobile } from '../../context/MobileContext';
 import { useDragContext } from '../../context/DragContext';
@@ -41,7 +41,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     getJobRowConfig
   } = useScheduler();
   
-  const { isMobile } = useMobile();
+  const { isMobile: _isMobile } = useMobile();
   
   // Get job object
   const job = getJobById(jobId);
@@ -49,8 +49,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   // Get assignments for this job and row type
   const assignments = getResourcesByAssignment(jobId, rowType);
   
-  const { } = useDragContext(); // For future drag state handling
-  const { } = useModal(); // For future modal operations
+  // const { } = useDragContext(); // For future drag state handling
+  // const { } = useModal(); // For future modal operations
   
   // Test drop target
   const [{ isTestOver }] = useDrop({
@@ -165,7 +165,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         });
         
         // Check if this drop was already handled by a nested component
-        if ((item as any)._handled) {
+        if ((item as DragItem & { _handled?: boolean })._handled) {
           logger.debug('Drop already handled by nested component, skipping');
           return { jobId, rowType, alreadyHandled: true };
         }
@@ -199,7 +199,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           });
           
           // Mark as handled to prevent duplicate processing
-          (item as any)._handled = true;
+          (item as DragItem & { _handled?: boolean })._handled = true;
           
           const assignmentId = await assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
           logger.debug('Assignment created:', assignmentId);
@@ -210,15 +210,14 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
           // For second shift (Ctrl+drag), create a new assignment instead of moving existing
           if (item.isSecondShift) {
             logger.debug('Second shift assignment - creating new assignment for resource');
-            (item as any)._handled = true;
+            (item as DragItem & { _handled?: boolean })._handled = true;
             const position = assignments.length;
             const assignmentId = await assignResourceWithTruckConfig(item.resource.id, jobId, rowType, undefined, position, item.isSecondShift);
             logger.debug('Second shift assignment created:', assignmentId);
             return { jobId, rowType, assignmentId, isSecondShift: true, keepOriginal: true };
           } else {
             logger.debug('Moving assignment group');
-            (item as any)._handled = true;
-            const assignmentIds = item.assignments.map(a => a.id);
+            (item as DragItem & { _handled?: boolean })._handled = true;
             const newAssignmentId = await moveAssignmentGroup(item.assignments, jobId, rowType);
             logger.debug('Assignment group moved:', newAssignmentId);
             return { jobId, rowType, assignmentId: newAssignmentId };
@@ -270,9 +269,8 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
         return true;
       }
       
-      // Legacy equipment type restrictions (now handled by drop rules above)
+      // Legacy equipment type restrictions (now handled by drop rules above)  
       if (item.type === ItemTypes.RESOURCE) {
-        const isEquipment = equipmentTypes.includes(item.resource.type);
         
         // Check if truck has a driver assigned before allowing drop
         if (item.resource.type === 'truck' && rowType === 'trucks') {
@@ -471,7 +469,7 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
   };
   
   // Helper function to categorize trucks
-  const categorizeTruck = (resource: any, assignmentId?: string) => {
+  const categorizeTruck = (resource: Resource | null, assignmentId?: string) => {
     if (!resource) {
       logger.error('🚛 Resource not found for truck assignment:', assignmentId);
       return 'uncategorized'; // New category for missing resources
@@ -574,8 +572,6 @@ const JobRow: React.FC<JobRowProps> = ({ jobId, rowType, label }) => {
     const shouldShowFlowboy = job?.type === 'paving' || job?.type === 'both' || flowboyAssignments.length > 0;
     const shouldShowDumpTrailer = job?.type === 'milling' || job?.type === 'both' || dumpTrailerAssignments.length > 0;
     const shouldShowGenericAddButton = !shouldShowFlowboy && !shouldShowDumpTrailer && job?.type !== 'paving' && job?.type !== 'milling' && job?.type !== 'both';
-    
-    const templateCards = getTemplateCards();
     
     return (
       <div 

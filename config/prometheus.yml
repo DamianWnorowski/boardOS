@@ -1,0 +1,52 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # BoardOS application metrics
+  - job_name: 'boardos'
+    static_configs:
+      - targets: ['boardos:8080']
+    metrics_path: '/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+
+  # Traefik metrics
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Docker daemon metrics (if enabled)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+    scrape_interval: 30s
+
+  # Node exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Sample alerting rules (uncomment to enable)
+# rule_files:
+#   - "boardos_alerts.yml"

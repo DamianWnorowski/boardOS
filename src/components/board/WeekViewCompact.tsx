@@ -215,7 +215,7 @@ const WeekViewCompact: React.FC<WeekViewCompactProps> = ({ startDate, onDateChan
       {/* Compact Week Grid */}
       <div className="flex-1 overflow-x-auto">
         <div className="flex h-full min-w-max">
-          {weekDates.map((date, index) => {
+          {weekDates.map((date, _index) => {
             const dateStr = date.toISOString().split('T')[0];
             const dayJobs = weekJobs.get(dateStr) || [];
             const stats = getDayStats(date);

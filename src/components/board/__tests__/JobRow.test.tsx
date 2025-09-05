@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import JobRow from '../JobRow';
@@ -8,7 +8,7 @@ import { SchedulerContext } from '../../../context/SchedulerContext';
 import { MobileContext } from '../../../context/MobileContext';
 import { DragContext } from '../../../context/DragContext';
 import { ModalContext } from '../../../context/ModalContext';
-import { RowType, Job, Assignment, Resource, ResourceType } from '../../../types';
+import { RowType, Job, Assignment, Resource } from '../../../types';
 import { isRowNeededForJobType, isRowTogglable } from '../../../utils/jobUtils';
 
 // Mock modules

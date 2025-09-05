@@ -16,7 +16,7 @@ WeekViewCompact is a exported React component in the Board category.
 - **Type**: exported
 - **Export**: Default
 - **File**: `WeekViewCompact.tsx`
-- **Line**: 426
+- **Line**: 425
 - **Category**: Board
 - **Has JSDoc**: ❌
 
@@ -42,7 +42,6 @@ function ExampleUsage() {
 - `react`
 - `lucide-react`
 - `../../context/SchedulerContext`
-- `../../services/DatabaseService`
 - `../../types`
 - `../modals/AddJobModal`
 
